@@ -1,0 +1,33 @@
+
+/* fix alternating colors even through genre colors are the actual background */
+.table-row-cell, .table-row-cell:odd, .tree-table-cell, .tree-cell {
+    -fx-background: derive(-fx-base, 20%);
+}
+
+.table-view, .tree-view, .tree-table-view {
+    -fx-font-size: 11;
+
+	myText: -fx-text-background-color;
+}
+
+.table-cell, .tree-cell, .tree-table-cell {
+	-fx-text-fill: myText;
+}
+
+/* Selected rows */
+.tree-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-cell:filled:selected,
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:filled:selected,
+.tree-table-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-table-row-cell:filled:selected,
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected,
+.tree-table-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-table-row-cell .tree-table-cell:selected {
+    myText: ladder(#999, -fx-text-background-color, hsb(210, 90%, 100%));
+}
+
+/* Selected when control is not focused */
+.tree-cell:filled:selected,
+.table-row-cell:filled:selected,
+.tree-table-row-cell:filled:selected,
+.table-row-cell:filled > .table-cell:selected,
+.tree-table-row-cell:filled > .tree-table-cell:selected {
+    myText: ladder(#666, -fx-text-background-color, hsb(210, 90%, 100%));
+}

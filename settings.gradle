@@ -1,0 +1,4 @@
+rootProject.name = 'Monstercat'
+include 'Updater'
+
+includeBuild '../Utils'
