@@ -1,3 +1,6 @@
 
-/archive
-/build
+.gradle
+.idea
+
+archive
+build
