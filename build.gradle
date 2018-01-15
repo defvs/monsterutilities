@@ -12,7 +12,7 @@ plugins {
 }
 apply plugin: 'kotlin'
 
-allprojects {
+/*allprojects {
 	apply plugin: 'idea'
 	idea {
 		module {
@@ -20,14 +20,15 @@ allprojects {
 			testOutputDir file('build/idea/test')
 		}
 	}
-}
+}*/
 
 println("Java version: ${JavaVersion.current()}")
 println("Kotlin version: $kotlinVersion")
 mainClassName = 'xerus.monstercat.MonsterUtilitiesKt'
 
-// gradle run -Dexec.args="FINE save" < nul
-run { args System.getProperty('exec.args', '').split() }
+// gradle run -Dexec.args="FINE save"
+run { //noinspection GroovyAssignabilityCheck
+    args System.getProperty('exec.args', '').split() }
 
 sourceSets {
 	main.kotlin.srcDirs = ['src/main']
@@ -43,13 +44,6 @@ shadowJar {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all { kotlinOptions.jvmTarget = '1.8' }
 kotlin.experimental.coroutines "enable"
-
-idea {
-	module {
-		downloadJavadoc = true
-		downloadSources = true
-	}
-}
 
 repositories {
 	mavenCentral()
@@ -75,7 +69,8 @@ dependencies {
 def MAIN = '!main'
 run.setGroup(MAIN)
 task release(type: Exec, dependsOn: ['shadowJar'], group: MAIN) {
-	ignoreExitValue true
+	//noinspection GroovyAssignabilityCheck
+    ignoreExitValue true
 	commandLine "robocopy", "/NJH", "build/libs", ".", "MonsterUtilities.jar"
 }
 
