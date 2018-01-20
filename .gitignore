@@ -1,7 +1,6 @@
 
 .gradle
 .idea
-
-archive
 build
 out
+archive

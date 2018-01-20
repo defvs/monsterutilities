@@ -7,24 +7,28 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.params.ClientPNames
 import org.apache.http.client.params.CookiePolicy
 import org.apache.http.client.protocol.ClientContext
-import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.protocol.BasicHttpContext
+import xerus.ktutil.containsAny
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.pair
 import xerus.monstercat.MCatalog
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.Session
+import xerus.monstercat.api.response.TrackResponse
+import xerus.monstercat.api.response.declaredKeys
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 
 /** eases query creation to the Monstercat API */
 class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
-	
+
 	private val path: String = "/api/" + path.joinToString("/")
 	val uri: URI
 		get() = URI("https", "connect.monstercat.com", path, getQuery(), null)
