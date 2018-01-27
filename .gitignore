@@ -1,0 +1,14 @@
+.idea
+out
+
+.gradle
+build
+gradle.properties
+
+*.jar
+*.sh
+*.ps1
+
+src/resources/version
+src/resources/sheets-api-key
+src/resources/client_secret.json
