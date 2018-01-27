@@ -30,7 +30,7 @@ object Settings : SettingsNode("xerus/monstercat") {
 	val DELETE = create("versionDelete", File(""))
 	val UNSTABLE = create("updateUnstable", false)
 
-	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities {version}")
-	val FILENAMEPATTERNUNSTABLE = create("updatePatternUnstable", "MonsterUtilities unstable {version}")
+	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities %version%")
+	val FILENAMEPATTERNUNSTABLE = create("updatePatternUnstable", "MonsterUtilities unstable %version%")
 	
 }

@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -17,7 +18,6 @@ java.sourceSets {
     }
 }
 
-
 // configure kotlin
 val kotlinVersion: String? by extra {
     buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
@@ -27,13 +27,6 @@ val kotlinVersion: String? by extra {
 application {
     mainClassName = "xerus.monstercat.MonsterUtilitiesKt"
 }
-
-/*shadowJar {
-    baseName = "MonsterUtilities"
-    classifier = null
-}*/
-
-// gradle run -Dexec.args="FINE save"
 
 repositories {
     jcenter()
@@ -59,12 +52,18 @@ dependencies {
 tasks {
     val MAIN = "_Main"
 
-    getByName("runShadow").setGroup("")
-    getByName("startShadowScripts").setGroup("")
+    getByName("runShadow").group = MAIN
+    getByName("startShadowScripts").group = "distribution"
 
     "run"(JavaExec::class) {
         group = MAIN
+        // gradle run -Dexec.args="FINE save"
         args = System.getProperty("exec.args", "").split(" ")
+    }
+
+    "shadowJar"(ShadowJar::class) {
+        baseName = "MonsterUtilities"
+        classifier = null
     }
 
     withType<KotlinCompile> {
@@ -87,17 +86,6 @@ tasks {
     }*/
 
 }
-
-
-/*allprojects {
-	apply plugin: "idea"
-	idea {
-		module {
-			outputDir file("build/idea/main")
-			testOutputDir file("build/idea/test")
-		}
-	}
-}*/
 
 println("Java version: ${JavaVersion.current()}")
 println("Kotlin version: $kotlinVersion")

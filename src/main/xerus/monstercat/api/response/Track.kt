@@ -60,19 +60,19 @@ open class Track(
      */
     fun toString(format: String): String {
         init()
-        // todo consider outer brackets
-        val bits = BitSet()
-        return format.split('{', '}').mapIndexed { i, cur ->
+        return parseRecursive(format).first
+        /*format.split('{', '}').mapIndexed { i, cur ->
             if (i % 2 == 1)
                 insertField(cur)
             else
                 cur
-        }.joinToString(separator = "")
+        }.joinToString(separator = "")*/
     }
 
     private val inserter = PseudoParser('%')
     private fun parseRecursive(string: String): Pair<String, Boolean> {
         var didSomething = false
+        // todo join function
         val result = PseudoParser('{', '}').parse(string, {
             inserter.parse(it) {
                 val value = insertField(it)
