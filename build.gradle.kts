@@ -1,6 +1,8 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    kotlin("jvm") version "1.2.20"
-    aplication
+    kotlin("jvm") version "1.2.21"
+    application
     id("com.github.johnrengelman.shadow") version "2.0.1"
 }
 
@@ -22,27 +24,16 @@ val kotlinVersion: String? by extra {
             .find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }?.moduleVersion
 }
 
-allprojects {
-    tasks.withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
-    }
-}
-
 application {
     mainClassName = "xerus.monstercat.MonsterUtilitiesKt"
 }
 
-shadowJar {
+/*shadowJar {
     baseName = "MonsterUtilities"
     classifier = null
-}
+}*/
 
 // gradle run -Dexec.args="FINE save"
-run {
-    args = System.getProperty("exec.args", "").split()
-}
 
 repositories {
     jcenter()
@@ -66,25 +57,34 @@ dependencies {
 }
 
 tasks {
-    val MAIN = "!main"
+    val MAIN = "_Main"
 
-    run.setGroup(MAIN)
-    group.dump()
     getByName("runShadow").setGroup("")
-    startShadowScripts.setGroup("")
+    getByName("startShadowScripts").setGroup("")
+
+    "run"(JavaExec::class) {
+        group = MAIN
+        args = System.getProperty("exec.args", "").split(" ")
+    }
+
+    withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+    }
 
     val release by creating(Copy::class) {
         group = MAIN
         dependsOn("shadowJar")
-        from "build/libs/MonsterUtilities.jar"
-        into "."
+        from("build/libs/MonsterUtilities.jar")
+        into(".")
     }
 
-    val jar by creating {
+    /*val jar by creating {
         // overwrite
         group = MAIN
         dependsOn("shadowJar")
-    }
+    }*/
 
 }
 

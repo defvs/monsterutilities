@@ -53,8 +53,6 @@ open class Track(
                     it.endsWith("mix", true) -> remix = it
                 }
             }
-        featuring.printNamed("featuring")
-        remix.printNamed()
     }
 
     /**
@@ -83,8 +81,10 @@ open class Track(
         }.joinToString(separator = "")
     }
 
-    private fun parseRecursive(string: String) {
-        PseudoParser.
+    private fun parseRecursive(string: String): String {
+        return PseudoParser('{', '}').parse(string) {
+            parseRecursive(it)
+        }
     }
 
     override fun toString(): String =
