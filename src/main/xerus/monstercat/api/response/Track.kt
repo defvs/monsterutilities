@@ -4,7 +4,6 @@ import com.google.api.client.util.Key
 import xerus.ktutil.getField
 import xerus.ktutil.helpers.PseudoParser
 import xerus.ktutil.joinEnumeration
-import xerus.ktutil.printNamed
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.*
 import java.util.Collections.emptyList
@@ -64,26 +63,43 @@ open class Track(
         // todo consider outer brackets
         val bits = BitSet()
         return format.split('{', '}').mapIndexed { i, cur ->
-            if (i % 2 == 1) {
-                cur.split('|').let {
-                    val value = getField(it[0])
-                    if (it.size > 1) {
-                        val separator = it[1]
-                        @Suppress("UNCHECKED_CAST")
-                        (value as? Array<Any> ?: (value as? Collection<Any>)?.toTypedArray())?.let {
-                            return@mapIndexed if (separator == "enumeration") joinEnumeration(*it)
-                            else it.joinToString(separator)
-                        }
-                    }
-                    value.toString()
-                }
-            } else cur
+            if (i % 2 == 1)
+                insertField(cur)
+            else
+                cur
         }.joinToString(separator = "")
     }
 
-    private fun parseRecursive(string: String): String {
-        return PseudoParser('{', '}').parse(string) {
-            parseRecursive(it)
+    private val inserter = PseudoParser('%')
+    private fun parseRecursive(string: String): Pair<String, Boolean> {
+        var didSomething = false
+        val result = PseudoParser('{', '}').parse(string, {
+            inserter.parse(it) {
+                val value = insertField(it)
+                didSomething = didSomething || value.isNotEmpty()
+                value
+            }
+        }, {
+            val parsed = parseRecursive(it)
+            if(parsed.second)
+                parsed.first
+            else ""
+        })
+        return Pair(result, didSomething)
+    }
+
+    private fun insertField(string: String): String {
+        string.split('|').let {
+            val value = getField(it[0])
+            if (it.size > 1) {
+                val separator = it[1]
+                @Suppress("UNCHECKED_CAST")
+                (value as? Array<Any> ?: (value as? Collection<Any>)?.toTypedArray())?.let {
+                    return if (separator == "enumeration") joinEnumeration(*it)
+                    else it.joinToString(separator)
+                }
+            }
+            return value.toString()
         }
     }
 
