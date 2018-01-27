@@ -129,15 +129,19 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
         if (VERSION != Settings.LASTVERSION.get()) {
             launch {
                 logger.fine("New version detected! $VERSION from " + Settings.LASTVERSION())
-                val f = Settings.DELETEVERSION()
+                val f = Settings.DELETE()
                 if (f.exists()) {
                     logger.config("Deleting older version $f...")
                     val time = currentSeconds()
+                    var res = false
                     do {
-                        val res = f.delete()
+                        res = f.delete()
                     } while (!res && time + 10 > currentSeconds())
-                    Settings.DELETEVERSION.reset()
-                    logger.config("Deleted $f!")
+                    if(res) {
+                        Settings.DELETE.reset()
+                        logger.config("Deleted $f!")
+                    } else
+                        logger.config("Couldn't delete older version $f")
                 }
                 Settings.LASTVERSION.put(VERSION)
             }
@@ -202,7 +206,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
             // restart
             override fun succeeded() {
                 if (isUnstable == unstable)
-                    Settings.DELETEVERSION.set(File(MonsterUtilities::class.java.protectionDomain.codeSource.location.toURI()))
+                    Settings.DELETE.set(File(MonsterUtilities::class.java.protectionDomain.codeSource.location.toURI()))
                 App.stage.close()
                 logger.info("Exiting for update")
                 Platform.exit()

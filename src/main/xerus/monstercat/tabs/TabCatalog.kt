@@ -16,6 +16,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
 import xerus.monstercat.logger
 import java.time.LocalTime
+import java.util.*
 import kotlin.math.absoluteValue
 
 class TabCatalog : TableTab() {
@@ -87,7 +88,7 @@ class TabCatalog : TableTab() {
 				@Suppress("UNCHECKED_CAST")
 				val widths = ArrayList<Double>(table.items.size)
 				for (item in table.items) {
-					// fixme read font
+					// todo read font
 					widths.add(col.getCellData(item).toString().textWidth(Font.font("System", 11.0)) + 6)
 				}
 				val avg = widths.average()

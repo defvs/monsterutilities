@@ -71,6 +71,7 @@ run.setGroup(MAIN)
 task release(type: Exec, dependsOn: ['shadowJar'], group: MAIN) {
 	//noinspection GroovyAssignabilityCheck
     ignoreExitValue true
+	//file("build/libs/MonsterUtilities.jar").move(".")
 	commandLine "robocopy", "/NJH", "build/libs", ".", "MonsterUtilities.jar"
 }
 

@@ -1,5 +1,11 @@
 
-.gradle
+# IDEA
 .idea
-build
 out
+
+
+# Gradle
+.gradle
+PlayerFX.*
+build
+

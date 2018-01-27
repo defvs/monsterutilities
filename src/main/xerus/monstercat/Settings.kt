@@ -27,7 +27,7 @@ object Settings : SettingsNode("xerus/monstercat") {
 
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")
-	val DELETEVERSION = create("versionDelete", File(""))
+	val DELETE = create("versionDelete", File(""))
 	val UNSTABLE = create("updateUnstable", false)
 
 	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities {version}")

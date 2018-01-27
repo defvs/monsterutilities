@@ -211,7 +211,7 @@ class TabDownloader : VBox(5.0), BaseTab {
 		val threadSpinner = intSpinner(0, initial = DOWNLOADTHREADS())
 		DOWNLOADTHREADS.bind(threadSpinner.valueProperty())
 		addLabeled("Download Threads", threadSpinner)
-		// todo progress inidicator
+		// todo progress indicator
 		fill(taskView)
 		taskView.tasks.addListener(ListChangeListener {
 			if (it.list.size == 0)

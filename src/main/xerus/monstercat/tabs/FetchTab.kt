@@ -25,7 +25,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 
-val snackbarTextCache = "Catalog was loaded from cache"
+val snackbarTextCache = "MCatalog was loaded from cache"
 
 abstract class FetchTab : VBox(3.0), BaseTab {
 	

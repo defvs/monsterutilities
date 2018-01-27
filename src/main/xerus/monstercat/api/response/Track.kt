@@ -2,8 +2,12 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 import xerus.ktutil.getField
+import xerus.ktutil.helpers.PseudoParser
 import xerus.ktutil.joinEnumeration
+import xerus.ktutil.printNamed
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
+import java.util.*
+import java.util.Collections.emptyList
 
 
 /** JvmFields are used for Reflection, which is needed for the formatted [toString] method */
@@ -44,11 +48,13 @@ open class Track(
         if (split.size > 1)
             split.subList(1, split.lastIndex).forEach {
                 when {
-                // todo split it up
+                    // todo split it up
                     it.startsWith("feat", true) -> featuring = it.split(' ', limit = 2)[1]
                     it.endsWith("mix", true) -> remix = it
                 }
             }
+        featuring.printNamed("featuring")
+        remix.printNamed()
     }
 
     /**
@@ -58,6 +64,7 @@ open class Track(
     fun toString(format: String): String {
         init()
         // todo consider outer brackets
+        val bits = BitSet()
         return format.split('{', '}').mapIndexed { i, cur ->
             if (i % 2 == 1) {
                 cur.split('|').let {
@@ -74,6 +81,10 @@ open class Track(
                 }
             } else cur
         }.joinToString(separator = "")
+    }
+
+    private fun parseRecursive(string: String) {
+        PseudoParser.
     }
 
     override fun toString(): String =
