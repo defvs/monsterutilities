@@ -33,8 +33,8 @@ repositories {
 }
 
 dependencies {
-    compile("xerus.utils", "kotlin")
-    compile("xerus.utils", "javafx")
+    compile("xerus.util", "kotlin")
+    compile("xerus.util", "javafx")
 
     compile("org.jetbrains.kotlin", "kotlin-stdlib-jdk8", kotlinVersion)
     compile("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "0.+")
@@ -49,8 +49,8 @@ dependencies {
 
 }
 
+val MAIN = "_Main"
 tasks {
-    val MAIN = "_Main"
 
     getByName("runShadow").group = MAIN
     getByName("startShadowScripts").group = "distribution"
@@ -79,12 +79,11 @@ tasks {
         into(".")
     }
 
-    val jar by creating {
-        // overwrite
-        group = MAIN
-        dependsOn("shadowJar")
-    }
+}
 
+tasks.replace("jar", Jar::class.java).apply {
+    group = MAIN
+    dependsOn("shadowJar")
 }
 
 println("Java version: ${JavaVersion.current()}")

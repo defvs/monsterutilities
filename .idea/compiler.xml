@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="javafx_main" target="1.8" />
+      <module name="javafx_test" target="1.8" />
+      <module name="kotlin_main" target="1.8" />
+      <module name="kotlin_test" target="1.8" />
+      <module name="MonsterUtilities_main" target="1.8" />
+      <module name="MonsterUtilities_test" target="1.8" />
+      <module name="test_main" target="1.8" />
+      <module name="test_test" target="1.8" />
+      <module name="utilities_main" target="1.8" />
+      <module name="utilities_test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
