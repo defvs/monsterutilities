@@ -79,11 +79,11 @@ tasks {
         into(".")
     }
 
-    /*val jar by creating {
+    val jar by creating {
         // overwrite
         group = MAIN
         dependsOn("shadowJar")
-    }*/
+    }
 
 }
 
