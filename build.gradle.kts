@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -28,20 +29,13 @@ application {
     mainClassName = "xerus.monstercat.MonsterUtilitiesKt"
 }
 
-/*shadowJar {
-    baseName = "MonsterUtilities"
-    classifier = null
-}*/
-
-// gradle run -Dexec.args="FINE save"
-
 repositories {
     jcenter()
 }
 
 dependencies {
-    compile("xerus.utils", "kotlin")
-    compile("xerus.utils", "javafx")
+    compile("xerus.util", "kotlin")
+    compile("xerus.util", "javafx")
 
     compile("org.jetbrains.kotlin", "kotlin-stdlib-jdk8", kotlinVersion)
     compile("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "0.+")
@@ -56,15 +50,21 @@ dependencies {
 
 }
 
+val MAIN = "_Main"
 tasks {
-    val MAIN = "_Main"
 
-    getByName("runShadow").setGroup("")
-    getByName("startShadowScripts").setGroup("")
+    getByName("runShadow").group = MAIN
+    getByName("startShadowScripts").group = "distribution"
 
     "run"(JavaExec::class) {
         group = MAIN
+        // gradle run -Dexec.args="FINE save"
         args = System.getProperty("exec.args", "").split(" ")
+    }
+
+    "shadowJar"(ShadowJar::class) {
+        baseName = "MonsterUtilities"
+        classifier = null
     }
 
     withType<KotlinCompile> {
@@ -80,24 +80,12 @@ tasks {
         into(".")
     }
 
-    /*val jar by creating {
-        // overwrite
-        group = MAIN
-        dependsOn("shadowJar")
-    }*/
-
 }
 
-
-/*allprojects {
-	apply plugin: "idea"
-	idea {
-		module {
-			outputDir file("build/idea/main")
-			testOutputDir file("build/idea/test")
-		}
-	}
-}*/
+tasks.replace("jar", Jar::class.java).apply {
+    group = MAIN
+    dependsOn("shadowJar")
+}
 
 println("Java version: ${JavaVersion.current()}")
 println("Kotlin version: $kotlinVersion")
