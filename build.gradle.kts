@@ -18,6 +18,7 @@ java.sourceSets {
     }
 }
 
+
 // configure kotlin
 val kotlinVersion: String? by extra {
     buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
