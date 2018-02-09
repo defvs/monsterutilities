@@ -31,7 +31,7 @@ import java.time.LocalDate
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%")
-val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.getArray())
+val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
 
 class TabDownloader : VBox(5.0), BaseTab {
 	

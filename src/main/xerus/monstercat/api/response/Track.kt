@@ -1,5 +1,6 @@
 package xerus.monstercat.api.response
 
+import com.google.api.client.util.Key
 import xerus.ktutil.getField
 import xerus.ktutil.helpers.PseudoParser
 import xerus.ktutil.joinEnumeration
