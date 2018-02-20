@@ -79,9 +79,10 @@ class TabSettings : VBox(5.0), BaseTab {
         val logChooser = FileChooser(App.stage, Settings.LOGFILE(), "", "Logfile")
         logChooser.selectedFile.addListener { _, _, new -> Settings.LOGFILE.set(new) }
         add(logChooser.hBox)*/
-        addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE),
-                //CheckBox("Enable Logfile").bind(Settings.ENABLELOGFILE),
-                CheckBox("Download unstable build").bind(Settings.UNSTABLE))
+        addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE)
+                //,CheckBox("Enable Logfile").bind(Settings.ENABLELOGFILE)
+                //,CheckBox("Download unstable build").bind(Settings.UNSTABLE)
+        )
 
         Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
             override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
@@ -204,7 +205,7 @@ class TabSettings : VBox(5.0), BaseTab {
         val status = response.statusLine
         logger.finer("Response: $status")
         when (status.statusCode) {
-            200 -> monsterUtilities.showMessage("Your feedback was successfully sent!")
+            200 -> monsterUtilities.showMessage("Your feedback was sent successfully!")
             else -> {
                 val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
                 val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)

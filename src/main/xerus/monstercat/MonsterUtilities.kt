@@ -228,7 +228,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
         val c = Changelog("BETA - Many bugs are fixed, but major features are still worked on and may introduce new bugs or break compatibility",
                 "Note: The Catalog and Genres Tab pull their data from the MCatalog Spreadsheet, thus issues may come from their side.").apply {
             version(1, 0, "Complete Overhaul", "Brand new shiny favicon and player buttons - big thanks to NocFA!")
-                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Two distinct filename patterns for Singles and Album tracks", "Easy filtering")
+                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
                     .change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
                     .change("Catalog and Genre Tab now show Genre colors")
                     .change("Catalog improved", "More filtering options", "Smart column size")

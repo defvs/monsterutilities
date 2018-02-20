@@ -16,6 +16,7 @@ import org.controlsfx.control.CheckTreeView
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
 import xerus.ktutil.helpers.Cache
+import xerus.ktutil.helpers.PseudoParser.ParserException
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.*
@@ -30,7 +31,7 @@ import xerus.monstercat.tabs.BaseTab
 import java.time.LocalDate
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%")
+val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
 val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
 
 class TabDownloader : VBox(5.0), BaseTab {
@@ -73,9 +74,9 @@ class TabDownloader : VBox(5.0), BaseTab {
 				textProperty().bindSoft({
 					try {
 						test.toString(property.value).also { patternValid.value = true }
-					} catch (e: NoSuchFieldException) {
+					} catch (e: ParserException) {
 						patternValid.value = false
-						"No such field: " + e.message
+						"No such field: " + e.cause?.cause?.message
 					} catch (e: Exception) {
 						patternValid.value = false
 						monsterUtilities.showError(e, "Error parsing pattern")
@@ -134,7 +135,7 @@ class TabDownloader : VBox(5.0), BaseTab {
 		//addRow(CheckBox("Fast skip").apply { selectedProperty().bindBidirectional(FASTSKIP) })
 		addRow(TextField().apply {
 			promptText = "connect.sid"
-			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts like \"s%3A\")")
+			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
 			textProperty().bindBidirectional(CONNECTSID)
 			maxWidth = Double.MAX_VALUE
 		}.priority(), Button("Start Download").onClick { startDownload() }.apply {
