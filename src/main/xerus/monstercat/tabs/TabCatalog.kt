@@ -1,13 +1,10 @@
 package xerus.monstercat.tabs
 
 import com.sun.javafx.scene.control.skin.TableViewSkin
-import javafx.beans.Observable
 import javafx.collections.ListChangeListener
 import javafx.scene.control.Label
-import javafx.scene.control.TableColumn
 import javafx.scene.control.TableRow
 import javafx.scene.text.Font
-import javafx.scene.text.Text
 import xerus.ktutil.*
 import xerus.ktutil.helpers.KeyNotFoundException
 import xerus.ktutil.javafx.*
@@ -34,7 +31,7 @@ class TabCatalog : TableTab() {
 			TableRow<List<String>>().apply {
 				val genre = cols.find("Genre") ?: return@apply
 				itemProperty().addListener { _, _, new ->
-					style = genreColor(new?.get(genre)?.let { genreColors.find(it) }) ?: "-fx-background-color: transparent"
+					style = genreColor(new?.get(genre)?.let { genreColors.find(it) ?: genreColors.find(it.split(' ').map { it.first() }.joinToString(separator = "")) }) ?: "-fx-background-color: transparent"
 				}
 			}
 		}

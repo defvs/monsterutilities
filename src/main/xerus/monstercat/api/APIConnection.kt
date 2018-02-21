@@ -11,7 +11,6 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.protocol.BasicHttpContext
-import xerus.ktutil.containsAny
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.pair
 import xerus.monstercat.MCatalog
@@ -21,7 +20,6 @@ import xerus.monstercat.api.response.TrackResponse
 import xerus.monstercat.api.response.declaredKeys
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
-import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI

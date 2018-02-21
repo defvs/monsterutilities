@@ -25,6 +25,7 @@ import xerus.monstercat.api.*
 import xerus.monstercat.api.response.Artist
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.api.Player
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.BaseTab
@@ -236,9 +237,11 @@ class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 			}
 		}
 		launch {
+			root.value = Track(title = "Loading Tracks...")
 			Tracks.tracks?.sortedBy { it.toString() }?.forEach {
 				root.internalChildren.add(FilterableTreeItem(it))
 			}
+			root.value = Track(title = "Tracks")
 		}
 	}
 }

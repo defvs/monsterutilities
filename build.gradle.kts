@@ -1,5 +1,8 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.Coroutines
+
+version = KotlinVersion(1, 0)
 
 plugins {
     kotlin("jvm") version "1.2.21"
@@ -20,6 +23,7 @@ java.sourceSets {
 
 
 // configure kotlin
+kotlin.experimental.coroutines = Coroutines.ENABLE
 val kotlinVersion: String? by extra {
     buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
             .find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }?.moduleVersion
@@ -65,24 +69,21 @@ tasks {
     "shadowJar"(ShadowJar::class) {
         baseName = "MonsterUtilities"
         classifier = null
+        destinationDir = file(".")
     }
 
     withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
+        kotlinOptions.jvmTarget = "1.8"
     }
 
-    val release by creating(Copy::class) {
+    val release by creating {
         group = MAIN
         dependsOn("shadowJar")
-        from("build/libs/MonsterUtilities.jar")
-        into(".")
     }
 
 }
 
-tasks.replace("jar", Jar::class.java).apply {
+tasks.replace("jar").apply {
     group = MAIN
     dependsOn("shadowJar")
 }

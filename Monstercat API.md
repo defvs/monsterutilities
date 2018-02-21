@@ -16,6 +16,7 @@ All API calls go to https://connect.monstercat.com/
 ### /signin
 **POST**
 *Signs you in*
+
 `{"email": "a@b.com", "password": "supersecretpassword"}`
 
 ### /api/catalog/release

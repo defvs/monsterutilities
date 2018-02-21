@@ -50,7 +50,7 @@ object Player : FadingHBox(false) {
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onJFX {
-				add(Button().id("play").onClick { Player.play(latest) })
+				add(Button().id("play").onClick { play(latest) })
 				fill(pos = 0)
 				fill()
 				add(closeButton)

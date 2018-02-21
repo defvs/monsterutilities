@@ -62,7 +62,7 @@ class TabGenres : FetchTab() {
 				cur = new
 			}
 			if (hex != null)
-				FetchTab.refreshViews()
+				refreshViews()
 		})
 		
 		view.setRowFactory {

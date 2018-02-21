@@ -5,6 +5,7 @@ import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.cachePath
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.logger
 import java.io.File
@@ -14,7 +15,7 @@ object Releases : Refresher() {
 	private const val SEPARATOR = ";;"
 	
 	private val releaseCache: File
-		get() = Settings.cachePath.resolve("releases.txt").toFile()
+		get() = cachePath.resolve("releases.txt").toFile()
 	
 	private var lastRefresh = 0
 	private var lastCookie: String = ""

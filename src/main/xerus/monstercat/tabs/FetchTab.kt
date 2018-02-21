@@ -11,14 +11,15 @@ import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.add
-import xerus.ktutil.javafx.checkJFX
 import xerus.ktutil.javafx.onJFX
 import xerus.ktutil.javafx.ui.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
-import xerus.monstercat.*
 import xerus.monstercat.MCatalog.fetchSheet
 import xerus.monstercat.api.Releases
+import xerus.monstercat.Settings
+import xerus.monstercat.logger
+import xerus.monstercat.monsterUtilities
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.Files
@@ -77,7 +78,7 @@ abstract class FetchTab : VBox(3.0), BaseTab {
 	// region Caching
 	
 	private val cachePath: Path
-		get() = Settings.cachePath.resolve("MCatalog " + tabName)
+		get() = xerus.monstercat.cachePath.resolve("MCatalog " + tabName)
 	
 	private fun writeCache(sheet: Any) {
 		if (!Settings.ENABLECACHE())

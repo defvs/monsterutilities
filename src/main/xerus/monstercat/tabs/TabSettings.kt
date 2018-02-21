@@ -182,7 +182,7 @@ class TabSettings : VBox(5.0), BaseTab {
 
     /** @return false if it should be retried */
     private fun sendFeedback(subject: String, message: String): Boolean {
-        val zipFile = Settings.cachePath.resolve("logs.zip").toFile()
+        val zipFile = cachePath.resolve("logs.zip").toFile()
         val logs = logDir.listFiles()
         ZipOutputStream(FileOutputStream(zipFile)).use { zip ->
             logs.forEach {
