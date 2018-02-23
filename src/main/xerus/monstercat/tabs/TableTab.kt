@@ -1,7 +1,7 @@
 package xerus.monstercat.tabs
 
 import javafx.scene.Node
-import xerus.ktutil.javafx.ui.FilteredTableView
+import xerus.ktutil.javafx.ui.controls.FilteredTableView
 
 open class TableTab : FetchTab() {
 

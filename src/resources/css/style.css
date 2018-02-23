@@ -31,3 +31,16 @@
 .tree-table-row-cell:filled > .tree-table-cell:selected {
     myText: ladder(#666, -fx-text-background-color, hsb(210, 90%, 100%));
 }
+
+#seekBar .bar {
+    -fx-background-insets: 0 0 0 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+#seekBar .track {
+    -fx-background-color: null;
+    -fx-background-insets: 0 0 0 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}

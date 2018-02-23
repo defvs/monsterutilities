@@ -12,12 +12,12 @@ import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.add
 import xerus.ktutil.javafx.onJFX
-import xerus.ktutil.javafx.ui.Snackbar
+import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
 import xerus.monstercat.MCatalog.fetchSheet
-import xerus.monstercat.api.Releases
 import xerus.monstercat.Settings
+import xerus.monstercat.api.Releases
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import java.io.FileNotFoundException
