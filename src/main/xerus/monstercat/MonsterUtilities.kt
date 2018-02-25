@@ -139,6 +139,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
                 onJFX {
                     // TODO intro dialog
                 }
+                Settings.LASTVERSION.put(VERSION)
             } else {
                 launch {
                     logger.fine("New version detected! $VERSION from " + Settings.LASTVERSION())
@@ -242,7 +243,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
         val c = Changelog("Note: The Catalog and Genres Tab pull their data from the MCatalog Spreadsheet, thus issues may stem from their side.").apply {
             version(1, 0, "Release", "Brand new shiny favicon and player buttons - big thanks to NocFA!",
                     "Added tutorial", "Feedback can now be sent directly from the application!")
-                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "connect.sid is now checked live", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
+                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
                     .change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
                     .change("Catalog and Genre Tab now show Genre colors")
                     .change("Catalog improved", "More filtering options", "Smart column size")

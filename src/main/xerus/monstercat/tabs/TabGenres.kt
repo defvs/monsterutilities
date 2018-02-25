@@ -1,11 +1,15 @@
 package xerus.monstercat.tabs
 
 import javafx.beans.InvalidationListener
+import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.control.*
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.bold
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.format
+import xerus.ktutil.javafx.italic
 import xerus.ktutil.javafx.properties.ConstantObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
