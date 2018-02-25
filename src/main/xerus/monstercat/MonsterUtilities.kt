@@ -76,7 +76,7 @@ fun main(args: Array<String>) {
     logger.config("Initializing Google Sheets API Service")
     MCatalog.initService("MCatalog Reader", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
     App.launch("MonsterUtilities $VERSION", { stage ->
-        stage.icons.add(Image(getResource("favicon.png")?.toExternalForm()))
+        stage.icons.add(Image(getResource("favicon-glowing.png")?.toExternalForm()))
     }, {
         val scene = Scene(MonsterUtilities(), 800.0, 600.0)
         scene.applySkin(Settings.SKIN())
