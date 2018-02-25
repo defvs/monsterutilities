@@ -195,7 +195,7 @@ class TabDownloader : VBox(5.0), BaseTab {
         val job = launch {
             val releases = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
             if (releases.isNotEmpty()) {
-                logger.fine("Starting Downloads for releases $releases")
+                logger.fine("Starting Downloads for ${releases.size} releases")
                 for (release in releases) {
                     val task = ReleaseDownloader(release)
                     var added = false
@@ -207,7 +207,7 @@ class TabDownloader : VBox(5.0), BaseTab {
             }
             val tracks = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
             if (tracks.isNotEmpty()) {
-                logger.fine("Starting Downloads for tracks $tracks")
+                logger.fine("Starting Downloads for ${tracks.size} tracks")
                 for (track in tracks) {
                     val task = TrackDownloader(track)
                     var added = false
@@ -270,7 +270,6 @@ class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")
         }
         launch {
             val roots = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes").associate { Pair(it, FilterableTreeItem(Release(title = it))) }
-            //roots.forEach { _, treeItem -> treeItem.bindPredicate(searchField.textProperty()) }
             Releases.getReleases().forEach {
                 roots[it.type]?.internalChildren?.add(FilterableTreeItem(it))
                         ?: logger.warning("Unknown Release type: ${it.type}")

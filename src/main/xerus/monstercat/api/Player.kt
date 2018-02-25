@@ -43,7 +43,7 @@ object Player : FadingHBox(true) {
     }
     internal val box = VBox(this)
 
-    override val fader = box.verticalTransition(0.3, 40)
+    override val fader = box.verticalTransition(30)
 
     init {
         id("controls")
@@ -102,7 +102,7 @@ object Player : FadingHBox(true) {
 
     private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
     private val stopButton = Button().id("stop").onClick { stopPlaying() }
-    private val volumeSlider = Slider(0.1, 1.0, 0.4).apply { prefWidth = 100.0; valueProperty().addListener { _ -> setVolume() } }
+    private val volumeSlider = Slider(0.1, 1.0, 0.5).apply { prefWidth = 100.0; valueProperty().addListener { _ -> setVolume() } }
 
     private fun playing(text: String) {
         onJFX {
