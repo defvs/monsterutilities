@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import com.sun.javafx.scene.control.skin.TableViewSkin
 import javafx.collections.ListChangeListener
+import javafx.geometry.Insets
 import javafx.scene.control.Label
 import javafx.scene.control.TableRow
 import javafx.scene.text.Font
@@ -26,7 +27,6 @@ class TabCatalog : TableTab() {
     private val searchables = searchView.options
 
     init {
-        id("catalog")
         prefWidth = 600.0
         val columns = Settings.LASTCATALOGCOLUMNS.all
         val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()

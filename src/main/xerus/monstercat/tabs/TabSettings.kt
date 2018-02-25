@@ -33,16 +33,12 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 
-class TabSettings : VBox(5.0), BaseTab {
+class TabSettings : VTab() {
 
     init {
-        padding = Insets(5.0)
-
         addButton("Show Changelog", { monsterUtilities.showChangelog() })
         addButton("Send Feedback", { feedback() })
         addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
-        val startTab = ComboBox(FXCollections.observableArrayList("Previous"))
-        addLabeled("Startup Tab", startTab)
 
         /*Settings.CACHEPATH.addListener { _, old, new ->
             if (old != null && new.toAbsolutePath() != old.toAbsolutePath()) {
@@ -84,6 +80,8 @@ class TabSettings : VBox(5.0), BaseTab {
                 //,CheckBox("Enable Logfile").bind(Settings.ENABLELOGFILE)
                 //,CheckBox("Download unstable build").bind(Settings.UNSTABLE)
         )
+        val startTab = ComboBox(FXCollections.observableArrayList("Previous"))
+        addLabeled("Startup Tab", startTab)
 
         Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
             override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {

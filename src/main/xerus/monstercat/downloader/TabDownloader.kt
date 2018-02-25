@@ -37,13 +37,14 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.BaseTab
+import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
 val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
 
-class TabDownloader : VBox(5.0), BaseTab {
+class TabDownloader : VTab() {
 
     private val releaseView = ReleaseView()
     private val trackView = TrackView()
@@ -55,8 +56,6 @@ class TabDownloader : VBox(5.0), BaseTab {
     private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE, { it.releaseDate.substring(0, 10).toLocalDate() }))
 
     init {
-        padding = Insets(5.0)
-
         FilterableTreeItem.autoExpand = true
         FilterableTreeItem.autoLeaf = false
 

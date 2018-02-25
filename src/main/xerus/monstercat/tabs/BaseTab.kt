@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import javafx.scene.control.Control
 import javafx.scene.layout.Pane
+import javafx.scene.layout.VBox
 import org.controlsfx.validation.decoration.GraphicValidationDecoration
 
 val minimalDecorator = object : GraphicValidationDecoration() {
@@ -15,4 +16,10 @@ interface BaseTab {
 	
 	fun asNode() = this as Pane
 	
+}
+
+abstract class VTab : VBox(), BaseTab {
+	init {
+		styleClass.add("vtab")
+	}
 }
