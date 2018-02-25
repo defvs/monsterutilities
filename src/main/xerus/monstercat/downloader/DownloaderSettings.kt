@@ -3,7 +3,7 @@ package xerus.monstercat.downloader
 import xerus.ktutil.preferences.SettingsNode
 import java.nio.file.Paths
 
-object DownloaderSettings : SettingsNode("xerus/monstercat/downloader")
+object DownloaderSettings : SettingsNode("xerus/monsterutilities/downloader")
 
 val DOWNLOADDIR = DownloaderSettings.create("directory", Paths.get("Monstercat"))
 val SINGLEFOLDER = DownloaderSettings.create("directorySingles")

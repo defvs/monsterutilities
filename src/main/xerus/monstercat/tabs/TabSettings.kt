@@ -20,6 +20,7 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ConstantObservable
 import xerus.ktutil.javafx.properties.UnmodifiableObservableList
 import xerus.ktutil.javafx.properties.bindSoft
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.ktutil.pair
@@ -57,7 +58,7 @@ class TabSettings : VBox(5.0), BaseTab {
             }
         }*/
 
-        Settings.ENABLECACHE.addListener { _, _, selected ->
+        Settings.ENABLECACHE.listen { selected ->
             logger.fine("Cache " + (if (selected) "en" else "dis") + "abled")
             if (selected) {
                 FetchTab.writeCache()
@@ -74,14 +75,15 @@ class TabSettings : VBox(5.0), BaseTab {
         }
 
         /*val cacheChooser = FileChooser(App.stage, Settings.CACHEPATH.get().toFile(), null, "Cache Directory")
-        cacheChooser.selectedFile.addListener { _, _, new -> Settings.CACHEPATH.set(new.toPath()) }
+        cacheChooser.selectedFile.listen { Settings.CACHEPATH.set(it.toPath()) }
         add(cacheChooser.hBox)
         val logChooser = FileChooser(App.stage, Settings.LOGFILE(), "", "Logfile")
-        logChooser.selectedFile.addListener { _, _, new -> Settings.LOGFILE.set(new) }
+        logChooser.selectedFile.listen { Settings.LOGFILE.set(it) }
         add(logChooser.hBox)*/
-        addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE),
-                //CheckBox("Enable Logfile").bind(Settings.ENABLELOGFILE),
-                CheckBox("Download unstable build").bind(Settings.UNSTABLE))
+        addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE)
+                //,CheckBox("Enable Logfile").bind(Settings.ENABLELOGFILE)
+                //,CheckBox("Download unstable build").bind(Settings.UNSTABLE)
+        )
 
         Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
             override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
@@ -100,11 +102,11 @@ class TabSettings : VBox(5.0), BaseTab {
             }
         })
 
-        Settings.SKIN.addListener { _, _, new -> monsterUtilities.scene.applySkin(new) }
+        Settings.SKIN.listen { monsterUtilities.scene.applySkin(it) }
         addLabeled("Skin", ComboBox(UnmodifiableObservableList(*Skins.availableSkins)).apply {
             valueProperty().bindBidirectional(Settings.SKIN)
         })
-        val slider = Slider(0.0, 255.0, Settings.GENRECOLORS().toDouble())
+        val slider = Slider(0.0, 255.0, Settings.GENRECOLORS.get().toDouble())
         slider.minorTickCount = 16
         slider.isSnapToTicks = true
         Settings.GENRECOLORS.bindSoft({ slider.value.toInt() }, slider.valueProperty())
@@ -181,7 +183,7 @@ class TabSettings : VBox(5.0), BaseTab {
 
     /** @return false if it should be retried */
     private fun sendFeedback(subject: String, message: String): Boolean {
-        val zipFile = Settings.cachePath.resolve("logs.zip").toFile()
+        val zipFile = cachePath.resolve("logs.zip").toFile()
         val logs = logDir.listFiles()
         ZipOutputStream(FileOutputStream(zipFile)).use { zip ->
             logs.forEach {
@@ -204,7 +206,7 @@ class TabSettings : VBox(5.0), BaseTab {
         val status = response.statusLine
         logger.finer("Response: $status")
         when (status.statusCode) {
-            200 -> monsterUtilities.showMessage("Your feedback was successfully sent!")
+            200 -> monsterUtilities.showMessage("Your feedback was sent successfully!")
             else -> {
                 val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
                 val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)

@@ -10,20 +10,20 @@ import java.nio.file.Paths
 val defaultColumns = arrayOf("Genre", "Artist(s)", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("Catalog #", "Date", "Genre", "Subgenre(s)", "Artist(s)", "Track", "BPM", "Length", "Key").joinToString(multiSeparator)
 
-object Settings : SettingsNode("xerus/monstercat") {
-	val ENABLECACHE = create("enableCache", true)
+val cachePath: Path
+	get() = Paths.get(System.getProperty("java.io.tmpdir")).resolve("monsterutilities").create()
+
+object Settings : SettingsNode("xerus/monsterutilities") {
+	val ENABLECACHE = create("cacheEnabled", true)
 	
-	val STARTUPTAB = create("startuptab", "Previous")
-	val LASTTAB = create("lasttab")
+	val STARTUPTAB = create("tabStartup", "Previous")
+	val LASTTAB = create("tabLast")
 	
 	val LASTCATALOGCOLUMNS = create("catalogLastColumns", availableColumns)
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
 	val GENRECOLORS = create("genrecolors", 80)
 	
 	val SKIN = create("skin", "silver")
-	
-	val cachePath: Path
-		get() = Paths.get(System.getProperty("java.io.tmpdir")).resolve("monsterutilities").create()
 
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")

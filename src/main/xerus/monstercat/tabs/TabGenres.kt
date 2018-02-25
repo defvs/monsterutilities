@@ -7,6 +7,7 @@ import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ConstantObservable
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.Settings.GENRECOLORS
 import xerus.monstercat.logger
@@ -62,14 +63,14 @@ class TabGenres : FetchTab() {
 				cur = new
 			}
 			if (hex != null)
-				FetchTab.refreshViews()
+				refreshViews()
 		})
 		
 		view.setRowFactory {
 			TreeTableRow<Row>().apply {
 				if (GENRECOLORS() > 0) {
 					val hex = cols.find("Hex") ?: return@apply
-					itemProperty().addListener { _, _, new -> style = genreColor(new?.get(hex)) }
+					itemProperty().listen { style = genreColor(it?.get(hex)) }
 				}
 			}
 		}

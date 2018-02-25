@@ -25,7 +25,7 @@ open class Track(
         @JvmField var
         remix: String = "",
         @JvmField var
-        featuring: String = "") {
+        feat: String = "") {
 
     val alb: Album
         get() = albums.first()
@@ -47,7 +47,7 @@ open class Track(
             split.subList(1, split.lastIndex).forEach {
                 when {
                     // todo split it up
-                    it.startsWith("feat", true) -> featuring = it.split(' ', limit = 2)[1]
+                    it.startsWith("feat", true) -> feat = it.split(' ', limit = 2)[1]
                     it.endsWith("mix", true) -> remix = it
                 }
             }

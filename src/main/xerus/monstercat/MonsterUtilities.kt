@@ -13,14 +13,21 @@ import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.applySkin
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.launch
+import xerus.ktutil.javafx.onJFX
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.Changelog
 import xerus.ktutil.javafx.ui.JFXMessageDisplay
 import xerus.ktutil.ui.SimpleFrame
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
-import xerus.monstercat.tabs.*
+import xerus.monstercat.tabs.BaseTab
+import xerus.monstercat.tabs.TabCatalog
+import xerus.monstercat.tabs.TabGenres
+import xerus.monstercat.tabs.TabSettings
 import java.io.File
 import java.net.URL
 import java.util.*
@@ -29,11 +36,11 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0.0"
+private const val VERSION = "1.0.0"
 private val isUnstable = VERSION.split('.').size > 3
 
 val logDir
-    get() = Settings.cachePath.resolve("logs").create().toFile()
+    get() = cachePath.resolve("logs").create().toFile()
 
 lateinit var monsterUtilities: MonsterUtilities
 
@@ -127,28 +134,35 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
         addTab(TabDownloader::class)
         addTab(TabSettings::class)
         if (VERSION != Settings.LASTVERSION.get()) {
-            launch {
-                logger.fine("New version detected! $VERSION from " + Settings.LASTVERSION())
-                val f = Settings.DELETE()
-                if (f.exists()) {
-                    logger.config("Deleting older version $f...")
-                    val time = currentSeconds()
-                    var res = false
-                    do {
-                        res = f.delete()
-                    } while (!res && time + 10 > currentSeconds())
-                    if(res) {
-                        Settings.DELETE.reset()
-                        logger.config("Deleted $f!")
-                    } else
-                        logger.config("Couldn't delete older version $f")
+            if (Settings.LASTVERSION().isEmpty()) {
+                logger.info("First launch! Showing tutorial!")
+                onJFX {
+                    // TODO intro dialog
                 }
-                Settings.LASTVERSION.put(VERSION)
+            } else {
+                launch {
+                    logger.fine("New version detected! $VERSION from " + Settings.LASTVERSION())
+                    val f = Settings.DELETE()
+                    if (f.exists()) {
+                        logger.config("Deleting older version $f...")
+                        val time = currentSeconds()
+                        var res = false
+                        do {
+                            res = f.delete()
+                        } while (!res && time + 10 > currentSeconds())
+                        if (res) {
+                            Settings.DELETE.reset()
+                            logger.config("Deleted $f!")
+                        } else
+                            logger.config("Couldn't delete older version $f")
+                    }
+                    Settings.LASTVERSION.put(VERSION)
+                }
+                showChangelog()
             }
-            showChangelog()
         }
 
-        children.add(Player)
+        children.add(Player.box)
         fill(tabPane)
         checkForUpdate()
     }
@@ -171,7 +185,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
                 else
                     onJFX {
                         val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
-                        dialog.resultProperty().addListener { _, _, type ->
+                        dialog.resultProperty().listen { type ->
                             if (type.buttonData == ButtonBar.ButtonData.YES) {
                                 update(latestVersion)
                             } else if (type.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
@@ -225,14 +239,16 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
     }
 
     fun showChangelog() {
-        val c = Changelog("BETA - Many bugs are fixed, but major features are still worked on and may introduce new bugs or break compatibility",
-                "Note: The Catalog and Genres Tab pull their data from the MCatalog Spreadsheet, thus issues may come from their side.").apply {
-            version(1, 0, "Complete Overhaul", "Brand new shiny favicon and player buttons - big thanks to NocFA!")
-                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Two distinct filename patterns for Singles and Album tracks", "Easy filtering")
+        val c = Changelog("Note: The Catalog and Genres Tab pull their data from the MCatalog Spreadsheet, thus issues may stem from their side.").apply {
+            version(1, 0, "Release", "Brand new shiny favicon and player buttons - big thanks to NocFA!",
+                    "Added tutorial", "Feedback can now be sent directly from the application!")
+                    .change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "connect.sid is now checked live", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
                     .change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
                     .change("Catalog and Genre Tab now show Genre colors")
                     .change("Catalog improved", "More filtering options", "Smart column size")
+                    .change("Player now has a Seekbar")
 
+            /*
             version(0, 3, "UI Rework started", "Genres are now presented as a tree",
                     "Music playing is better integrated", "Fixed some mistakes in the Downloader")
                     .change("Catalog rework", "New, extremely flexible SearchVíew added", "Visible catalog columns can now be changed on-the-fly")
@@ -259,7 +275,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
                     "Fixed Genre Tab", "Fixed some small downloading Errors", "Improved Error handling")
                     .patch("Added more downloading options & prettified them", "Tweaked many Settings",
                             "Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
-
+            */
         }
         onJFX { c.show(App.stage) }
     }
