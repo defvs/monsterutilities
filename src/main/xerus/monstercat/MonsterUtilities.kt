@@ -59,7 +59,7 @@ fun main(args: Array<String>) {
                 logs.asSequence().sortedByDescending { it.name }.drop(2).filter {
                     val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull() ?: return@filter true
                     timestamp + 100_000 < currentSeconds()
-                }.also { logger.finer("Deleting ${it.count()} logs") }.forEach { it.delete() }
+                }.also { logger.finer("Deleting ${it.count()} old logs") }.forEach { it.delete() }
             }
         }
     } catch (t: Throwable) {
