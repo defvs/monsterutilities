@@ -36,7 +36,7 @@
 }
 
 .combo-box-base {
-    -fx-background-color: null;
+    -fx-background-color: null !important;
 }
 
 #seekBar .bar {

@@ -7,7 +7,6 @@ import xerus.ktutil.joinEnumeration
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
-
 /** JvmFields are used for Reflection, which is needed for the formatted [toString] method */
 open class Track(
         @Key("_id") var

@@ -16,7 +16,7 @@ import java.util.zip.ZipInputStream
 
 abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 	
-	protected val basepath = DOWNLOADDIR.get()
+	protected val basepath: Path = DOWNLOADDIR()
 	protected fun addFormat(fileName: String) = "%s.%s".format(fileName, QUALITY().split('_')[0])
 	
 	init {

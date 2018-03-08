@@ -1,23 +1,24 @@
 package xerus.monstercat.downloader
 
+import javafx.application.Platform
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
-import javafx.geometry.Insets
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.control.CheckTreeView
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
+import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.helpers.Cache
 import xerus.ktutil.helpers.PseudoParser.ParserException
 import xerus.ktutil.javafx.*
@@ -36,7 +37,6 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
-import xerus.monstercat.tabs.BaseTab
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 
@@ -116,6 +116,10 @@ class TabDownloader : VTab() {
             else { parent, value -> parent != releaseView.root && value.toString().contains(searchField.text, true) && releaseSearch.predicate.test(value) }
         }, searchField.textProperty(), releaseSearch.predicateProperty)
         trackView.root.bindPredicate(searchField.textProperty())
+        searchField.textProperty().addListener { _ ->
+            releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateCheck() }
+            trackView.root.updateCheck()
+        }
 
         // add Views
         val pane = gridPane()
@@ -123,8 +127,8 @@ class TabDownloader : VTab() {
         pane.add(releaseView, 0, 1, 2, 1)
         pane.add(trackView, 2, 0, 2, 2)
         pane.addRow(2
-                , Label("Singles Subfolder (root if empty)"), TextField().bindText(SINGLEFOLDER)
-                , Label("Tracks Subfolder (root if empty)"), TextField().bindText(TRACKFOLDER))
+                , Label("Singles Subfolder"), TextField().bindText(SINGLEFOLDER).placeholder("Foldername (root if empty)")
+                , Label("Tracks Subfolder"), TextField().bindText(TRACKFOLDER).placeholder("Foldername (root if empty)"))
         pane.maxWidth = Double.MAX_VALUE
         pane.children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
         fill(pane)
@@ -140,7 +144,38 @@ class TabDownloader : VTab() {
         QUALITY.addListener { _ -> buttons.forEach { it.isSelected = it.userData == QUALITY() } }
 
         // Misc options
-        //addRow(CheckBox("Fast skip").apply { selectedProperty().bindBidirectional(FASTSKIP) })
+        addRow(CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
+                .tooltip("Only works if the Trackpatterns and subfolders stayed the same"),
+                Button("Just get it all!").apply { setOnAction {
+                    trackView.checkModel.clearChecks()
+                    val albums = releaseView.get("Album")
+                    albums.isSelected = true
+                    ProgressDialog(SimpleTask("Updating", "Fetching") {
+                        val deferred = albums.internalChildren.map {
+                            async {
+                                (APIConnection("catalog", "release", it.value.id, "tracks").getTracks()
+                                        ?: throw Exception("No connection!")).map { it.toString().trim().toLowerCase() }
+                            }
+                        }
+                        val allAlbumTracks = HashSet<String>()
+                        var progress = 0L
+                        val max = deferred.size.toLong()
+                        deferred.forEach {
+                            allAlbumTracks.addAll(it.await())
+                            updateProgress(progress++, max)
+                        }
+                        onJFX {
+                            releaseView.get("Single").internalChildren.forEach {
+                                val str = it.value.toString().trim().toLowerCase()
+                                val select = str !in allAlbumTracks
+                                (it as CheckBoxTreeItem).isSelected = select
+                                if(select)
+                                    allAlbumTracks.add(str)
+                            }
+                            trackView.root.internalChildren.forEach { (it as CheckBoxTreeItem).isSelected = it.value.toString().trim().toLowerCase() !in allAlbumTracks }
+                        }
+                    }).show()
+                }}.tooltip("Selects the songs such that you are ensured to have every song without duplicates and sorted into Albums"))
         addRow(TextField().apply {
             promptText = "connect.sid"
             tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
@@ -248,17 +283,22 @@ class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
                     Player.playTrack(selected.value)
             }
         }
+        root.value = Track(title = "Loading Tracks...")
         launch {
-            root.value = Track(title = "Loading Tracks...")
             Tracks.tracks?.sortedBy { it.toString() }?.forEach {
                 root.internalChildren.add(FilterableTreeItem(it))
             }
-            root.value = Track(title = "Tracks")
+            onJFX {
+                root.value = Track(title = "Tracks")
+            }
         }
     }
 }
 
 class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")) {
+
+    val categories = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes")
+
     init {
         setOnMouseClicked {
             if (it.clickCount == 2) {
@@ -268,7 +308,7 @@ class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")
             }
         }
         launch {
-            val roots = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes").associate { Pair(it, FilterableTreeItem(Release(title = it))) }
+            val roots = categories.associate { Pair(it, FilterableTreeItem(Release(title = it))) }
             Releases.getReleases().forEach {
                 roots[it.type]?.internalChildren?.add(FilterableTreeItem(it))
                         ?: logger.warning("Unknown Release type: ${it.type}")
@@ -276,6 +316,9 @@ class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")
             onJFX { root.internalChildren.addAll(roots.values) }
         }
     }
+
+    fun get(name: String) = root.internalChildren[categories.indexOf(name)] as FilterableTreeItem
+
 }
 
 open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
@@ -294,6 +337,14 @@ open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
         predicate.unbind()
         predicate.set { _, _ -> true }
     }
+}
+
+fun CheckBoxTreeItem<*>.updateCheck() {
+    children.firstOrNull()?.run {
+        val child = this as CheckBoxTreeItem
+        child.isSelected = !child.isSelected
+        child.isSelected = !child.isSelected
+    } ?: run { isIndeterminate = true }
 }
 
 /*
