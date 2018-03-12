@@ -2,11 +2,12 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import java.io.ByteArrayOutputStream
+import java.util.Scanner
 
-version = "1.0.0"
+version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
 
 plugins {
-    kotlin("jvm") version "1.2.21"
+    kotlin("jvm") version "1.2.30"
     application
     id("com.github.johnrengelman.shadow") version "2.0.1"
 }
@@ -25,9 +26,9 @@ java.sourceSets {
 
 // configure kotlin
 kotlin.experimental.coroutines = Coroutines.ENABLE
-val kotlinVersion: String? by extra {
+val kotlinVersion: String by extra {
     buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
-            .find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }?.moduleVersion
+            .find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }!!.moduleVersion
 }
 
 application {
@@ -43,7 +44,7 @@ dependencies {
     compile("xerus.util", "javafx")
 
     compile("org.jetbrains.kotlin", "kotlin-stdlib-jdk8", kotlinVersion)
-    compile("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "0.+")
+    //compile("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "0.+")
 
     compile("org.controlsfx", "controlsfx", "8.40.+")
 
@@ -74,33 +75,31 @@ tasks {
         args = System.getProperty("exec.args", "").split(" ")
     }
 
-    val version by creating {
-        doFirst {
-            val out = ByteArrayOutputStream()
-            exec {
-                commandLine("git", "rev-parse", "--short", "HEAD")
-                standardOutput = out
-            }
-            version = "$version-$out"
-            out.close()
-        }
-    }
-
     "shadowJar"(ShadowJar::class) {
         baseName = "MonsterUtilities"
         classifier = null
         destinationDir = file(".")
-        mustRunAfter(version)
     }
-
-    withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "1.8"
-    }
-
+    
     val release by creating(Exec::class) {
         group = MAIN
-        dependsOn("shadowJar", "version")
+        dependsOn("shadowJar")
         commandLine("lftp", "-c", "set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e \"cd /; mput $file; quit\" monsterutilities.bplaced.net")
+    }
+    
+    val version by creating(Copy::class) {
+        from("src/main/xerus/monstercat/MonsterUtilities.kt")
+        into("$buildDir/copied")
+        filter { line -> if(line.contains("val VERSION")) "private const val VERSION = \"$version\"" else line }
+    }
+    
+    "compileKotlin"(KotlinCompile::class) {
+        //source("$buildDir/copied")
+        dependsOn(version)
+    }
+    
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "1.8"
     }
 
 }

@@ -14,10 +14,21 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
 
+
+fun Release.path() = when {
+	isMulti -> basepath.resolve(toString().replaceIllegalFileChars()) // Album, Monstercat Collection
+	isType("Podcast", "Mixes") -> basepath.resolve(type)
+	else -> basepath.resolve(SINGLEFOLDER()) // Single
+}
+
+fun Track.path() = basepath.resolve(TRACKFOLDER()).create().resolve(addFormat(toFileName()))
+
+private inline val basepath
+	get() = DOWNLOADDIR()
+
+private fun addFormat(fileName: String) = "$fileName.${QUALITY().split('_')[0]}"
+
 abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
-	
-	protected val basepath: Path = DOWNLOADDIR()
-	protected fun addFormat(fileName: String) = "%s.%s".format(fileName, QUALITY().split('_')[0])
 	
 	init {
 		@Suppress("LEAKINGTHIS")
@@ -92,13 +103,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 class ReleaseDownloader(private val release: Release) : Downloader(release.toString(), release.coverUrl) {
 	
 	override fun download() {
-		val path = with(release) {
-			when {
-				isMulti -> basepath.resolve(toString().replaceIllegalFileChars()) // Album, Monstercat Collection
-				isType("Podcast", "Mixes") -> basepath.resolve(type)
-				else -> basepath.resolve(SINGLEFOLDER()) // Single
-			}
-		}
+		val path = release.path()
 		Files.createDirectories(path)
 		logger.finer("Downloading $release to $path")
 		
@@ -133,7 +138,7 @@ class TrackDownloader(private val track: Track) : Downloader(track.toString(), A
 	
 	override fun download() {
 		createConnection(track.alb.albumId, { it }, "track=" + track.id)
-		downloadFile(basepath.resolve(TRACKFOLDER()).create().resolve(addFormat(track.toFileName())))
+		downloadFile(track.path())
 		abort()
 	}
 	

@@ -229,6 +229,7 @@ class TabDownloader : VTab() {
         taskView.setGraphicFactory { ImageView(cache.get(it.coverUrl, { Image(it + "?image_width=64", true) })) }
         val job = launch {
             val releases = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
+            val tracks = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
             if (releases.isNotEmpty()) {
                 logger.fine("Starting Downloads for ${releases.size} releases")
                 for (release in releases) {
@@ -240,7 +241,6 @@ class TabDownloader : VTab() {
                         delay(200)
                 }
             }
-            val tracks = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
             if (tracks.isNotEmpty()) {
                 logger.fine("Starting Downloads for ${tracks.size} tracks")
                 for (track in tracks) {
@@ -264,7 +264,7 @@ class TabDownloader : VTab() {
         // todo progress indicator
         fill(taskView)
         taskView.tasks.addListener(ListChangeListener {
-            if (it.list.size == 0)
+            if (it.list.isEmpty())
                 cancelButton.apply {
                     setOnMouseClicked { initialize() }
                     text = "Back"

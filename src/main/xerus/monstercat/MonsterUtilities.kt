@@ -2,7 +2,6 @@ package xerus.monstercat
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
-import com.sun.management.HotSpotDiagnosticMXBean
 import javafx.application.Platform
 import javafx.concurrent.Task
 import javafx.scene.Scene
@@ -14,7 +13,6 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
-import sun.management.HotSpotDiagnostic
 import xerus.ktutil.*
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.fill
@@ -33,13 +31,12 @@ import java.io.File
 import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
-import javax.management.MXBean
 import javax.swing.JTextArea
 import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-1979c3d" // todo set this from gradle
+private const val VERSION = "1.0.0"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
@@ -118,7 +115,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
         val startupTab = Settings.STARTUPTAB.get().takeUnless { it == "Previous" } ?: Settings.LASTTAB()
         logger.fine("Startup tab: $startupTab")
 
-        val addTab = { tabClass: KClass<out BaseTab> ->
+        fun addTab(tabClass: KClass<out BaseTab>) {
             try {
                 val baseTab = tabClass.java.newInstance()
                 logger.finer("New Tab: $baseTab")
@@ -140,6 +137,8 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
             if (Settings.LASTVERSION().isEmpty()) {
                 logger.info("First launch! Showing tutorial!")
                 onJFX {
+                    val intro = Alert(Alert.AlertType.INFORMATION, "Welcome to MonsterUtilities!")
+                    intro.show()
                     // TODO intro dialog
                 }
                 Settings.LASTVERSION.put(VERSION)
