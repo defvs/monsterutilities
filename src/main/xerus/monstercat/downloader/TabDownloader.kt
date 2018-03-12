@@ -144,8 +144,9 @@ class TabDownloader : VTab() {
         QUALITY.addListener { _ -> buttons.forEach { it.isSelected = it.userData == QUALITY() } }
 
         // Misc options
-        addRow(CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
-                .tooltip("Only works if the Trackpatterns and subfolders stayed the same"),
+        addRow(/* todo hide downloaded
+                 CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
+                .tooltip("Only works if the Trackpatterns and subfolders stayed the same"),*/
                 Button("Just get it all!").apply { setOnAction {
                     trackView.checkModel.clearChecks()
                     val albums = releaseView.get("Album")
