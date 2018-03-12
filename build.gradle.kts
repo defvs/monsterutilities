@@ -1,8 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
+import java.io.ByteArrayOutputStream
 
-version = KotlinVersion(1, 0)
+version = "1.0.0"
 
 plugins {
     kotlin("jvm") version "1.2.21"
@@ -54,6 +55,13 @@ dependencies {
 
 }
 
+application {
+    applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
+}
+
+val file
+    get() = "MonsterUtilities-$version.jar"
+
 val MAIN = "_Main"
 tasks {
 
@@ -66,19 +74,33 @@ tasks {
         args = System.getProperty("exec.args", "").split(" ")
     }
 
+    val version by creating {
+        doFirst {
+            val out = ByteArrayOutputStream()
+            exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                standardOutput = out
+            }
+            version = "$version-$out"
+            out.close()
+        }
+    }
+
     "shadowJar"(ShadowJar::class) {
         baseName = "MonsterUtilities"
         classifier = null
         destinationDir = file(".")
+        mustRunAfter(version)
     }
 
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }
 
-    val release by creating {
+    val release by creating(Exec::class) {
         group = MAIN
-        dependsOn("shadowJar")
+        dependsOn("shadowJar", "version")
+        commandLine("lftp", "-c", "set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e \"cd /; mput $file; quit\" monsterutilities.bplaced.net")
     }
 
 }
