@@ -50,7 +50,7 @@ class TabDownloader : VTab() {
     private val trackView = TrackView()
 
     private val patternValid = SimpleObservable(false)
-    private val noItemsSelected = SimpleObservable(false)
+    private val noItemsSelected = SimpleObservable(true)
 
     private val searchField = TextField()
     private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE, { it.releaseDate.substring(0, 10).toLocalDate() }))

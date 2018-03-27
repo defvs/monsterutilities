@@ -1,0 +1,1 @@
+java -jar $(find /home/janek/Projects/monsterutilities/MonsterUtilities*.jar)

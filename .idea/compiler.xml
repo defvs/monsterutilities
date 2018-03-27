@@ -10,8 +10,16 @@
       <module name="MonsterUtilities_test" target="1.8" />
       <module name="test_main" target="1.8" />
       <module name="test_test" target="1.8" />
+      <module name="util-javafx_main" target="1.8" />
+      <module name="util-javafx_test" target="1.8" />
+      <module name="util-kotlin_main" target="1.8" />
+      <module name="util-kotlin_test" target="1.8" />
+      <module name="util-test_main" target="1.8" />
+      <module name="util-test_test" target="1.8" />
       <module name="utilities_main" target="1.8" />
+      <module name="utilities_main~1" target="1.8" />
       <module name="utilities_test" target="1.8" />
+      <module name="utilities_test~1" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
