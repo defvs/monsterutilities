@@ -2,9 +2,8 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 
-
 data class Release(
-        @Key("_id") var
+        @Key("_id") override var
         id: String = "",
         @Key var
         releaseDate: String = "",
@@ -17,7 +16,7 @@ data class Release(
         @Key var
         coverUrl: String = "",
         @Key var
-        downloadable: Boolean = false) {
+        downloadable: Boolean = false): MusicResponse {
 
     constructor(vararg line: String) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
 

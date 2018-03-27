@@ -86,7 +86,9 @@ class TabSettings : VTab() {
         Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
             override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
                 if (new) {
-                    val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?", content = "Unstable builds contain the newest features and fixes, but may also have unexpected bugs. Use at your own risk!.\nThe unstable version can be used alongside the stable one and will forcibly update itself whenever possible.")
+                    val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?",
+                            content = "Unstable builds contain the latest features and fixes, but may also introduce unexpected bugs, regressions and incompatible changes. Use at your own risk!.\n" +
+                            "The unstable version can be used alongside the stable one and will forcibly update itself whenever possible.")
                     alert.resultProperty().addListener { _ ->
                         if (alert.result.buttonData == ButtonBar.ButtonData.YES) {
                             monsterUtilities.checkForUpdate(true, true)

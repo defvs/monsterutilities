@@ -96,7 +96,7 @@ class TabCatalog : TableTab() {
                 @Suppress("UNCHECKED_CAST")
                 val widths = ArrayList<Double>(table.items.size)
                 for (item in table.items) {
-                    // todo read font
+                    // improve read font
                     widths.add(col.getCellData(item).toString().textWidth(Font.font("System", 11.0)) + 6)
                 }
                 val avg = widths.average()
