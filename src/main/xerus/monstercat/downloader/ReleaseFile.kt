@@ -7,7 +7,7 @@ import xerus.monstercat.api.response.Track
 import java.util.regex.Pattern
 
 val delimiters = arrayOf(" & ", ", ", " and ", " x ")
-val exceptions = arrayOf("Slips & Slurs", "Case & Point")
+val exceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns")
 val artistMasker = Masker("artist", *exceptions)
 
 val namePattern = Pattern.compile("([^-]+) - (.+) - (\\d+) (.+)")

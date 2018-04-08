@@ -94,7 +94,6 @@ tasks {
     }
     
     "compileKotlin"(KotlinCompile::class) {
-        //source("$buildDir/copied")
         dependsOn(version)
     }
     
