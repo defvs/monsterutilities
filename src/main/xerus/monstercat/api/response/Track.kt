@@ -11,8 +11,6 @@ import java.util.Collections.emptyList
 open class Track(
 		@Key("_id") override var
 		id: String = "",
-		@Key var
-		created: String = "",
 		@Key @JvmField var
 		title: String = "",
 		@Key @JvmField var

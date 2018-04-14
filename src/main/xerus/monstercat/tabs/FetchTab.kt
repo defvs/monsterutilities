@@ -12,6 +12,7 @@ import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.add
 import xerus.ktutil.javafx.onJFX
+import xerus.ktutil.javafx.styleClass
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
@@ -27,13 +28,14 @@ import java.nio.file.Path
 
 abstract class FetchTab : VTab() {
 
-	val snackbarTextCache = "MCatalog was loaded from cache"
+	val snackbarTextCache = "MCatalog was restored from cache"
 
 	init {
 		onJFX {
 			add(notification)
 			sheetFetcher()
 		}
+		styleClass("fetch-tab")
 	}
 	
 	protected open val request: String = ""
@@ -112,9 +114,7 @@ abstract class FetchTab : VTab() {
 		notification.showText(text, reopen)
 	}
 	
-	override fun toString(): String {
-		return "FetchTab for " + tabName
-	}
+	override fun toString(): String = "FetchTab for $tabName"
 	
 	abstract fun refreshView()
 	

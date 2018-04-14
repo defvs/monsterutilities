@@ -1,4 +1,3 @@
-# Monstercat Connect API unofficial doc
 
 All API calls go to https://connect.monstercat.com/
 
@@ -6,12 +5,12 @@ All API calls go to https://connect.monstercat.com/
 | URL   |      HTTP Verb      |  Functionality |
 |---|---|---|
 | /signin                   | POST | [Signs you in](#signin) |
-| /api/catalog/release      | GET | [Returns all releases (=albums)](#apicatalogrelease) |
-| /api/catalog/track        | GET | [Returns all tracks](#apicatalogtrack) |
-| /api/playlist             | GET | [Returns all playlists of the user](#apiplaylist) |
-| /api/playlist | POST | [Create a new playlist](#apiplaylist) |
-| /api/playlist/**&lt;playlist_id&gt;** | PUT | [Add a song to a playlist](#apiplaylist) |
-| /api/self         | GET | [Returns information about the users](#apiself) |
+| /api/catalog/release      | GET | [Returns all tracks paired to releases](#catalogbrowse) |
+| /api/catalog/release      | GET | [Returns all releases](#catalogrelease) |
+| /api/catalog/track        | GET | [Returns all tracks](#catalogtrack) |
+| /api/playlist             | GET/POST/PUT | [Interacts with playlists of the user](#playlist) |
+| /api/playlist/:id | PUT | [Add a song to a playlist](#playlist) |
+| /api/self         | GET | [Returns information about the user](#self) |
 
 ### /signin
 **POST**
@@ -19,92 +18,100 @@ All API calls go to https://connect.monstercat.com/
 
 `{"email": "a@b.com", "password": "supersecretpassword"}`
 
-### /api/catalog/release
+### /catalog/browse
 **GET**
-*Returns all releases/albums available*
+Returns tracks paired with their releases.
+Tracks that are on two releases will be returned twice.
 
-### /api/catalog/track
+#### Browse Query Parameters
+
+|Param|Description|
+|:--|:--|
+|search|Does a text search on track title, artists, and albums|
+|playlistId|Will only return tracks on provided playlist|
+|albumId|Only returns tracks found on that album|
+|isrc|Return track with that ISRC|
+|types|Comma separated list of album types. Options: Single, EP, Podcast, Album|
+|genres|Comma separated list of album genres.|
+|tags|Comma separate list of track tags.|
+|sortOn|Field to sort on. Options: `title`, `release` (album title), `bpm`, `time` (track duration), `date` (album release date), `artists` (artistsTitle field)|
+|sortDirection|-1 for descending, 1 for ascending.|
+
+### /catalog/track
 **GET**
-*Returns all tracks available*
-
-### /api/playlist
-**GET**
-*Return all user playlists with tracks*
-
-**POST**
-*Create a new playlist*
-`{"name":"TESTING","tracks":[]}`
-
-**PUT**
-*Add a track to a playlist.*
-`{"_id":"56290bf0ddd2cfb810eddae9","name":"Valkyrie","userId":"55fc1f7d53c399fc274c5054","deleted":false,"public":false,"tracks":[{"trackId":"53a0c93640cc048e26f848e6","releaseId":"53a897d07f9a812a0d96bbdc"},{"trackId":"542f2c17502836c00e5be117","releaseId":"542f2bac502836c00e5be116"},{"trackId":"5614507cc5df9f40201f85ed","releaseId":"561c5da57fb673586a3d2a98"},{"trackId":"56e0a83280a64c6105fcc8ec","releaseId":"57083d7e85ff0545443034e3","startTime":0}]}`
-
-### /api/playlist/**&lt;playlist_id&gt;**
-**PUT**
-*Rename playlist or make public*
-`{"_id":"5725bc898fcb2ef579fe5f9d","name":"TESTINGRENAME","userId":"55fc1f7d53c399fc274c5054","deleted":false,"public":false,"tracks":[]}`
-
-**DELETE**
-*Remove playlist*
-
-### /api/self
-### /api/self/session
-**GET**
-*Returns info about the account when logged in*
-
-
-
-# Connect API official doc
-
-Write Date: April 14, 2016  
-Last Update: July 5, 2016  
-API Version Prefix: `/api`
-
-## Routes
-
-### GET `/catalog/track`
-
-Gets all tracks. You can use default collection query options.
+Returns all tracks - you can use default collection query options.
 
 **WARNING**
+> Even though this route is publicly available, it may not be available in future releases.
+> It is advised to fetch releases and their tracks. See below.
 
-> Even though this route is publicly available it may not be available in future releases. It is advised to fetch releases and their tracks. See below.
+### /catalog/track/:id
+**GET**
+Returns a track by id.
 
-### GET `/catalog/track/:id`
+### /catalog/release
+**GET**
+Returns all releases - you can use default collection query options
 
-Gets a track by id.
+### /catalog/release/:catalog_id
+**GET**
+Returns a release by id OR catalog id
 
-### GET `/catalog/release`
+### /catalog/release/:id/tracks
+**GET**
+Returns tracks for a release - you can use default collection query options
 
-Gets all releases. You can use default collection query options.
+### /catalog/artist
+**GET**
+Returns all artists - you can use default collection query options
 
-### GET `/catalog/release/:catalog_id`
+### /catalog/artist/:vanity_uri
+**GET**
+Returns an artist by id or their vanity URI
 
-Gets a release by id OR catalog id.
+### /catalog/artist/:vanity_uri/releases
+**GET**
+Returns an artists releases
 
-### GET `/catalog/release/:id/tracks`
+### /playlist
+*Requires you to be logged in!*
 
-Gets you tracks for a release. You can use default collection query options.
+**GET**
+Returns your playlists
 
-### GET `/catalog/artist`
+**POST**
+Create a new playlist
+`{"name":"New Playlist","tracks":[]}`
 
-Gets you artists.
+**PUT**
+Add a track to a playlist
+`{"_id":"56290bf0ddd2cfb810eddae9","name":"Valkyrie","userId":"55fc1f7d53c399fc274c5054","deleted":false,"public":false,"tracks":[{"trackId":"53a0c93640cc048e26f848e6","releaseId":"53a897d07f9a812a0d96bbdc"},{"trackId":"542f2c17502836c00e5be117","releaseId":"542f2bac502836c00e5be116"},{"trackId":"5614507cc5df9f40201f85ed","releaseId":"561c5da57fb673586a3d2a98"},{"trackId":"56e0a83280a64c6105fcc8ec","releaseId":"57083d7e85ff0545443034e3","startTime":0}]}`
 
-### GET `/catalog/artist/:vanity_uri`
+### /playlist/:id
+*Requires you to be logged in!*
 
-Gets you an artist by id or their vanity URI
+**PUT**
+Rename playlist or make it public
+`{"_id":"5725bc898fcb2ef579fe5f9d","name":"New Playlist Name","userId":"55fc1f7d53c399fc274c5054","deleted":false,"public":false,"tracks":[]}`
 
-### GET `/catalog/artist/:vanity_uri/releases`
+**DELETE**
+Delete this playlist
 
-Gets you an artists releases.
+### /playlist/:id/tracks
+**GET**
+Returns tracks for a playlist - you can use default collection query options
 
-### GET `/playlist`
+### /self
+*Requires you to be logged in!*
 
-Gets you a playlist that is publicly available.
+**GET**
+Returns information about your account
 
-### GET `/playlist/:id/tracks`
+### /self/session
+*Requires you to be logged in!*
 
-Gets you tracks for a playlist. You can use default collection query options.
+**GET**
+Returns information about your current session
 
 ## Query Options
 
@@ -116,17 +123,17 @@ Query options are simple URL query string key values.
 
 `fields=a,b,c`
 
-Specifiy what fields you wish to recieve by a comma separated string.
+Specifies the fields you wish to receive by a comma separated string.
 
 **WARNING**
-
-> Some fields are manatory and will appear anyways.
+> Some fields are mandatory and will appear anyways.
 
 #### Identifiers
 
 `ids=id1,id2`
 
 Specifies specific ids you want to fetch instead of the whole collection.
+This parameter is not available on the `/catalog/browse` route.
 
 #### Offset/Skip
 
@@ -141,20 +148,21 @@ Specifies the starting point of the collection you wish to fetch.
 Specifies the number of results you wish to fetch.
 
 **WARNING**
-
 > In the future it may be capped.
 
 #### Fuzzy Match
 
 `fuzzy=field,value,field2,value2`
 
-Specifies searches with fuzzy matching. This is an AND operation. Use `fuzzyOr` for OR operations.  
+Specifies searches with fuzzy matching. This is an AND operation. Use `fuzzyOr` for OR operations.
 The parameter value is a comma separated pair list.
+This parameter is not available on the `/catalog/browse` route.
 
-#### Filter Match
 
-`filter=field,value,field2,value2`
+#### Filters Match
 
-Specifies searches with exact matching. This is an AND operation. Use `filterOr` for OR operations.  
+`filters=field,value,field2,value2`
+
+Specifies searches with exact matching. Case sensitive. This is an AND operation. Use `filtersOr` for OR operations.
 The parameter value is a comma separated pair list.
-
+This parameter is not available on the `/catalog/browse` route.

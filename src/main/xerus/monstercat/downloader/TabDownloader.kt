@@ -32,6 +32,7 @@ import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.*
 import xerus.monstercat.api.response.Artist
+import xerus.monstercat.api.response.MusicResponse
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
@@ -43,7 +44,10 @@ private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac"
 val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
 val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
 
-class TabDownloader : VTab() {
+val TreeItem<out MusicResponse>.normalisedValue
+	get() = value.toString().trim().toLowerCase()
+
+class TabDownloader: VTab() {
 	
 	private val releaseView = ReleaseView()
 	private val trackView = TrackView()
@@ -72,7 +76,7 @@ class TabDownloader : VTab() {
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
 		chooser.selectedFile.listen { DOWNLOADDIR.set(it.toPath()) }
-		add(chooser.hBox)
+		add(chooser.createHBox())
 		
 		// Patterns
 		val patternPane = gridPane()
@@ -146,7 +150,7 @@ class TabDownloader : VTab() {
 		addRow(/* todo hide downloaded
                  CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
                 .tooltip("Only works if the Trackpatterns and subfolders stayed the same"),*/
-				Button("Just get it all!").apply {
+				Button("Select all Songs (DO NOT click this if you are not connected to the internet!)").apply {
 					setOnAction {
 						trackView.checkModel.clearChecks()
 						val albums = releaseView.get("Album")
@@ -159,25 +163,20 @@ class TabDownloader : VTab() {
 								}
 							}
 							val allAlbumTracks = HashSet<String>()
-							var progress = 0L
-							val max = deferred.size.toLong()
+							var progress = 0
+							val max = deferred.size
 							deferred.forEach {
 								allAlbumTracks.addAll(it.await())
 								updateProgress(progress++, max)
 							}
 							onJFX {
-								releaseView.get("Single").internalChildren.forEach {
-									val str = it.value.toString().trim().toLowerCase()
-									val select = str !in allAlbumTracks
-									(it as CheckBoxTreeItem).isSelected = select
-									if (select)
-										allAlbumTracks.add(str)
+								trackView.root.internalChildren.forEach {
+									(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in allAlbumTracks
 								}
-								trackView.root.internalChildren.forEach { (it as CheckBoxTreeItem).isSelected = it.value.toString().trim().toLowerCase() !in allAlbumTracks }
 							}
 						}).show()
 					}
-				}.tooltip("Selects the songs such that you are ensured to have every song without duplicates and sorted into Albums"))
+				}.tooltip("Selects all Albums and then all Tracks that are not included in these"))
 		addRow(TextField().apply {
 			promptText = "connect.sid"
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
@@ -276,7 +275,7 @@ class TabDownloader : VTab() {
 	
 }
 
-class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
+class TrackView: FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 	init {
 		setOnMouseClicked {
 			if (it.clickCount == 2) {
@@ -297,7 +296,7 @@ class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 	}
 }
 
-class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")) {
+class ReleaseView: FilterableCheckTreeView<Release>(Release(title = "Releases")) {
 	
 	val categories = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes")
 	
@@ -323,7 +322,7 @@ class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")
 	
 }
 
-open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
+open class FilterableCheckTreeView<T: Any>(rootValue: T): CheckTreeView<T>() {
 	val root = FilterableTreeItem(rootValue)
 	val checkedItems: ObservableList<TreeItem<T>>
 		get() = checkModel.checkedItems

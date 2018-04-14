@@ -12,9 +12,11 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.helpers.Rater
 import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.properties.addListener
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.verticalTransition
+import xerus.ktutil.printNamed
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -22,16 +24,16 @@ import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
-object Player : FadingHBox(true) {
+object Player: FadingHBox(true, true) {
 	private val seekBar = ProgressBar(0.0).apply {
-		id("seekBar")
+		id("seek-bar")
 		setSize(height = 7.0)
 		maxWidth = Double.MAX_VALUE
 		val handler = EventHandler<MouseEvent> { event ->
 			if (event.button == MouseButton.PRIMARY) {
 				val b1 = layoutBounds
 				val mouseX = event.sceneX
-				var percent = (mouseX - b1.minX) / (b1.maxX - b1.minX)
+				val percent = (mouseX - b1.minX) / (b1.maxX - b1.minX)
 				progress = percent + 2 / width
 				player?.run {
 					seek(Duration(totalDuration.toMillis().times(progress)))
@@ -41,12 +43,14 @@ object Player : FadingHBox(true) {
 		onMousePressed = handler
 		onMouseDragged = handler
 	}
-	internal val box = VBox(this)
 	
-	override val fader = box.verticalTransition(30)
+	internal val box = VBox(this).apply {
+		setSize(height = 0.0)
+		opacity = 0.0
+	}
+	override val fader = box.verticalTransition(30, true)
 	
 	init {
-		id("controls")
 		resetNotification()
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 	}
@@ -124,7 +128,7 @@ object Player : FadingHBox(true) {
 	fun playTrack(track: Track) {
 		disposePlayer()
 		val hash = track.streamHash ?: run {
-			showBack("$track is currently not available for streaming! If it is Gold only, ensure that you've entered a valid connect.sid in the Download tab.")
+			showBack("$track is currently not available for streaming!")
 			return
 		}
 		player = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
