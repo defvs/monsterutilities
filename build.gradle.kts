@@ -78,15 +78,12 @@ tasks {
 		baseName = "MonsterUtilities"
 		classifier = null
 		destinationDir = file(".")
-		doLast {
-			println("Created $file")
-		}
 	}
 	
 	val release by creating(Exec::class) {
 		group = MAIN
 		dependsOn("shadowJar")
-		commandLine("lftp", "-c", "set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e \"cd /; mput $file; quit\" monsterutilities.bplaced.net")
+		commandLine("lftp", "-c", "set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e \"cd /downloads/unstable; mrm *.jar; put $file; quit\" monsterutilities.bplaced.net")
 	}
 	
 	val version by creating(Copy::class) {
