@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.Coroutines
 import java.io.ByteArrayOutputStream
 import java.util.Scanner
 
+val isUnstable = true
 version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
 
 plugins {
@@ -60,7 +61,7 @@ application {
 }
 
 val file
-	get() = "MonsterUtilities-$version.jar"
+	get() = "$name-$version.jar"
 
 val MAIN = "_Main"
 tasks {
@@ -87,9 +88,11 @@ tasks {
 	}
 	
 	val version by creating(Copy::class) {
-		from("src/main/xerus/monstercat/MonsterUtilities.kt")
-		into("$buildDir/copied")
-		filter { line -> if (line.contains("val VERSION")) "private const val VERSION = \"$version\"" else line }
+		val original = "src/main/xerus/monstercat/MonsterUtilities.kt"
+		from(original)
+		into("$buildDir/tmp")
+		filter { line -> if (line.contains("val VERSION")) line.dropLastWhile { it != '=' } + " \"$version\"" else line }
+		doLast { file("$buildDir/tmp/MonsterUtilities.kt").renameTo(file(original)) }
 	}
 	
 	"compileKotlin"(KotlinCompile::class).dependsOn(version)
@@ -98,9 +101,10 @@ tasks {
 		kotlinOptions.jvmTarget = "1.8"
 	}
 	
-	tasks.replace("jar").apply {
+	tasks.replace("jar", Delete::class.java).apply {
 		group = MAIN
 		dependsOn("shadowJar")
+		setDelete(file(".").listFiles { f -> f.name.startsWith("${rootProject.name}-") && f.extension == "jar" && f.name != file })
 	}
 	
 }

@@ -36,7 +36,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = ""
+private const val VERSION = "1.0.0-b737c73"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
@@ -80,7 +80,7 @@ fun main(args: Array<String>) {
 	logger.config("Initializing Google Sheets API Service")
 	MCatalog.initService("MCatalog Reader", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	App.launch("MonsterUtilities $VERSION", { stage ->
-		stage.icons.addAll(arrayOf("black64.png").map {
+		stage.icons.addAll(arrayOf("icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 					?: null.apply { logger.warning("Resource $it not found") }
 		})
@@ -140,6 +140,8 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 				logger.info("First launch! Showing tutorial!")
 				onJFX {
 					val intro = Alert(Alert.AlertType.INFORMATION, "Welcome to MonsterUtilities!")
+					showAlert(Alert.AlertType.INFORMATION, null, content = "Welcome to MonsterUtilities!")
+					intro.headerText = null
 					intro.show()
 					// TODO intro dialog
 				}
