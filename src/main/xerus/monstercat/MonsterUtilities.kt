@@ -14,10 +14,7 @@ import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
-import xerus.ktutil.javafx.applySkin
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.launch
-import xerus.ktutil.javafx.onJFX
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.*
 import xerus.ktutil.ui.SimpleFrame
@@ -36,7 +33,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-b737c73"
+private const val VERSION = "1.0.0-bd1901c"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
@@ -139,10 +136,7 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 			if (Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
 				onJFX {
-					val intro = Alert(Alert.AlertType.INFORMATION, "Welcome to MonsterUtilities!")
 					showAlert(Alert.AlertType.INFORMATION, null, content = "Welcome to MonsterUtilities!")
-					intro.headerText = null
-					intro.show()
 					// TODO intro dialog
 				}
 				Settings.LASTVERSION.put(VERSION)
@@ -174,7 +168,7 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 		checkForUpdate()
 	}
 	
-	inline fun <reified T: BaseTab> findTabs() = tabs.mapNotNull { it as? T }
+	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		launch {

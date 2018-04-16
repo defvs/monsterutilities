@@ -80,11 +80,11 @@ class TabDownloader: VTab() {
 		
 		// Patterns
 		val patternPane = gridPane()
-		val patternLabel = { property: Property<String>, test: Track ->
+		fun patternLabel(pattern: Property<String>, track: Track) =
 			Label().apply {
-				textProperty().bindSoft({
+				textProperty().dependOn(pattern) {
 					try {
-						test.toString(property.value).also { patternValid.value = true }
+						track.toString(pattern.value).also { patternValid.value = true }
 					} catch (e: ParserException) {
 						patternValid.value = false
 						"No such field: " + e.cause?.cause?.message
@@ -93,9 +93,8 @@ class TabDownloader: VTab() {
 						monsterUtilities.showError(e, "Error parsing pattern")
 						e.toString()
 					}
-				}, property)
+				}
 			}
-		}
 		patternPane.add(Label("Single naming pattern"),
 				0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
@@ -108,7 +107,7 @@ class TabDownloader: VTab() {
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 				1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-				ReleaseFile("Rogue, Stonebank & Slips & Slurs - Monstercat Uncaged Vol. 1 - 1 Unity", false)),
+				ReleaseFile("Gareth Emery & Standerwick - Saving Light (The Remixes) [feat. HALIENE] - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", false)),
 				1, 3)
 		add(patternPane)
 		

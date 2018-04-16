@@ -6,7 +6,6 @@ import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import javafx.scene.layout.VBox
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
@@ -79,7 +78,7 @@ abstract class FetchTab : VTab() {
 	// region Caching
 	
 	private val cachePath: Path
-		get() = xerus.monstercat.cachePath.resolve("MCatalog " + tabName)
+		get() = xerus.monstercat.cachePath.resolve("MCatalog $tabName")
 	
 	private fun writeCache(sheet: Any) {
 		if (!Settings.ENABLECACHE())
@@ -95,7 +94,7 @@ abstract class FetchTab : VTab() {
 	private fun restoreCache() {
 		if (!Settings.ENABLECACHE())
 			return
-		logger.fine("Restoring cache file " + cachePath)
+		logger.fine("Restoring cache file $cachePath")
 		try {
 			readSheet(readObject<MutableList<List<String>>>(cachePath.toFile()))
 			showNotification(snackbarTextCache)
@@ -137,7 +136,7 @@ abstract class FetchTab : VTab() {
 		}
 		
 		private fun forAllFetchTabs(runnable: FetchTab.() -> Unit) =
-				monsterUtilities.findTabs<FetchTab>().forEach { runnable(it) }
+				monsterUtilities.tabsByClass<FetchTab>().forEach { runnable(it) }
 		
 	}
 	
