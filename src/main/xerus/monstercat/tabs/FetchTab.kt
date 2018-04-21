@@ -2,7 +2,6 @@ package xerus.monstercat.tabs
 
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
@@ -10,6 +9,7 @@ import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.add
+import xerus.ktutil.javafx.createButton
 import xerus.ktutil.javafx.onJFX
 import xerus.ktutil.javafx.styleClass
 import xerus.ktutil.javafx.ui.controls.Snackbar
@@ -26,22 +26,27 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 abstract class FetchTab : VTab() {
-
+	
 	val snackbarTextCache = "MCatalog was restored from cache"
-
+	
 	init {
 		onJFX {
 			add(notification)
+			setPlaceholder(Label("Loading..."))
 			sheetFetcher()
 		}
 		styleClass("fetch-tab")
 	}
 	
 	protected open val request: String = ""
-	private val retry: Button = Button("Retry").apply { onAction = EventHandler { fetchSheet(tabName, request) } }
+	private val retryButton: Button = createButton("Try again") {
+		setPlaceholder(Label("Fetching..."))
+		sheetFetcher()
+	}
 	
 	val sheetFetcher = SimpleRefresher {
 		onJFX { setPlaceholder(Label("Fetching...")) }
+		logger.fine("Fetching MCatalog $tabName")
 		val sheet = fetchSheet(tabName, request)
 		if (sheet != null) {
 			readSheet(sheet)
@@ -49,8 +54,11 @@ abstract class FetchTab : VTab() {
 		} else if (data.isEmpty())
 			restoreCache()
 		onJFX {
-			if (data.isEmpty()) setPlaceholder(retry)
-			else setPlaceholder(Label("No matches found!"))
+			if (data.isEmpty()) {
+				logger.finer("Showing retry button for $tabName because data is empty")
+				setPlaceholder(retryButton)
+			} else
+				setPlaceholder(Label("No matches found!"))
 		}
 	}
 	
@@ -75,7 +83,7 @@ abstract class FetchTab : VTab() {
 		data.setAll(sheet)
 	}
 	
-	// region Caching
+	// region caching
 	
 	private val cachePath: Path
 		get() = xerus.monstercat.cachePath.resolve("MCatalog $tabName")
@@ -94,9 +102,9 @@ abstract class FetchTab : VTab() {
 	private fun restoreCache() {
 		if (!Settings.ENABLECACHE())
 			return
-		logger.fine("Restoring cache file $cachePath")
 		try {
-			readSheet(readObject<MutableList<List<String>>>(cachePath.toFile()))
+			readSheet(readObject(cachePath.toFile()))
+			logger.fine("Restored cache file $cachePath")
 			showNotification(snackbarTextCache)
 		} catch (ignored: FileNotFoundException) {
 		} catch (e: Throwable) {
@@ -109,9 +117,8 @@ abstract class FetchTab : VTab() {
 	
 	protected val notification = Snackbar()
 	
-	fun showNotification(text: String, reopen: Boolean = true) {
+	fun showNotification(text: String, reopen: Boolean = true) =
 		notification.showText(text, reopen)
-	}
 	
 	override fun toString(): String = "FetchTab for $tabName"
 	
@@ -135,7 +142,7 @@ abstract class FetchTab : VTab() {
 			forAllFetchTabs { sheetFetcher.refresh() }
 		}
 		
-		private fun forAllFetchTabs(runnable: FetchTab.() -> Unit) =
+		private inline fun forAllFetchTabs(runnable: FetchTab.() -> Unit) =
 				monsterUtilities.tabsByClass<FetchTab>().forEach { runnable(it) }
 		
 	}

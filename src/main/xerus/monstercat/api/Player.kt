@@ -12,11 +12,9 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.helpers.Rater
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.addListener
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.verticalTransition
-import xerus.ktutil.printNamed
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -77,11 +75,11 @@ object Player: FadingHBox(true, true) {
 	fun resetNotification() {
 		fadeOut()
 		launch {
-			val latest = Releases.getReleases().last()
+			val latest = Releases.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onJFX {
-				add(Button().id("play").onClick { play(latest) })
+				add(buttonWithId("play") { play(latest) })
 				fill(pos = 0)
 				fill()
 				add(closeButton)
@@ -105,7 +103,7 @@ object Player: FadingHBox(true, true) {
 	// playing & controls
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = Button().id("stop").onClick { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { stopPlaying() }
 	private val volumeSlider = Slider(0.1, 1.0, 0.5).apply { prefWidth = 100.0; valueProperty().addListener { _ -> setVolume() } }
 	
 	private fun playing(text: String) {
@@ -133,14 +131,16 @@ object Player: FadingHBox(true, true) {
 		}
 		player = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		setVolume()
-		player!!.play()
 		playing("Loading $track")
-		player!!.setOnReady {
-			label.text = "Now Playing: $track"
-			val total = player!!.totalDuration.toMillis()
-			player!!.currentTimeProperty().listen { seekBar.progress = it.toMillis() / total }
-			checkJFX {
-				box.children.add(0, seekBar)
+		player!!.run { 
+			play()
+			setOnReady {
+				label.text = "Now Playing: $track"
+				val total = totalDuration.toMillis()
+				currentTimeProperty().listen { seekBar.progress = it.toMillis() / total }
+				checkJFX {
+					box.children.add(0, seekBar)
+				}
 			}
 		}
 	}
@@ -198,9 +198,9 @@ object Player: FadingHBox(true, true) {
 		playTrack(tracks[index])
 		onJFX {
 			if (index > 0)
-				children.add(children.size - 3, Button().id("skipback").onClick { play(tracks, index - 1) })
+				children.add(children.size - 3, buttonWithId("skipback") { play(tracks, index - 1) })
 			if (index < tracks.lastIndex)
-				children.add(children.size - 3, Button().id("skip").onClick { play(tracks, index + 1) })
+				children.add(children.size - 3, buttonWithId("skip") { play(tracks, index + 1) })
 		}
 		player?.setOnEndOfMedia { if (tracks.lastIndex > index) play(tracks, index + 1) else stopPlaying() }
 	}

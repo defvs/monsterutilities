@@ -79,6 +79,9 @@ tasks {
 		baseName = "MonsterUtilities"
 		classifier = null
 		destinationDir = file(".")
+		doLast {
+			exec { commandLine("chmod", "+x", file) }
+		}
 	}
 	
 	val release by creating(Exec::class) {

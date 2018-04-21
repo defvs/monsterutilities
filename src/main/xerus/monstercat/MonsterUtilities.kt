@@ -14,9 +14,15 @@ import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.applySkin
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.launch
+import xerus.ktutil.javafx.onJFX
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.*
+import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.Changelog
+import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.ui.SimpleFrame
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -33,7 +39,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-bd1901c"
+private const val VERSION = "1.0.0-3626713"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
@@ -99,7 +105,7 @@ fun showErrorSafe(error: Throwable, title: String = "Error") {
 	}
 }
 
-class MonsterUtilities: VBox(), JFXMessageDisplay {
+class MonsterUtilities : VBox(), JFXMessageDisplay {
 	
 	val tabs: MutableList<BaseTab>
 	val tabPane: TabPane
@@ -135,10 +141,7 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 		if (VERSION != Settings.LASTVERSION.get()) {
 			if (Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
-				onJFX {
-					showAlert(Alert.AlertType.INFORMATION, null, content = "Welcome to MonsterUtilities!")
-					// TODO intro dialog
-				}
+				showTutorial()
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				launch {
@@ -147,7 +150,7 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 					if (f.exists()) {
 						logger.config("Deleting older version $f...")
 						val time = currentSeconds()
-						var res = false
+						var res: Boolean
 						do {
 							res = f.delete()
 						} while (!res && time + 10 > currentSeconds())
@@ -168,13 +171,12 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 		checkForUpdate()
 	}
 	
-	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
+	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		launch {
 			try {
-				// todo API endpoint
-				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads?version=" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
+				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.fine("Latest version: $latestVersion")
 				if (latestVersion == null || latestVersion.length > 20 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION())) {
 					if (userControlled)
@@ -206,13 +208,12 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 		// todo patterns normal/unstable
 		val file = File("MonsterUtilities $version.jar").absoluteFile
 		logger.fine("Update initiated to $file")
-		val worker = object: Task<Unit>() {
+		val worker = object : Task<Unit>() {
 			override fun call() {
-				val connection = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else version).openConnection()
+				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
-				val inputStream = connection.getInputStream()
 				logger.fine("Update to $version started")
-				inputStream.copyTo(file.outputStream(), true, true) {
+				connection.getInputStream().copyTo(file.outputStream(), true, true) {
 					updateProgress(it, contentLength)
 					isCancelled
 				}
@@ -220,7 +221,6 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 					logger.config("Update cancelled, deleting $file: ${file.delete()}")
 			}
 			
-			// restart
 			override fun succeeded() {
 				if (isUnstable == unstable)
 					Settings.DELETE.set(File(MonsterUtilities::class.java.protectionDomain.codeSource.location.toURI()))
@@ -237,25 +237,38 @@ class MonsterUtilities: VBox(), JFXMessageDisplay {
 			}
 		}
 		worker.launch()
-		val progressDialog = ProgressDialog(worker)
-		progressDialog.title = "Updater"
-		progressDialog.headerText = "Downloading Update"
-		progressDialog.contentText = "Downloading $file to ${file.absoluteFile.parent}"
-		progressDialog.dialogPane.scene.window.setOnCloseRequest { worker.cancel() }
-		progressDialog.initOwner(App.stage)
-		progressDialog.show()
+		ProgressDialog(worker).run {
+			title = "Updater"
+			headerText = "Downloading Update"
+			contentText = "Downloading $file to ${file.absoluteFile.parent}"
+			dialogPane.scene.window.setOnCloseRequest { worker.cancel() }
+			initOwner(App.stage)
+			show()
+		}
+	}
+	
+	fun showTutorial() {
+		onJFX {
+			showAlert(Alert.AlertType.INFORMATION, "Welcome to MonsterUtilities!",
+					content = "MonsterUtilities enables you to access the Monstercat library with ease! Here a quick feature overview:\n" +
+							"- The Catalog Tab serves you information about every track freshly fetched from the MCatalog\n" +
+							"- The Genres Tab provides you an overview of genres, likewise from the MCatalog\n" +
+							"- The Downloader enables you to batch-download songs from the Monstercat library providing you have Gold\n" +
+							"The Catalog, Genres and Releases are conveniently cached for offline use\n" +
+							"Clicking on a song name anywhere plays it in the Player\n" +
+							"Look out for Tooltips!")
+		}
 	}
 	
 	fun showChangelog() {
-		val c = Changelog("Note: The Catalog and Genres Tab pull their data from the MCatalog Spreadsheet, thus issues may stem from their side.").apply {
+		val c = Changelog().apply {
 			version("dev", "pre-Release", "Brand new shiny favicon and player buttons - big thanks to NocFA!",
-					/* todo "Added tutorial",*/ "Feedback can now be sent directly from the application!")
+					"Added intro dialog", "Feedback can now be sent directly from the application!")
 					.change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
 					.change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 					.change("Catalog and Genre Tab now show Genre colors")
 					.change("Catalog improved", "More filtering options", "Smart column size")
-					.change("Player now has a Seekbar")
-			
+					.change("Player now has a slick seekbar inspired by the website")
 			
 			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
 					"Music playing is better integrated", "Fixed some mistakes in the Downloader")
