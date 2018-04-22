@@ -29,7 +29,7 @@ object Releases : Refresher() {
 	}
 	
 	override suspend fun doRefresh() {
-		logger.fine("Refreshing Releases")
+		logger.finer("Release refresh requested")
 		val releaseConnection = APIConnection("catalog", "release")
 				.fields(Release::class.java).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
@@ -37,11 +37,11 @@ object Releases : Refresher() {
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())
 			readReleases()
 		val rel = releaseConnection.getReleases() ?: run {
-			logger.info("Could not refresh Releases!")
+			logger.info("Release refresh failed!")
 			return
 		}
 		if (releases.containsAll(rel)) {
-			logger.fine("Releases are already up to date!")
+			logger.finer("Releases are already up to date!")
 			if (!releaseCache.exists() && Settings.ENABLECACHE())
 				writeReleases()
 			return
@@ -79,7 +79,7 @@ object Releases : Refresher() {
 	private fun readReleases(): Boolean {
 		return try {
 			releaseCache.bufferedReader().forEachLine {
-				releases.add(Release(*it.split(SEPARATOR).toTypedArray()).init())
+				releases.add(Release(it.split(SEPARATOR).toTypedArray()).init())
 			}
 			true
 		} catch (e: Throwable) {

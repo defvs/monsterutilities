@@ -14,6 +14,7 @@ import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
+import xerus.ktutil.helpers.PseudoParser
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.launch
@@ -39,7 +40,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-3626713"
+private const val VERSION = "1.0.0-6246d0b"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
@@ -48,6 +49,7 @@ val logDir
 lateinit var monsterUtilities: MonsterUtilities
 
 fun main(args: Array<String>) {
+	System.getProperties().list(System.out)
 	XerusLogger.parseArgs(*args, defaultLevel = "finer")
 	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
 		logger.warning("Uncaught exception in $thread: ${ex.getStackTraceString()}")
@@ -205,8 +207,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	}
 	
 	private fun update(version: String, unstable: Boolean = false) {
-		// todo patterns normal/unstable
-		val file = File("MonsterUtilities $version.jar").absoluteFile
+		val file = File(Settings.FILENAMEPATTERN().replace("%version%", version, true)).absoluteFile
 		logger.fine("Update initiated to $file")
 		val worker = object : Task<Unit>() {
 			override fun call() {

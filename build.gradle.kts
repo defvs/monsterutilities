@@ -8,9 +8,9 @@ val isUnstable = true
 version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
 
 plugins {
-	kotlin("jvm") version "1.2.31"
+	kotlin("jvm") version "1.2.40"
 	application
-	id("com.github.johnrengelman.shadow") version "2.0.1"
+	id("com.github.johnrengelman.shadow") version "2.0.3"
 }
 
 // source directories
@@ -33,6 +33,7 @@ val kotlinVersion: String by extra {
 }
 
 application {
+	applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
 	mainClassName = "xerus.monstercat.MonsterUtilitiesKt"
 }
 
@@ -42,22 +43,16 @@ repositories {
 
 dependencies {
 	compile("xerus.util", "javafx")
-	
 	compile(kotlin("stdlib-jdk8"))
-	//compile("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "0.+")
 	
 	compile("org.controlsfx", "controlsfx", "8.40.+")
 	
 	compile("org.apache.httpcomponents", "httpmime", "4.5.4")
-	compile("com.google.apis", "google-api-services-sheets", "v4-rev496-1.+")
+	compile("com.google.apis", "google-api-services-sheets", "v4-rev518-1.23.0")
 	
 	testCompile("com.google.api-client", "google-api-client-java6", "1.23.0")
 	testCompile("com.google.oauth-client", "google-oauth-client-jetty", "1.11.0-beta")
 	
-}
-
-application {
-	applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
 }
 
 val file
@@ -107,7 +102,7 @@ tasks {
 	tasks.replace("jar", Delete::class.java).apply {
 		group = MAIN
 		dependsOn("shadowJar")
-		setDelete(file(".").listFiles { f -> f.name.startsWith("${rootProject.name}-") && f.extension == "jar" && f.name != file })
+		setDelete(file(".").listFiles { f -> f.name.run { startsWith("${rootProject.name}-") && endsWith("jar") && this != file } })
 	}
 	
 }

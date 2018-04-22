@@ -11,6 +11,7 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.protocol.BasicHttpContext
+import xerus.ktutil.XerusLogger
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.pair
 import xerus.monstercat.MCatalog
@@ -61,6 +62,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
     private var httpGet: HttpGet? = null
     fun execute() {
         httpGet = HttpGet(uri)
+        XerusLogger.finest("$this connecting to $uri")
         // add Cookie
         val httpContext = BasicHttpContext().apply {
             setAttribute(ClientContext.COOKIE_STORE, BasicClientCookie("connect.sid", CONNECTSID.get()).run {

@@ -5,12 +5,15 @@ import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
+import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
+import javafx.stage.Stage
+import javafx.stage.StageStyle
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
@@ -41,13 +44,13 @@ import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = UnmodifiableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
-val albumTrackPatterns = UnmodifiableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
+val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
+val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
 
 val TreeItem<out MusicResponse>.normalisedValue
 	get() = value.toString().trim().toLowerCase()
 
-class TabDownloader: VTab() {
+class TabDownloader : VTab() {
 	
 	private val releaseView = ReleaseView()
 	private val trackView = TrackView()
@@ -76,33 +79,50 @@ class TabDownloader: VTab() {
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
 		chooser.selectedFile.listen { DOWNLOADDIR.set(it.toPath()) }
-		add(chooser.createHBox())
+		add(HBox(chooser.textField(), createButton("Select Folders") {
+			Stage().run {
+				val pane = gridPane(padding = 5)
+				scene = Scene(pane)
+				pane.addRow(0, chooser.textField(), chooser.button().allowExpand(vertical = false))
+				pane.addRow(1, Label("Singles Subfolder").centerText(), TextField().bindText(SINGLEFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(2, Label("Albums Subfolder").centerText(), TextField().bindText(ALBUMFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.children.forEach {
+					GridPane.setVgrow(it, Priority.SOMETIMES)
+					GridPane.setHgrow(it, if (it is TextField) Priority.ALWAYS else Priority.SOMETIMES)
+				}
+				initWindowOwner(App.stage)
+				pane.prefWidth = 600.0
+				initStyle(StageStyle.UTILITY)
+				isResizable = false
+				show()
+			}
+		}))
 		
 		// Patterns
 		val patternPane = gridPane()
 		fun patternLabel(pattern: Property<String>, track: Track) =
-			Label().apply {
-				textProperty().dependOn(pattern) {
-					try {
-						track.toString(pattern.value).also { patternValid.value = true }
-					} catch (e: ParserException) {
-						patternValid.value = false
-						"No such field: " + e.cause?.cause?.message
-					} catch (e: Exception) {
-						patternValid.value = false
-						monsterUtilities.showError(e, "Error parsing pattern")
-						e.toString()
+				Label().apply {
+					textProperty().dependOn(pattern) {
+						try {
+							track.toString(pattern.value).also { patternValid.value = true }
+						} catch (e: ParserException) {
+							patternValid.value = false
+							"No such field: " + e.cause?.cause?.message
+						} catch (e: Exception) {
+							patternValid.value = false
+							monsterUtilities.showError(e, "Error parsing pattern")
+							e.toString()
+						}
 					}
 				}
-			}
-		patternPane.add(Label("Single naming pattern"),
+		patternPane.add(Label("Singles pattern"),
 				0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
 				1, 0)
 		patternPane.add(patternLabel(TRACKNAMEPATTERN,
 				Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
 				1, 1)
-		patternPane.add(Label("Album Track naming pattern"),
+		patternPane.add(Label("Album Tracks pattern"),
 				0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 				1, 2)
@@ -125,56 +145,51 @@ class TabDownloader: VTab() {
 		
 		// add Views
 		val pane = gridPane()
-		pane.add(HBox(5.0, Label("Releasedate").priority(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0, 2, 1)
-		pane.add(releaseView, 0, 1, 2, 1)
-		pane.add(trackView, 2, 0, 2, 2)
-		pane.addRow(2
-				, Label("Singles Subfolder"), TextField().bindText(SINGLEFOLDER).placeholder("Foldername (root if empty)")
-				, Label("Tracks Subfolder"), TextField().bindText(TRACKFOLDER).placeholder("Foldername (root if empty)"))
+		pane.add(HBox(5.0, Label("Releasedate").priority(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
+		pane.add(releaseView, 0, 1)
+		pane.add(trackView, 1, 0, 1, 2)
 		pane.maxWidth = Double.MAX_VALUE
 		pane.children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
 		fill(pane)
 		
 		// Qualities
-		val buttons = UnmodifiableObservableList(*qualities.map {
+		val buttons = ImmutableObservableList(*qualities.map {
 			ToggleButton(it.replace('_', ' ').toUpperCase()).apply {
 				userData = it
 				isSelected = userData == QUALITY()
 			}
 		}.toTypedArray())
 		add(SegmentedButton(buttons)).toggleGroup.selectedToggleProperty().listen { if (it != null) QUALITY.put(it.userData) }
-		QUALITY.addListener { _ -> buttons.forEach { it.isSelected = it.userData == QUALITY() } }
+		QUALITY.listen { buttons.forEach { button -> button.isSelected = button.userData == it } }
 		
 		// Misc options
 		addRow(/* todo hide downloaded
                  CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
-                .tooltip("Only works if the Trackpatterns and subfolders stayed the same"),*/
-				Button("Select all Songs (DO NOT click this if you are not connected to the internet!)").apply {
-					setOnAction {
-						trackView.checkModel.clearChecks()
-						val albums = releaseView.get("Album")
-						albums.isSelected = true
-						ProgressDialog(SimpleTask("Updating", "Fetching") {
-							val deferred = albums.internalChildren.map {
-								async {
-									(APIConnection("catalog", "release", it.value.id, "tracks").getTracks()
-											?: throw Exception("No connection!")).map { it.toString().trim().toLowerCase() }
-								}
+                .tooltip("Only works if the Patterns and Folders are correctly set"),*/
+				createButton("Select all Songs (DO NOT click this if you are not connected to the internet!)") {
+					trackView.checkModel.clearChecks()
+					val albums = releaseView.get("Album")
+					albums.isSelected = true
+					ProgressDialog(SimpleTask("Updating", "Fetching") {
+						val deferred = albums.internalChildren.map {
+							async {
+								(APIConnection("catalog", "release", it.value.id, "tracks").getTracks()
+										?: throw Exception("No connection!")).map { it.toString().trim().toLowerCase() }
 							}
-							val allAlbumTracks = HashSet<String>()
-							var progress = 0
-							val max = deferred.size
-							deferred.forEach {
-								allAlbumTracks.addAll(it.await())
-								updateProgress(progress++, max)
+						}
+						val allAlbumTracks = HashSet<String>()
+						var progress = 0
+						val max = deferred.size
+						deferred.forEach {
+							allAlbumTracks.addAll(it.await())
+							updateProgress(progress++, max)
+						}
+						onJFX {
+							trackView.root.internalChildren.forEach {
+								(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in allAlbumTracks
 							}
-							onJFX {
-								trackView.root.internalChildren.forEach {
-									(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in allAlbumTracks
-								}
-							}
-						}).show()
-					}
+						}
+					}).show()
 				}.tooltip("Selects all Albums and then all Tracks that are not included in these"))
 		addRow(TextField().apply {
 			promptText = "connect.sid"
@@ -182,8 +197,8 @@ class TabDownloader: VTab() {
 			textProperty().bindBidirectional(CONNECTSID)
 			maxWidth = Double.MAX_VALUE
 		}.priority(), Button("Start Download").apply {
-			arrayOf<Observable>(patternValid, noItemsSelected, CONNECTSID, QUALITY).forEach {
-				it.addListener { refreshDownloadButton(this) }
+			arrayOf<Observable>(patternValid, noItemsSelected, CONNECTSID, QUALITY).addListener {
+				refreshDownloadButton(this)
 			}
 			refreshDownloadButton(this)
 		})
@@ -274,7 +289,7 @@ class TabDownloader: VTab() {
 	
 }
 
-class TrackView: FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
+class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 	init {
 		setOnMouseClicked {
 			if (it.clickCount == 2) {
@@ -295,7 +310,7 @@ class TrackView: FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 	}
 }
 
-class ReleaseView: FilterableCheckTreeView<Release>(Release(title = "Releases")) {
+class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")) {
 	
 	val categories = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes")
 	
@@ -321,7 +336,7 @@ class ReleaseView: FilterableCheckTreeView<Release>(Release(title = "Releases"))
 	
 }
 
-open class FilterableCheckTreeView<T: Any>(rootValue: T): CheckTreeView<T>() {
+open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
 	val root = FilterableTreeItem(rootValue)
 	val checkedItems: ObservableList<TreeItem<T>>
 		get() = checkModel.checkedItems

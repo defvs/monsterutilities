@@ -29,15 +29,6 @@ abstract class FetchTab : VTab() {
 	
 	val snackbarTextCache = "MCatalog was restored from cache"
 	
-	init {
-		onJFX {
-			add(notification)
-			setPlaceholder(Label("Loading..."))
-			sheetFetcher()
-		}
-		styleClass("fetch-tab")
-	}
-	
 	protected open val request: String = ""
 	private val retryButton: Button = createButton("Try again") {
 		setPlaceholder(Label("Fetching..."))
@@ -60,6 +51,15 @@ abstract class FetchTab : VTab() {
 			} else
 				setPlaceholder(Label("No matches found!"))
 		}
+	}
+	
+	init {
+		onJFX {
+			add(notification)
+			setPlaceholder(Label("Loading..."))
+		}
+		styleClass("fetch-tab")
+		sheetFetcher()
 	}
 	
 	abstract fun setPlaceholder(n: Node)
