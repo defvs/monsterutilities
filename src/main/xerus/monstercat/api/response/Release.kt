@@ -1,6 +1,7 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
+import xerus.ktutil.helpers.Parsable
 
 data class Release(
         @Key("_id") override var
@@ -16,9 +17,9 @@ data class Release(
         @Key var
         coverUrl: String = "",
         @Key var
-        downloadable: Boolean = false): MusicResponse {
+        downloadable: Boolean = false): MusicResponse, Parsable {
 
-    constructor(vararg line: String) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
+    constructor(line: Array<String>) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
 
     fun serialize(): Array<String> {
         val (v1, v2, v3, v4, v5, v6, v7) = this

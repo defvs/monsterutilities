@@ -15,13 +15,13 @@ import java.nio.file.Path
 import java.util.zip.ZipInputStream
 
 
-fun Release.path() = when {
-	isMulti -> basepath.resolve(toString().replaceIllegalFileChars()) // Album, Monstercat Collection
-	isType("Podcast", "Mixes") -> basepath.resolve(type)
-	else -> basepath.resolve(SINGLEFOLDER()) // Single
-}
+fun Release.path() = basepath.resolve(when {
+	isMulti -> toString(ALBUMFOLDER()).replaceIllegalFileChars() // Album, Monstercat Collection
+	isType("Podcast", "Mixes") -> type
+	else -> SINGLEFOLDER() // Single
+}).create()
 
-fun Track.path() = basepath.resolve(TRACKFOLDER()).create().resolve(addFormat(toFileName()))
+fun Track.path() = basepath.resolve(SINGLEFOLDER()).create().resolve(addFormat(toFileName()))
 
 private inline val basepath
 	get() = DOWNLOADDIR()
@@ -43,7 +43,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 			updateMessage("Error: $e")
 			try {
 				Thread.sleep(100_000_000_000)
-			} catch (cancelled: Exception) {
+			} catch (_: Exception) {
 			}
 		} finally {
 			abort()
@@ -103,8 +103,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 class ReleaseDownloader(private val release: Release) : Downloader(release.toString(), release.coverUrl) {
 	
 	override fun download() {
-		val path = release.path()
-		Files.createDirectories(path)
+		val path = release.path().create()
 		logger.finer("Downloading $release to $path")
 		
 		val zis = createConnection(release.id, { ZipInputStream(it) })

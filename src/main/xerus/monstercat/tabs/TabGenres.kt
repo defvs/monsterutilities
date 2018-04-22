@@ -8,7 +8,7 @@ import javafx.scene.layout.VBox
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ConstantObservable
+import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.Settings.GENRECOLORS
@@ -21,7 +21,7 @@ val genreColor = { item: String? ->
 	}
 }
 
-class TabGenres: FetchTab() {
+class TabGenres : FetchTab() {
 	
 	private val view = TreeTableView<Row>().apply {
 		columnResizePolicy = TreeTableView.CONSTRAINED_RESIZE_POLICY
@@ -79,20 +79,16 @@ class TabGenres: FetchTab() {
 			}
 		}
 		
-		val genre = TreeTableColumn<Row, String>("Genre")
-		genre.setCellValueFactory { ConstantObservable(it.value.value.firstOrNull { it.isNotEmpty() }) }
-		val bpm = TreeTableColumn<Row, String>("Typical BPM")
-		bpm.setCellValueFactory { ConstantObservable(it.value.value[cols.findUnsafe("BPM")]) }
-		val beat = TreeTableColumn<Row, String>("Typical Beat")
-		beat.setCellValueFactory { ConstantObservable(it.value.value[cols.findUnsafe("Beat")]) }
-		val examples = TreeTableColumn<Row, String>("Examples")
-		examples.setCellValueFactory { ConstantObservable(it.value.value.filterIndexed { index, s -> !s.isNullOrEmpty() && cols.findAll("Examples").contains(index) }.joinToString(" / ")) }
-		view.columns.addAll(genre, bpm, beat, examples)
+		val columns = arrayOf<TreeTableColumn<Row, String?>>(
+				TreeTableColumn("Genre") { it.value.value.firstOrNull { it.isNotEmpty() } },
+				TreeTableColumn("Typical BPM") { it.value.value[cols.findUnsafe("BPM")] },
+				TreeTableColumn("Typical Beat") { it.value.value[cols.findUnsafe("Beat")] })
 		
-		arrayOf(genre, bpm, beat, examples).forEach {
+		view.columns.addAll(*columns)
+		columns.forEach {
 			it.isSortable = false
 			it.setCellFactory {
-				object: TreeTableCell<Row, String>() {
+				object : TreeTableCell<Row, String?>() {
 					override fun updateItem(item: String?, empty: Boolean) {
 						super.updateItem(item, empty)
 						if (item == null || empty) {

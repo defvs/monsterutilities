@@ -5,7 +5,7 @@ import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import org.controlsfx.validation.decoration.GraphicValidationDecoration
 
-val minimalDecorator = object : GraphicValidationDecoration() {
+val minimalValidationDecorator = object : GraphicValidationDecoration() {
 	override fun applyRequiredDecoration(target: Control?) {}
 }
 
