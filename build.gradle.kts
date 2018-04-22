@@ -81,8 +81,13 @@ tasks {
 	
 	val release by creating(Exec::class) {
 		group = MAIN
-		dependsOn("shadowJar")
-		commandLine("lftp", "-c", "set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e \"cd /downloads/unstable; mrm *.jar; put $file; quit\" monsterutilities.bplaced.net")
+		dependsOn("jar")
+		val path = "website/downloads/" + if (isUnstable) "unstable" else "latest"
+		doFirst { file(path).writeText(file.removeSuffix(".jar")) }
+		commandLine("lftp", "-c", """set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e "
+			cd /downloads; put $path; 
+			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
+			quit" monsterutilities.bplaced.net""".replace("\t", "").replace("\n", ""))
 	}
 	
 	val version by creating(Copy::class) {

@@ -40,7 +40,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-6246d0b"
+private const val VERSION = "1.0.0-98b5ddd"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir
