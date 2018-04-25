@@ -1,9 +1,7 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import xerus.ktutil.getField
 import xerus.ktutil.helpers.Parsable
-import xerus.ktutil.joinEnumeration
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 

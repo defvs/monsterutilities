@@ -91,7 +91,7 @@ class TabDownloader : VTab() {
 					GridPane.setHgrow(it, if (it is TextField) Priority.ALWAYS else Priority.SOMETIMES)
 				}
 				initWindowOwner(App.stage)
-				pane.prefWidth = 600.0
+				pane.prefWidth = 700.0
 				initStyle(StageStyle.UTILITY)
 				isResizable = false
 				show()
