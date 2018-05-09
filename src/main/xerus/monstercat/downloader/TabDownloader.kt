@@ -145,7 +145,7 @@ class TabDownloader : VTab() {
 		
 		// add Views
 		val pane = gridPane()
-		pane.add(HBox(5.0, Label("Releasedate").priority(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
+		pane.add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
 		pane.add(releaseView, 0, 1)
 		pane.add(trackView, 1, 0, 1, 2)
 		pane.maxWidth = Double.MAX_VALUE
@@ -196,7 +196,7 @@ class TabDownloader : VTab() {
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
 			textProperty().bindBidirectional(CONNECTSID)
 			maxWidth = Double.MAX_VALUE
-		}.priority(), Button("Start Download").apply {
+		}.grow(), Button("Start Download").apply {
 			arrayOf<Observable>(patternValid, noItemsSelected, CONNECTSID, QUALITY).addListener {
 				refreshDownloadButton(this)
 			}

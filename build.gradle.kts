@@ -8,7 +8,7 @@ val isUnstable = true
 version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
 
 plugins {
-	kotlin("jvm") version "1.2.40"
+	kotlin("jvm") version "1.2.41"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.3"
 }
