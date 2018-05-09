@@ -2,7 +2,7 @@ package xerus.monstercat.downloader
 
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
-import xerus.ktutil.create
+import xerus.ktutil.createDirs
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.Release
@@ -10,7 +10,6 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
 
@@ -19,9 +18,9 @@ fun Release.path() = basepath.resolve(when {
 	isMulti -> toString(ALBUMFOLDER()).replaceIllegalFileChars() // Album, Monstercat Collection
 	isType("Podcast", "Mixes") -> type
 	else -> SINGLEFOLDER() // Single
-}).create()
+}).createDirs()
 
-fun Track.path() = basepath.resolve(SINGLEFOLDER()).create().resolve(addFormat(toFileName()))
+fun Track.path() = basepath.resolve(SINGLEFOLDER()).createDirs().resolve(addFormat(toFileName()))
 
 private inline val basepath
 	get() = DOWNLOADDIR()
@@ -103,7 +102,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 class ReleaseDownloader(private val release: Release) : Downloader(release.toString(), release.coverUrl) {
 	
 	override fun download() {
-		val path = release.path().create()
+		val path = release.path().createDirs()
 		logger.finer("Downloading $release to $path")
 		
 		val zis = createConnection(release.id, { ZipInputStream(it) })
@@ -118,7 +117,7 @@ class ReleaseDownloader(private val release: Release) : Downloader(release.toStr
 				name.contains("cover.") -> path.resolve(name)
 				name.contains("Album Mix") ->
 					when (ALBUMMIXES()) {
-						"Separate" -> resolve(name, basepath.resolve("Album Mixes").create())
+						"Separate" -> resolve(name, basepath.resolve("Album Mixes").createDirs())
 						"Exclude" -> continue@zip
 						else -> resolve(name, path)
 					}

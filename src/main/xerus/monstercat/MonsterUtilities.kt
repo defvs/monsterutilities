@@ -40,16 +40,15 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-6246d0b"
+private const val VERSION = "1.0.0-14b5e17"
 private val isUnstable = VERSION.indexOf('-') > -1
 
-val logDir
-	get() = cachePath.resolve("logs").create().toFile()
+val logDir: File
+	get() = cachePath.resolve("logs").createDirs().toFile()
 
 lateinit var monsterUtilities: MonsterUtilities
 
 fun main(args: Array<String>) {
-	System.getProperties().list(System.out)
 	XerusLogger.parseArgs(*args, defaultLevel = "finer")
 	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
 		logger.warning("Uncaught exception in $thread: ${ex.getStackTraceString()}")
