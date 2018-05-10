@@ -10,9 +10,9 @@ data class Release(
         releaseDate: String = "",
         @Key var
         type: String = "",
-        @Key var
+        @Key @JvmField var
         renderedArtists: String = "",
-        @Key var
+        @Key @JvmField var
         title: String = "",
         @Key var
         coverUrl: String = "",

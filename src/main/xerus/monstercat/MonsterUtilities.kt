@@ -40,7 +40,7 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0-14b5e17"
+private const val VERSION = "1.0.0-b57c173"
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir: File
@@ -179,7 +179,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			try {
 				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.fine("Latest version: $latestVersion")
-				if (latestVersion == null || latestVersion.length > 20 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION())) {
+				if (latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION())) {
 					if (userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
 					return@launch
@@ -226,7 +226,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					Settings.DELETE.set(File(MonsterUtilities::class.java.protectionDomain.codeSource.location.toURI()))
 				logger.info("Exiting for update")
 				Settings.flush()
-				println(System.getProperty("java.home"))
+				logger.info("Java home: ${System.getProperty("java.home")}")
 				file.setExecutable(true)
 				val p = Runtime.getRuntime().exec("java -jar \"$file\"")
 				p.waitFor(10, TimeUnit.SECONDS)

@@ -28,19 +28,14 @@ import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.ktutil.javafx.ui.controls.SearchRow
-import xerus.ktutil.javafx.ui.controls.Searchable
-import xerus.ktutil.javafx.ui.controls.Type
-import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
+import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.*
-import xerus.monstercat.api.response.Artist
-import xerus.monstercat.api.response.MusicResponse
-import xerus.monstercat.api.response.Release
-import xerus.monstercat.api.response.Track
+import xerus.monstercat.api.response.*
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
+import java.net.URLEncoder
 import java.time.LocalDate
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
@@ -75,6 +70,8 @@ class TabDownloader : VTab() {
 	
 	private fun initialize() {
 		children.clear()
+		
+		children.add(ImageView("https://assets.monstercat.com/releases/covers/Soulji%20-%20Black%20Mask%20EP%20(Art)-final.jpg?image_width=64"))
 		
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
@@ -240,7 +237,13 @@ class TabDownloader : VTab() {
 		
 		val taskView = TaskProgressView<Downloader>()
 		val cache = Cache<String, Image>()
-		taskView.setGraphicFactory { ImageView(cache.getOrPut(it.coverUrl) { Image("$it?image_width=64", true) }) }
+		taskView.setGraphicFactory {
+			ImageView(cache.getOrPut(it.coverUrl) {
+				val url = "$it?image_width=64".replace(" ", "%20")
+				logger.finest("Loading image $url")
+				Image(url, true)
+			})
+		}
 		val job = launch {
 			val releases = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
 			val tracks = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
