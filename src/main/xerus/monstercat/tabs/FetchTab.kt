@@ -25,9 +25,12 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 
+const val snackbarTextCache = "MCatalog was restored from cache"
+
 abstract class FetchTab : VTab() {
 	
-	val snackbarTextCache = "MCatalog was restored from cache"
+	val cols = RoughMap<Int>()
+	val data: ObservableList<List<String>> = FXCollections.observableArrayList()
 	
 	protected open val request: String = ""
 	private val retryButton: Button = createButton("Try again") {
@@ -63,9 +66,6 @@ abstract class FetchTab : VTab() {
 	}
 	
 	abstract fun setPlaceholder(n: Node)
-	
-	val cols = RoughMap<Int>()
-	val data: ObservableList<List<String>> = FXCollections.observableArrayList()
 	
 	fun readSheet(sheet: MutableList<List<String>>) {
 		readCols(sheet[0])

@@ -84,21 +84,32 @@ tasks {
 		dependsOn("jar")
 		val path = "website/downloads/" + if (isUnstable) "unstable" else "latest"
 		doFirst { file(path).writeText(file.removeSuffix(".jar")) }
+		// TODO temporary workaround until real release
+		val path2 = "website/downloads/latest"
+		doFirst { file(path2).writeText(file.removeSuffix(".jar")) }
 		commandLine("lftp", "-c", """set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e "
 			cd /downloads; put $path; 
 			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
 			quit" monsterutilities.bplaced.net""".replace("\t", "").replace("\n", ""))
 	}
 	
-	val version by creating(Copy::class) {
-		val original = "src/main/xerus/monstercat/MonsterUtilities.kt"
-		from(original)
-		into("$buildDir/tmp")
-		filter { line -> if (line.contains("val VERSION")) line.dropLastWhile { it != '=' } + " \"$version\"" else line }
-		doLast { file("$buildDir/tmp/MonsterUtilities.kt").renameTo(file(original)) }
+	"compileKotlin"(KotlinCompile::class) {
+		val sourceFile = file("src/main/xerus/monstercat/MonsterUtilities.kt")
+		val tempFile = file("$buildDir/tmp/version/MonsterUtilities.kt")
+		doFirst {
+			tempFile.parentFile.mkdirs()
+			sourceFile.renameTo(tempFile)
+			copy {
+				from("$buildDir/tmp/version")
+				into("src/main/xerus/monstercat")
+				filter { line -> if (line.contains("val VERSION")) line.dropLastWhile { it != '=' } + " \"$version\"" else line }
+			}
+		}
+		doLast {
+			if (isUnstable)
+				file(tempFile).copyTo(sourceFile, true)
+		}
 	}
-	
-	"compileKotlin"(KotlinCompile::class).dependsOn(version)
 	
 	withType<KotlinCompile> {
 		kotlinOptions.jvmTarget = "1.8"
