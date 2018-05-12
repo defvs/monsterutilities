@@ -64,7 +64,6 @@ fun main(args: Array<String>) {
 	} catch (t: Throwable) {
 		showErrorSafe(t, "Can't log to $logfile!")
 	}
-	// Only Java 8 works
 	if (!javaVersion().startsWith("1.8")) {
 		SimpleFrame {
 			add(JTextArea("Please install and use Java 8!\nThe current version is ${javaVersion()}").apply { isEditable = false })
@@ -133,7 +132,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		if (VERSION != Settings.LASTVERSION.get()) {
 			if (Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
-				showTutorial()
+				showIntro()
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				launch {
@@ -208,11 +207,10 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				logger.fine("Update to $version started")
 				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
 					updateProgress(it, contentLength)
-					Thread.sleep(20)
 					isCancelled
 				}
 				if (isCancelled)
-					logger.config("Update cancelled, deleting $newFile: ${newFile.delete()}")
+					logger.config("Update cancelled, deleting $newFile: ${newFile.delete().to("Success", "FAILED")}")
 			}
 			
 			override fun succeeded() {
@@ -227,12 +225,14 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				val cmd = arrayOf("${System.getProperty("java.home")}/bin/java", "-jar", newFile.toString())
 				logger.info("Executing '${cmd.joinToString(" ")}'")
 				val p = Runtime.getRuntime().exec(cmd)
-				if (p.waitFor(3, TimeUnit.SECONDS)) {
-					p.inputStream.dump()
-					p.errorStream.dump()
-				} else {
+				val exited = p.waitFor(3, TimeUnit.SECONDS)
+				logger.info("Dumping streams of $p")
+				p.inputStream.dump()
+				p.errorStream.dump()
+				if (!exited) {
 					Platform.exit()
 					App.stage.close()
+					logger.warning("Exiting!")
 				}
 			}
 		}
@@ -249,23 +249,27 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		}
 	}
 	
-	fun showTutorial() {
+	fun showIntro() {
 		onJFX {
-			showAlert(Alert.AlertType.INFORMATION, "Welcome to MonsterUtilities!",
-					content = "MonsterUtilities enables you to access the Monstercat library with ease! Here a quick feature overview:\n" +
-							"- The Catalog Tab serves you information about every track freshly fetched from the MCatalog\n" +
-							"- The Genres Tab provides you an overview of genres, likewise from the MCatalog\n" +
-							"- The Downloader enables you to batch-download songs from the Monstercat library providing you have Gold\n" +
-							"The Catalog, Genres and Releases are conveniently cached for offline use\n" +
-							"Clicking on a song name anywhere plays it in the Player\n" +
-							"Look out for Tooltips!")
+			val text = Label("""
+					MonsterUtilities enables you to access the Monstercat library with ease! Here a quick feature overview:
+					- The Catalog Tab serves you information about every track, freshly fetched from the MCatalog
+					- The Genres Tab provides you an overview of genres, also from the MCatalog
+					- The Downloader enables you to batch-download songs from the Monstercat library providing you have Gold
+					Clicking on a song name anywhere plays it if available
+					The Catalog, Genres and Releases are conveniently cached for offline use in $cachePath
+					Look out for Tooltips when you are stuck!""".trimIndent())
+			text.isWrapText = true
+			App.stage.createStage("Welcome to MonsterUtilities", text).apply {
+				sizeToScene()
+			}.show()
 		}
 	}
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
 			version("dev", "pre-Release", "Brand new shiny favicon and player buttons - big thanks to NocFA!",
-					"Added intro dialog", "Feedback can now be sent directly from the application!")
+					"Added intro dialog", "Send Feedback directly from the application!")
 					.change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
 					.change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 					.change("Catalog and Genre Tab now show Genre colors")

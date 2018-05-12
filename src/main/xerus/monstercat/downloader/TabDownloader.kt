@@ -190,6 +190,7 @@ class TabDownloader : VTab() {
 				}.tooltip("Selects all Albums and then all Tracks that are not included in these"))
 		addRow(TextField().apply {
 			promptText = "connect.sid"
+			// todo better instructions
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
 			textProperty().bindBidirectional(CONNECTSID)
 			maxWidth = Double.MAX_VALUE

@@ -38,6 +38,7 @@ class TabSettings : VTab() {
 	
 	init {
 		addButton("Show Changelog", { monsterUtilities.showChangelog() })
+		addButton("Show Intro Dialog", { monsterUtilities.showIntro() })
 		addButton("Send Feedback", { feedback() })
 		addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
 		
