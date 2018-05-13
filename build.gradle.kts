@@ -83,12 +83,12 @@ tasks {
 		group = MAIN
 		dependsOn("jar")
 		val path = "website/downloads/" + if (isUnstable) "unstable" else "latest"
-		doFirst { file(path).writeText(file.removeSuffix(".jar")) }
+		doFirst { file(path).writeText(version.toString()) }
 		// TODO temporary workaround until real release
 		val path2 = "website/downloads/latest"
-		doFirst { file(path2).writeText(file.removeSuffix(".jar")) }
+		doFirst { file(path2).writeText(version.toString()) }
 		commandLine("lftp", "-c", """set ftp:ssl-allow true ; set ssl:verify-certificate no; open -u ${properties["credentials.ftp"]} -e "
-			cd /downloads; put $path; 
+			cd /downloads; put $path; put $path2;
 			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
 			quit" monsterutilities.bplaced.net""".replace("\t", "").replace("\n", ""))
 	}
