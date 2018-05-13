@@ -204,7 +204,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			override fun call() {
 				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
-				logger.fine("Update to $version started")
+				logger.fine("Update to $version started, size $contentLength")
 				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
 					updateProgress(it, contentLength)
 					isCancelled
@@ -241,7 +241,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			ProgressDialog(worker).run {
 				title = "Updater"
 				headerText = "Downloading Update"
-				contentText = "Downloading $newFile to ${newFile.absoluteFile.parent}"
+				contentText = "Downloading ${newFile.name} to ${newFile.absoluteFile.parent}"
 				dialogPane.scene.window.setOnCloseRequest { worker.cancel() }
 				initOwner(App.stage)
 				show()

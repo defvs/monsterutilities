@@ -32,6 +32,6 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val DELETE = create("versionDelete", File(""))
 	val UNSTABLE = create("updateUnstable", false)
 	
-	val FILENAMEPATTERN = create("updatePattern", "%version%.jar")
+	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities-%version%.jar")
 	
 }
