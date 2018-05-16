@@ -2,6 +2,7 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 import xerus.ktutil.helpers.Parsable
+import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
@@ -31,7 +32,8 @@ open class Track(
 	@JvmField
 	var titleRaw: String = ""
 	
-	open fun toFileName() = toString(TRACKNAMEPATTERN())
+	open fun toFileName() =
+			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
 		if (titleRaw.isNotEmpty())

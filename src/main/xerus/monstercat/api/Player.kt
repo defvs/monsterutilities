@@ -12,20 +12,24 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.helpers.Rater
 import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.verticalTransition
+import xerus.ktutil.square
 import xerus.ktutil.toInt
+import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
-object Player: FadingHBox(true, true) {
+object Player : FadingHBox(true, true, 25) {
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
-		setSize(height = 7.0)
+		setSize(height = 6.0)
+		isVisible = false
 		maxWidth = Double.MAX_VALUE
 		val handler = EventHandler<MouseEvent> { event ->
 			if (event.button == MouseButton.PRIMARY) {
@@ -42,7 +46,8 @@ object Player: FadingHBox(true, true) {
 		onMouseDragged = handler
 	}
 	
-	internal val box = VBox(this).apply {
+	internal val box = VBox(seekBar, this).apply {
+		id("player")
 		setSize(height = 0.0)
 		opacity = 0.0
 	}
@@ -93,18 +98,22 @@ object Player: FadingHBox(true, true) {
 	}
 	
 	private fun disposePlayer() {
-		checkJFX {
-			box.children.remove(seekBar)
-		}
 		player?.dispose()
 		player = null
+		checkJFX { 
+			seekBar.progress = 0.0
+			seekBar.isVisible = false
+		}
 	}
 	
 	// playing & controls
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
-	private val volumeSlider = Slider(0.1, 1.0, 0.5).apply { prefWidth = 100.0; valueProperty().addListener { _ -> setVolume() } }
+	private val volumeSlider = Slider(0.1, 1.0, Settings.PLAYERVOLUME()).apply {
+		prefWidth = 100.0
+		valueProperty().addListener { _ -> setVolume() }
+	}
 	
 	private fun playing(text: String) {
 		onJFX {
@@ -119,7 +128,7 @@ object Player: FadingHBox(true, true) {
 	}
 	
 	private fun setVolume() {
-		player?.volume = Math.pow(volumeSlider.value, 2.0)
+		player?.volume = volumeSlider.value.square
 	}
 	
 	private var player: MediaPlayer? = null
@@ -132,15 +141,13 @@ object Player: FadingHBox(true, true) {
 		player = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		setVolume()
 		playing("Loading $track")
-		player!!.run { 
+		player!!.run {
 			play()
 			setOnReady {
 				label.text = "Now Playing: $track"
 				val total = totalDuration.toMillis()
-				currentTimeProperty().listen { seekBar.progress = it.toMillis() / total }
-				checkJFX {
-					box.children.add(0, seekBar)
-				}
+				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
+				seekBar.isVisible = true
 			}
 		}
 	}

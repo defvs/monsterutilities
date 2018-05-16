@@ -5,6 +5,7 @@ import javafx.concurrent.Task
 import xerus.ktutil.createDirs
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.response.MusicResponse
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
@@ -13,6 +14,11 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
 
+fun MusicResponse.downloader() = when(this) {
+	is Track -> TrackDownloader(this)
+	is Release -> ReleaseDownloader(this)
+	else -> throw NoWhenBranchMatchedException()
+}
 
 fun Release.path() = basepath.resolve(when {
 	isMulti -> toString(ALBUMFOLDER()).replaceIllegalFileChars() // Album, Monstercat Collection

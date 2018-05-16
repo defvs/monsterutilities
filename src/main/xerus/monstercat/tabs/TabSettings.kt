@@ -1,7 +1,5 @@
 package xerus.monstercat.tabs
 
-import javafx.beans.value.ChangeListener
-import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.scene.control.*
 import javafx.scene.input.Clipboard
@@ -9,19 +7,15 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.GridPane
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import javafx.stage.StageStyle
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
-import org.controlsfx.validation.Severity
-import org.controlsfx.validation.ValidationResult
-import org.controlsfx.validation.ValidationSupport
-import org.controlsfx.validation.Validator
+import org.controlsfx.validation.*
+import xerus.ktutil.delete
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ImmutableObservable
-import xerus.ktutil.javafx.properties.ImmutableObservableList
-import xerus.ktutil.javafx.properties.dependOn
-import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.ktutil.pair
@@ -29,10 +23,8 @@ import xerus.monstercat.*
 import xerus.monstercat.downloader.DownloaderSettings
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.prefs.BackingStoreException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-
 
 class TabSettings : VTab() {
 	
@@ -42,67 +34,47 @@ class TabSettings : VTab() {
 		addButton("Send Feedback", { feedback() })
 		addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
 		
-		Settings.ENABLECACHE.listen { selected ->
-			logger.fine("Cache " + (if (selected) "en" else "dis") + "abled")
-			if (selected) {
-				FetchTab.writeCache()
-			}
-		}
 		
-		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE)
-				//,CheckBox("Download unstable build").bind(Settings.UNSTABLE)
-		)
 		val startTab = ComboBox(FXCollections.observableArrayList("Previous"))
 		addLabeled("Startup Tab", startTab)
 		
-		Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
-			override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
-				if (new) {
-					val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?",
-							content = "Unstable builds contain the latest features and fixes, but may also introduce unexpected bugs, regressions and incompatible changes. Use at your own risk!.\n" +
-									"The unstable version can be used alongside the stable one and will forcibly update itself whenever possible.")
-					alert.resultProperty().addListener { _ ->
-						if (alert.result.buttonData == ButtonBar.ButtonData.YES) {
-							monsterUtilities.checkForUpdate(true, true)
-						} else {
-							Settings.UNSTABLE.removeListener(this)
-							Settings.UNSTABLE.set(false)
-							Settings.UNSTABLE.addListener(this)
-						}
-					}
-				}
-			}
-		})
-		
-		Settings.SKIN.listen { monsterUtilities.scene.applySkin(it) }
 		addLabeled("Skin", ComboBox(ImmutableObservableList(*Skins.availableSkins)).apply {
 			valueProperty().bindBidirectional(Settings.SKIN)
 		})
-		val slider = Slider(0.0, 255.0, Settings.GENRECOLORS.get().toDouble())
-		slider.minorTickCount = 16
-		slider.isSnapToTicks = true
+		val slider = Slider(0.0, 255.0, Settings.GENRECOLORS().toDouble())
 		Settings.GENRECOLORS.dependOn(slider.valueProperty()) { it.toInt() }
-		addLabeled("Genre Color strength", slider)
+		addLabeled("Genre color intensity", slider)
+		
+		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
+		addRow(CheckBox("Update automatically").bind(Settings.AUTOUPDATE))
 		
 		addRow(
 				createButton("Quick restart", {
 					Settings.refresh()
 					DownloaderSettings.refresh()
 					App.restart()
-				}),
-				createButton("Reset all settings", {
-					monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, content = "Are you sure you want to RESET ALL SETTINGS?").resultProperty().listen {
-						if (it.buttonData == ButtonBar.ButtonData.YES) {
-							try {
-								Settings.reset()
-								DownloaderSettings.reset()
-							} catch (e: BackingStoreException) {
-								monsterUtilities.showError(e)
+				}).apply { prefWidth = 100.0 },
+				createButton("Reset", {
+					App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
+						initStyle(StageStyle.UTILITY)
+						resultProperty().listen {
+							if (it.buttonData == ButtonBar.ButtonData.YES) {
+								try {
+									Settings.reset()
+									DownloaderSettings.reset()
+									cachePath.delete()
+								} catch (e: Exception) {
+									monsterUtilities.showError(e)
+								}
+								App.restart()
 							}
-							App.restart()
 						}
+						show()
 					}
-				}).apply { textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8))) }
+				}).apply {
+					prefWidth = 100.0
+					textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
+				}
 		)
 		onJFX {
 			startTab.items.addAll(monsterUtilities.tabs.map { it.tabName })

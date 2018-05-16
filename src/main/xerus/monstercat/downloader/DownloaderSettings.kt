@@ -18,5 +18,5 @@ val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", a
 val QUALITY = DownloaderSettings.create("quality")
 val CONNECTSID = DownloaderSettings.create("connect.sid")
 
-val DOWNLOADTHREADS = DownloaderSettings.create("threads", 3)
+val DOWNLOADTHREADS = DownloaderSettings.create("threads", Runtime.getRuntime().availableProcessors().minus(1).coerceIn(1, 3))
 

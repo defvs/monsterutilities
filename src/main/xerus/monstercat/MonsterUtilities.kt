@@ -136,7 +136,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				launch {
-					logger.fine("New version detected! $VERSION from " + Settings.LASTVERSION())
+					logger.fine("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if (f.exists()) {
 						logger.config("Deleting older version $f...")
@@ -149,7 +149,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 							Settings.DELETE.reset()
 							logger.config("Deleted $f!")
 						} else
-							logger.config("Couldn't delete older version $f")
+							logger.warning("Couldn't delete older version residing in $f")
 					}
 					Settings.LASTVERSION.put(VERSION)
 				}
@@ -159,7 +159,8 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		
 		children.add(Player.box)
 		fill(tabPane)
-		checkForUpdate()
+		if (Settings.AUTOUPDATE())
+			checkForUpdate()
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
@@ -260,7 +261,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					The Catalog, Genres and Releases are conveniently cached for offline use in $cachePath
 					Look out for Tooltips when you are stuck!""".trimIndent())
 			text.isWrapText = true
-			App.stage.createStage("Welcome to MonsterUtilities", text).apply {
+			App.stage.createStage("Welcome to MonsterUtilities!", text).apply {
 				sizeToScene()
 			}.show()
 		}
