@@ -7,22 +7,21 @@ import javafx.scene.input.DataFormat
 import javafx.scene.layout.GridPane
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import javafx.stage.Stage
 import javafx.stage.StageStyle
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
-import xerus.ktutil.delete
+import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
-import xerus.ktutil.pair
 import xerus.monstercat.*
 import xerus.monstercat.downloader.DownloaderSettings
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -84,55 +83,56 @@ class TabSettings : VTab() {
 		}
 	}
 	
+	lateinit var dialog: Dialog<Pair<String, String>>
 	fun feedback() {
-		val dialog = Dialog<Pair<String, String>>().apply {
-			initOwner(App.stage)
+		dialog = Dialog<Pair<String, String>>().apply {
+			(dialogPane.scene.window as Stage).initWindowOwner(App.stage)
 			val send = ButtonType("Send", ButtonBar.ButtonData.YES)
 			dialogPane.buttonTypes.addAll(send, ButtonType.CANCEL)
 			title = "Send Feedback"
 			headerText = null
-			val subject = TextField()
-			val message = TextArea()
-			val support = ValidationSupport()
-			support.validationDecorator = minimalValidationDecorator
-			support.registerValidator(subject, Validator<String> { control, value ->
-				ValidationResult()
-						.addMessageIf(control, "Only standard letters and \"?!.,-_\" allowed", Severity.ERROR,
-								!Regex("[\\w \\-!.,?]*").matches(value))
-						.addMessageIf(control, "Please keep the subject short", Severity.ERROR, value.length > 40)
-			})
-			support.registerValidator(message, Validator<String> { control, value ->
-				ValidationResult().addMessageIf(control, "The message is too long!", Severity.ERROR, value.length > 100_000)
-			})
+			val subjectField = TextField()
+			val messageArea = TextArea()
+			val support = ValidationSupport().apply {
+				validationDecorator = minimalValidationDecorator
+				registerValidator(subjectField, Validator<String> { control, value ->
+					ValidationResult()
+							.addMessageIf(control, "Only standard letters and \"?!.,-_\" allowed", Severity.ERROR,
+									!Regex("[\\w \\-!.,?]*").matches(value))
+							.addMessageIf(control, "Please keep the subject short", Severity.ERROR, value.length > 40)
+				})
+				registerValidator(messageArea, Validator<String> { control, value ->
+					ValidationResult().addMessageIf(control, "The message is too long!", Severity.ERROR, value.length > 100_000)
+				})
+			}
 			dialogPane.lookupButton(send).disableProperty().bind(support.invalidProperty())
 			
 			dialogPane.content = GridPane().apply {
 				spacing(5)
-				addRow(0, Label("Subject"), subject)
-				addRow(1, Label("Message"), message)
+				addRow(0, Label("Subject"), subjectField)
+				addRow(1, Label("Message"), messageArea)
 			}
 			setResultConverter {
 				return@setResultConverter if (it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
 					null
 				else {
-					subject.text.pair { message.text }
+					subjectField.text to messageArea.text
 				}
 			}
 		}
 		dialog.show()
 		dialog.resultProperty().listen { result ->
 			result?.run {
-				if (!sendFeedback(first, second))
-					onJFX { dialog.show() }
+				sendFeedback(first, second)
 			}
 		}
 	}
 	
 	/** @return false if it should be retried */
-	private fun sendFeedback(subject: String, message: String): Boolean {
+	private fun sendFeedback(subject: String, message: String) {
 		val zipFile = cachePath.resolve("logs.zip").toFile()
 		val logs = logDir.listFiles()
-		ZipOutputStream(FileOutputStream(zipFile)).use { zip ->
+		ZipOutputStream(zipFile.outputStream()).use { zip ->
 			logs.forEach {
 				zip.putNextEntry(ZipEntry(it.name))
 				FileInputStream(it).use {
@@ -140,33 +140,34 @@ class TabSettings : VTab() {
 				}
 			}
 		}
-		logger.config("Sending request with subject \"$subject\" and ${logs.size} logs with a packed size of ${zipFile.length()}")
+		logger.config("Sending request with subject '$subject' and ${logs.size} logs with a packed size of ${zipFile.length().byteCountString()}")
 		val entity = MultipartEntityBuilder.create()
 				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 				.addTextBody("subject", subject)
 				.addTextBody("message", message)
 				.addBinaryBody("log", zipFile)
 				.build()
-		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback")
+		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
 		postRequest.entity = entity
 		val response = HttpClientBuilder.create().build().execute(postRequest)
 		val status = response.statusLine
 		logger.finer("Response: $status")
-		when (status.statusCode) {
-			200 -> monsterUtilities.showMessage("Your feedback was sent successfully!")
-			else -> {
-				val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
-				val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
-				val type = App.stage.createAlert(Alert.AlertType.WARNING, content = "The feedback wasn't submitted correctly. Error Code: ${status.statusCode}",
-						buttons = *arrayOf(retry, copy, ButtonType.CANCEL))
-						.showAndWait()
-				when (type.orElse(null)) {
-					retry -> return false
-					copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
+		if (status.statusCode == 200) {
+			monsterUtilities.showMessage("Your feedback was submitted successfully!")
+		} else {
+			val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
+			val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
+			App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
+					buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
+				resultProperty().listen {
+					when (it) {
+						retry -> onJFX { dialog.show() }
+						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
+					}
 				}
+				show()
 			}
 		}
-		return true
 	}
 	
 }

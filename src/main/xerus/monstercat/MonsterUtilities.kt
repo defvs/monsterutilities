@@ -207,7 +207,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			override fun call() {
 				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
-				logger.fine("Update to $version started, size $contentLength")
+				logger.fine("Update to $version started, size ${contentLength.byteCountString()}")
 				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
 					updateProgress(it, contentLength)
 					isCancelled
