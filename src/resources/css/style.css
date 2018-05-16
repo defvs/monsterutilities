@@ -66,3 +66,7 @@
 SearchView {
 	-fx-padding: 0 0 6 0;
 }
+
+#player {
+	-fx-spacing: 0;
+}

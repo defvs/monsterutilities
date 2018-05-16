@@ -14,9 +14,9 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.stage.Stage
 import javafx.stage.StageStyle
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.*
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.CheckTreeView
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
@@ -35,8 +35,8 @@ import xerus.monstercat.api.response.*
 import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
-import java.net.URLEncoder
 import java.time.LocalDate
+import java.util.concurrent.Executors
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
@@ -70,8 +70,6 @@ class TabDownloader : VTab() {
 	
 	private fun initialize() {
 		children.clear()
-		
-		children.add(ImageView("https://assets.monstercat.com/releases/covers/Soulji%20-%20Black%20Mask%20EP%20(Art)-final.jpg?image_width=64"))
 		
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
@@ -136,8 +134,8 @@ class TabDownloader : VTab() {
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
 		trackView.root.bindPredicate(searchField.textProperty())
 		searchField.textProperty().addListener { _ ->
-			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateCheck() }
-			trackView.root.updateCheck()
+			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
+			trackView.root.updateSelection()
 		}
 		
 		// add Views
@@ -236,39 +234,27 @@ class TabDownloader : VTab() {
 		releaseView.clearPredicate()
 		trackView.clearPredicate()
 		
-		val taskView = TaskProgressView<Downloader>()
 		val cache = Cache<String, Image>()
+		val taskView = TaskProgressView<Downloader>()
 		taskView.setGraphicFactory {
 			ImageView(cache.getOrPut(it.coverUrl) {
 				val url = "$it?image_width=64".replace(" ", "%20")
-				logger.finest("Loading image $url")
-				Image(url, true)
+				Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
 			})
 		}
+		
+		val context = Executors.newCachedThreadPool().asCoroutineDispatcher()
 		val job = launch {
-			val releases = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
-			val tracks = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
-			if (releases.isNotEmpty()) {
-				logger.fine("Starting Downloads for ${releases.size} releases")
-				for (release in releases) {
-					val task = ReleaseDownloader(release)
-					var added = false
-					onJFX { taskView.tasks.add(task); added = true }
-					task.launch()
-					while (!added || taskView.tasks.size >= DOWNLOADTHREADS())
-						delay(200)
-				}
-			}
-			if (tracks.isNotEmpty()) {
-				logger.fine("Starting Downloads for ${tracks.size} tracks")
-				for (track in tracks) {
-					val task = TrackDownloader(track)
-					var added = false
-					onJFX { taskView.tasks.add(task); added = true }
-					task.launch()
-					while (!added || taskView.tasks.size >= DOWNLOADTHREADS())
-						delay(200)
-				}
+			val releases: List<MusicResponse> = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
+			val tracks: List<MusicResponse> = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
+			logger.fine("Starting Downloader for ${releases.size} Releases and ${tracks.size} Tracks")
+			for (item in tracks + releases) {
+				val task = item.downloader()
+				var added = false
+				onJFX { taskView.tasks.add(task); added = true }
+				task.launch(context)
+				while (!added || taskView.tasks.size >= DOWNLOADTHREADS())
+					delay(200)
 			}
 		}
 		
@@ -276,7 +262,7 @@ class TabDownloader : VTab() {
 		cancelButton.maxWidth = Double.MAX_VALUE
 		add(cancelButton)
 		
-		val threadSpinner = intSpinner(0, initial = DOWNLOADTHREADS())
+		val threadSpinner = intSpinner(0, 5, initial = DOWNLOADTHREADS())
 		DOWNLOADTHREADS.bind(threadSpinner.valueProperty())
 		addLabeled("Download Threads", threadSpinner)
 		// todo progress indicator
@@ -358,7 +344,7 @@ open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
 	}
 }
 
-fun CheckBoxTreeItem<*>.updateCheck() {
+fun CheckBoxTreeItem<*>.updateSelection() {
 	children.firstOrNull()?.run {
 		val child = this as CheckBoxTreeItem
 		child.isSelected = !child.isSelected
