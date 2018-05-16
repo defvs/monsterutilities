@@ -105,14 +105,14 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			} else
 				cache!!.second
 		}
+		
+		fun cookies() = BasicClientCookie("connect.sid", CONNECTSID()).run {
+			domain = "connect.monstercat.com"
+			path = "/"
+			BasicCookieStore().also { it.addCookie(this) }
+		}
 	}
 	
-}
-
-fun cookies() = BasicClientCookie("connect.sid", CONNECTSID()).run {
-	domain = "connect.monstercat.com"
-	path = "/"
-	BasicCookieStore().also { it.addCookie(this) }
 }
 
 enum class CookieValidity {
