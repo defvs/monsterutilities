@@ -1,6 +1,7 @@
 gradle.properties
 
 MonsterUtilities*.jar
+src/resources/version
 
 website/.ftpconfig
 website/downloads/latest

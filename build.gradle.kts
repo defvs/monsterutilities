@@ -7,6 +7,7 @@ import java.util.Scanner
 
 val isUnstable = true
 version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
+file("src/resources/version").writeText(version as String)
 
 plugins {
 	kotlin("jvm") version "1.2.41"
@@ -94,26 +95,6 @@ tasks {
 			cd /downloads; put $path; put $path2; 
 			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
 			quit\" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
-	}
-	
-	"compileKotlin"(KotlinCompile::class) {
-		onlyIf { true }
-		val mu = "MonsterUtilities.kt"
-		val source = file("src/main/xerus/monstercat").toPath()
-		val temp = file("$buildDir/tmp/version").toPath()
-		doFirst {
-			Files.createDirectories(temp)
-			Files.move(source.resolve(mu), temp.resolve(mu), StandardCopyOption.REPLACE_EXISTING)
-			copy {
-				from(temp.resolve(mu))
-				into(source)
-				filter { line -> if (line.contains("val VERSION")) line.dropLastWhile { it != '=' } + " \"$version\"" else line }
-			}
-		}
-		doLast {
-			if (isUnstable)
-				Files.copy(temp.resolve(mu), source.resolve(mu), StandardCopyOption.REPLACE_EXISTING)
-		}
 	}
 	
 	withType<KotlinCompile> {

@@ -31,7 +31,9 @@ import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
 
-private const val VERSION = "1.0.0"
+private val VERSION = logger::class.java.getResourceAsStream("/version").reader().run {
+	readText().also { close() }
+}
 private val isUnstable = VERSION.indexOf('-') > -1
 
 val logDir: File
