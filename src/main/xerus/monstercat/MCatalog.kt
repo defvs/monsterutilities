@@ -28,13 +28,14 @@ object MCatalog {
                 .spreadsheets()
     }
 
-    private val sheetid = "116LycNEkWChmHmDK2HM2WV85fO3p3YTYDATpAthL8_g"
+    private val mcatalog = "116LycNEkWChmHmDK2HM2WV85fO3p3YTYDATpAthL8_g"
+    private val genres = "1xZUWWnll7HzDVmNj_W7cBfz9TTkl-fMMqHZ8derG-Dg"
     fun fetchSheet(tab: String, range: String?): MutableList<List<String>>? {
         var requestRange = tab
         if (!range.isNullOrEmpty())
             requestRange += "!$range"
         return try {
-            val request = values.get(sheetid, requestRange).setKey("getResource(sheets-api-key)?.readText()")
+            val request = values.get(mcatalog, requestRange).setKey("getResource(sheets-api-key)?.readText()")
             val result = request.execute()
             @Suppress("Unchecked_cast")
             result.getValues() as MutableList<List<String>>

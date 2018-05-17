@@ -23,7 +23,9 @@ val cachePath: Path
 			.resolve("monsterutilities").createDirs()
 
 object Settings : SettingsNode("xerus/monsterutilities") {
+	
 	val PLAYERVOLUME = create("playerVolume", 0.4)
+	val PLAYERSEEKSENSITIVITY = create("playerSeekSensitivity", 6.0)
 	
 	val ENABLECACHE = create("cacheEnabled", true)
 	

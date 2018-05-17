@@ -34,7 +34,7 @@ typealias logger = XerusLogger
 private val VERSION = logger::class.java.getResourceAsStream("/version").reader().run {
 	readText().also { close() }
 }
-private val isUnstable = VERSION.indexOf('-') > -1
+private val isUnstable = VERSION.contains('-')
 
 val logDir: File
 	get() = cachePath.resolve("logs").createDirs().toFile()
@@ -229,13 +229,12 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				logger.info("Executing '${cmd.joinToString(" ")}'")
 				val p = Runtime.getRuntime().exec(cmd)
 				val exited = p.waitFor(3, TimeUnit.SECONDS)
-				logger.info("Dumping streams of $p")
-				p.inputStream.dump()
-				p.errorStream.dump()
 				if (!exited) {
 					Platform.exit()
 					App.stage.close()
 					logger.warning("Exiting!")
+				} else {
+					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully")
 				}
 			}
 		}
@@ -271,13 +270,20 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
-			version("dev", "pre-Release", "Brand new shiny favicon and player buttons - big thanks to NocFA!",
-					"Added intro dialog", "Send Feedback directly from the application!")
-					.change("New Downloader!", "Can download any combinations of Releases and Tracks", "Easy filtering", "Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks", "Greatly improved pattern syntax with higher flexibility")
-					.change("Settings reworked", "Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
+			version("dev", "pre-Release",
+					"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
+					"Send feedback directly from the application!")
+					.change("New Downloader!",
+							"Can download any combinations of Releases and Tracks", "Easy filtering",
+							"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
+							"Greatly improved pattern syntax with higher flexibility")
+					.change("Settings reworked",
+							"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 					.change("Catalog and Genre Tab now show Genre colors")
-					.change("Catalog improved", "More filtering options", "Smart column size")
-					.change("Player now has a slick seekbar inspired by the website")
+					.change("Catalog improved",
+							"More filtering options", "Smart column size")
+					.change("Player now has a slick seekbar inspired by the website",
+							"It can also be controlled via scrolling (suggested by AddiVF)")
 			
 			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
 					"Music playing is better integrated", "Fixed some mistakes in the Downloader")

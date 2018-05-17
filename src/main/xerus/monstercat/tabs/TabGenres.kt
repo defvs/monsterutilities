@@ -5,14 +5,16 @@ import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.VBox
+import xerus.ktutil.getResource
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
+import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.Settings.GENRECOLORS
 import xerus.monstercat.logger
+import java.io.ObjectInputStream
 
 val genreColors = RoughMap<String>()
 val genreColor = { item: String? ->
