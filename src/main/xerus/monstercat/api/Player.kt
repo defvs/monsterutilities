@@ -24,6 +24,7 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
+import kotlin.math.pow
 
 object Player : FadingHBox(true, true, 25) {
 	private val seekBar = ProgressBar(0.0).apply {
@@ -44,6 +45,11 @@ object Player : FadingHBox(true, true, 25) {
 		}
 		onMousePressed = handler
 		onMouseDragged = handler
+		setOnScroll {
+			player?.run {
+				seek(Duration(currentTime.toMillis() + it.deltaY * 2.0.pow(Settings.PLAYERSEEKSENSITIVITY())))
+			}
+		}
 	}
 	
 	internal val box = VBox(seekBar, this).apply {

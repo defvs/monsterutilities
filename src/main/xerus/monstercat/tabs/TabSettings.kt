@@ -14,7 +14,8 @@ import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
-import xerus.ktutil.*
+import xerus.ktutil.byteCountString
+import xerus.ktutil.delete
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
@@ -22,6 +23,7 @@ import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.*
 import xerus.monstercat.downloader.DownloaderSettings
 import java.io.FileInputStream
+import java.io.PrintStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -44,6 +46,10 @@ class TabSettings : VTab() {
 		Settings.GENRECOLORS.dependOn(slider.valueProperty()) { it.toInt() }
 		addLabeled("Genre color intensity", slider)
 		
+		addLabeled("Player scroll sensitivity", doubleSpinner(0.0, initial = Settings.PLAYERSEEKSENSITIVITY()).apply {
+			Settings.PLAYERSEEKSENSITIVITY.bind(valueProperty())
+		})
+		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		addRow(CheckBox("Update automatically").bind(Settings.AUTOUPDATE))
 		
@@ -52,7 +58,7 @@ class TabSettings : VTab() {
 					Settings.refresh()
 					DownloaderSettings.refresh()
 					App.restart()
-				}).apply { prefWidth = 100.0 },
+				}).apply { prefWidth = 120.0 },
 				createButton("Reset", {
 					App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 						initStyle(StageStyle.UTILITY)
@@ -71,7 +77,7 @@ class TabSettings : VTab() {
 						show()
 					}
 				}).apply {
-					prefWidth = 100.0
+					prefWidth = 120.0
 					textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
 				}
 		)
@@ -93,6 +99,7 @@ class TabSettings : VTab() {
 			headerText = null
 			val subjectField = TextField()
 			val messageArea = TextArea()
+			messageArea.prefRowCount = 6
 			val support = ValidationSupport().apply {
 				validationDecorator = minimalValidationDecorator
 				registerValidator(subjectField, Validator<String> { control, value ->
@@ -131,6 +138,7 @@ class TabSettings : VTab() {
 	/** @return false if it should be retried */
 	private fun sendFeedback(subject: String, message: String) {
 		val zipFile = cachePath.resolve("logs.zip").toFile()
+		System.getProperties().list(PrintStream(logDir.resolve("System.properties.txt").outputStream()))
 		val logs = logDir.listFiles()
 		ZipOutputStream(zipFile.outputStream()).use { zip ->
 			logs.forEach {

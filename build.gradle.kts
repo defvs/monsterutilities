@@ -1,3 +1,4 @@
+import org.gradle.internal.os.OperatingSystem;
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
@@ -90,11 +91,12 @@ tasks {
 		val path2 = "website/downloads/latest"
 		doFirst { file(path2).writeText(version.toString()) }
 		
+		val s = if(OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; 
-			open -u ${properties["credentials.ftp"]} -e \"
+			open -u ${properties["credentials.ftp"]} -e $s"
 			cd /downloads; put $path; put $path2; 
 			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
-			quit\" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
+			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	
 	withType<KotlinCompile> {

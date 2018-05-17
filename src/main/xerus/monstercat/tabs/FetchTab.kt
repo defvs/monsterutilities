@@ -5,6 +5,7 @@ import javafx.collections.ObservableList
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import xerus.ktutil.getResource
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
@@ -22,6 +23,7 @@ import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.io.ObjectInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -39,26 +41,36 @@ abstract class FetchTab : VTab() {
 	}
 	
 	val sheetFetcher = SimpleRefresher {
-		onJFX { setPlaceholder(Label("Fetching...")) }
-		logger.fine("Fetching MCatalog $tabName")
-		val sheet = fetchSheet(tabName, request)
-		if (sheet != null) {
-			readSheet(sheet)
-			writeCache(sheet)
-		} else if (data.isEmpty())
-			restoreCache()
-		onJFX {
-			if (data.isEmpty()) {
-				logger.finer("Showing retry button for $tabName because data is empty")
-				setPlaceholder(retryButton)
-			} else
+		if(this::class != TabGenres::class) {
+			onJFX { setPlaceholder(Label("Fetching...")) }
+			logger.fine("Fetching MCatalog $tabName")
+			val sheet = fetchSheet(tabName, request)
+			if (sheet != null) {
+				readSheet(sheet)
+				writeCache(sheet)
+			} else if (data.isEmpty())
+				restoreCache()
+			onJFX {
+				if (data.isEmpty()) {
+					logger.finer("Showing retry button for $tabName because data is empty")
+					setPlaceholder(retryButton)
+				} else
+					setPlaceholder(Label("No matches found!"))
+			}
+		} else {
+			// todo use Genre sheet
+			onJFX {
 				setPlaceholder(Label("No matches found!"))
+			}
+			logger.fine("Loading $tabName")
+			@Suppress("UNCHECKED_CAST")
+			readSheet(ObjectInputStream(TabGenres::class.java.getResourceAsStream("/Genres")).readObject() as MutableList<List<String>>)
 		}
 	}
 	
 	init {
 		onJFX {
-			add(notification)
+			//add(notification)
 			setPlaceholder(Label("Loading..."))
 		}
 		styleClass("fetch-tab")
