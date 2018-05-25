@@ -1,5 +1,6 @@
 package xerus.monstercat.downloader
 
+import xerus.monstercat.logger
 import xerus.ktutil.preferences.SettingsNode
 import java.nio.file.Paths
 

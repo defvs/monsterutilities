@@ -1,7 +1,5 @@
 package xerus.monstercat
 
-import java.io.IOException
-
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.HttpTransport
@@ -10,6 +8,7 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.Sheets.Spreadsheets
 import com.google.api.services.sheets.v4.Sheets.Spreadsheets.Values
+import java.io.IOException
 
 object MCatalog {
 
@@ -29,7 +28,7 @@ object MCatalog {
     }
 
     private val mcatalog = "116LycNEkWChmHmDK2HM2WV85fO3p3YTYDATpAthL8_g"
-    private val genres = "1xZUWWnll7HzDVmNj_W7cBfz9TTkl-fMMqHZ8derG-Dg"
+    private val genreSheet = "1xZUWWnll7HzDVmNj_W7cBfz9TTkl-fMMqHZ8derG-Dg"
     fun fetchSheet(tab: String, range: String?): MutableList<List<String>>? {
         var requestRange = tab
         if (!range.isNullOrEmpty())

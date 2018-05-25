@@ -5,14 +5,10 @@ import javafx.collections.ObservableList
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import xerus.ktutil.getResource
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
-import xerus.ktutil.javafx.add
-import xerus.ktutil.javafx.createButton
-import xerus.ktutil.javafx.onJFX
-import xerus.ktutil.javafx.styleClass
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
@@ -41,8 +37,8 @@ abstract class FetchTab : VTab() {
 	}
 	
 	val sheetFetcher = SimpleRefresher {
-		if(this::class != TabGenres::class) {
-			onJFX { setPlaceholder(Label("Fetching...")) }
+		if (this::class != TabGenres::class) {
+			onFx { setPlaceholder(Label("Fetching...")) }
 			logger.fine("Fetching MCatalog $tabName")
 			val sheet = fetchSheet(tabName, request)
 			if (sheet != null) {
@@ -50,7 +46,7 @@ abstract class FetchTab : VTab() {
 				writeCache(sheet)
 			} else if (data.isEmpty())
 				restoreCache()
-			onJFX {
+			onFx {
 				if (data.isEmpty()) {
 					logger.finer("Showing retry button for $tabName because data is empty")
 					setPlaceholder(retryButton)
@@ -59,9 +55,7 @@ abstract class FetchTab : VTab() {
 			}
 		} else {
 			// todo use Genre sheet
-			onJFX {
-				setPlaceholder(Label("No matches found!"))
-			}
+			onFx { setPlaceholder(Label("No matches found!")) }
 			logger.fine("Loading $tabName")
 			@Suppress("UNCHECKED_CAST")
 			readSheet(ObjectInputStream(TabGenres::class.java.getResourceAsStream("/Genres")).readObject() as MutableList<List<String>>)
@@ -69,8 +63,9 @@ abstract class FetchTab : VTab() {
 	}
 	
 	init {
-		onJFX {
-			//add(notification)
+		onFx {
+			if(this !is TabGenres)
+				add(notification)
 			setPlaceholder(Label("Loading..."))
 		}
 		styleClass("fetch-tab")
@@ -81,7 +76,7 @@ abstract class FetchTab : VTab() {
 	
 	fun readSheet(sheet: MutableList<List<String>>) {
 		readCols(sheet[0])
-		onJFX {
+		onFx {
 			sheetToData(sheet.subList(1, sheet.size))
 		}
 	}
@@ -130,7 +125,7 @@ abstract class FetchTab : VTab() {
 	protected val notification = Snackbar()
 	
 	fun showNotification(text: String, reopen: Boolean = true) =
-		notification.showText(text, reopen)
+			notification.showText(text, reopen)
 	
 	override fun toString(): String = "FetchTab for $tabName"
 	

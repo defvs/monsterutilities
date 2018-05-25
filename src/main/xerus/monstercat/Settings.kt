@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
+import xerus.monstercat.logger
 import xerus.ktutil.createDirs
 import xerus.ktutil.exists
 import xerus.ktutil.javafx.applySkin
@@ -25,7 +26,8 @@ val cachePath: Path
 object Settings : SettingsNode("xerus/monsterutilities") {
 	
 	val PLAYERVOLUME = create("playerVolume", 0.4)
-	val PLAYERSEEKSENSITIVITY = create("playerSeekSensitivity", 6.0)
+	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
+	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	
 	val ENABLECACHE = create("cacheEnabled", true)
 	
@@ -36,7 +38,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
 	val GENRECOLORS = create("genrecolors", 80)
 	
-	val SKIN = create("skin", "beige")
+	val SKIN = create("skin", "black")
 	
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")

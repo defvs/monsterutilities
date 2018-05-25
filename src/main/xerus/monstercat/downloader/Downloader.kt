@@ -14,7 +14,7 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
 
-fun MusicResponse.downloader() = when(this) {
+fun MusicResponse.downloader() = when (this) {
 	is Track -> TrackDownloader(this)
 	is Release -> ReleaseDownloader(this)
 	else -> throw NoWhenBranchMatchedException()

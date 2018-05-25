@@ -9,5 +9,5 @@ open class ListResponse<T> {
 	var total: Int = 0
 }
 
-class ReleaseResponse: ListResponse<Release>()
-class TrackResponse: ListResponse<Track>()
+class ReleaseResponse : ListResponse<Release>()
+class TrackResponse : ListResponse<Track>()
