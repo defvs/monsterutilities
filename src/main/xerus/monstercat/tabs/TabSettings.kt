@@ -1,5 +1,6 @@
 package xerus.monstercat.tabs
 
+import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.scene.control.*
 import javafx.scene.input.Clipboard
@@ -14,13 +15,14 @@ import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
+import xerus.monstercat.logger
 import xerus.ktutil.byteCountString
-import xerus.ktutil.delete
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.*
+import xerus.monstercat.api.Releases
 import xerus.monstercat.downloader.DownloaderSettings
 import java.io.FileInputStream
 import java.io.PrintStream
@@ -33,25 +35,34 @@ class TabSettings : VTab() {
 		addButton("Show Changelog", { monsterUtilities.showChangelog() })
 		addButton("Show Intro Dialog", { monsterUtilities.showIntro() })
 		addButton("Send Feedback", { feedback() })
-		addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
-		
 		
 		val startTab = ComboBox(FXCollections.observableArrayList("Previous"))
-		addLabeled("Startup Tab", startTab)
+		onFx {
+			startTab.items.addAll(monsterUtilities.tabs.map { it.tabName })
+			val selectedTab = monsterUtilities.tabPane.selectionModel.selectedItemProperty()
+			startTab.valueProperty().bindBidirectional(Settings.STARTUPTAB)
+			Settings.LASTTAB.dependOn(selectedTab) { it.text }
+		}
+		addLabeled("Startup Tab:", startTab)
 		
-		addLabeled("Skin", ComboBox(ImmutableObservableList(*Skins.availableSkins)).apply {
+		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Skins.availableSkins)).apply {
 			valueProperty().bindBidirectional(Settings.SKIN)
 		})
-		val slider = Slider(0.0, 255.0, Settings.GENRECOLORS().toDouble())
+		val slider = Slider(0.0, 255.0, Settings.GENRECOLORS().toDouble()).scrollable(15.0)
 		Settings.GENRECOLORS.dependOn(slider.valueProperty()) { it.toInt() }
 		addLabeled("Genre color intensity", slider)
 		
-		addLabeled("Player scroll sensitivity", doubleSpinner(0.0, initial = Settings.PLAYERSEEKSENSITIVITY()).apply {
-			Settings.PLAYERSEEKSENSITIVITY.bind(valueProperty())
+		addLabeled("Player Seekbar scroll sensitivity", doubleSpinner(0.0, initial = Settings.PLAYERSCROLLSENSITIVITY()).apply {
+			Settings.PLAYERSCROLLSENSITIVITY.bind(valueProperty())
+		})
+		addLabeled("Player Seekbar height", Slider(0.0, 15.0, Settings.PLAYERSEEKBARHEIGHT()).scrollable(1.5).apply {
+			@Suppress("UNCHECKED_CAST")
+			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
-		addRow(CheckBox("Update automatically").bind(Settings.AUTOUPDATE))
+		addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
+		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
 		addRow(
 				createButton("Quick restart", {
@@ -67,7 +78,8 @@ class TabSettings : VTab() {
 								try {
 									Settings.reset()
 									DownloaderSettings.reset()
-									cachePath.delete()
+									cachePath.toFile().deleteRecursively()
+									Releases.clear()
 								} catch (e: Exception) {
 									monsterUtilities.showError(e)
 								}
@@ -81,12 +93,6 @@ class TabSettings : VTab() {
 					textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
 				}
 		)
-		onJFX {
-			startTab.items.addAll(monsterUtilities.tabs.map { it.tabName })
-			val selectedTab = monsterUtilities.tabPane.selectionModel.selectedItemProperty()
-			startTab.valueProperty().bindBidirectional(Settings.STARTUPTAB)
-			Settings.LASTTAB.dependOn(selectedTab) { it.text }
-		}
 	}
 	
 	lateinit var dialog: Dialog<Pair<String, String>>
@@ -169,7 +175,7 @@ class TabSettings : VTab() {
 					buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
 				resultProperty().listen {
 					when (it) {
-						retry -> onJFX { dialog.show() }
+						retry -> onFx { dialog.show() }
 						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
 					}
 				}

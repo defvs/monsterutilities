@@ -179,7 +179,7 @@ class TabDownloader : VTab() {
 							allAlbumTracks.addAll(it.await())
 							updateProgress(progress++, max)
 						}
-						onJFX {
+						onFx {
 							trackView.root.internalChildren.forEach {
 								(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in allAlbumTracks
 							}
@@ -219,7 +219,7 @@ class TabDownloader : VTab() {
 					}
 				}
 			}
-			onJFX {
+			onFx {
 				button.text = text
 				if (valid)
 					button.setOnAction { startDownload() }
@@ -243,7 +243,8 @@ class TabDownloader : VTab() {
 			})
 		}
 		
-		val context = Executors.newCachedThreadPool().asCoroutineDispatcher()
+		val threadPool = Executors.newCachedThreadPool()
+		val dispatcher = threadPool.asCoroutineDispatcher()
 		val job = launch {
 			val releases: List<MusicResponse> = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
 			val tracks: List<MusicResponse> = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
@@ -251,8 +252,8 @@ class TabDownloader : VTab() {
 			for (item in tracks + releases) {
 				val task = item.downloader()
 				var added = false
-				onJFX { taskView.tasks.add(task); added = true }
-				task.launch(context)
+				onFx { taskView.tasks.add(task); added = true }
+				task.launch(dispatcher)
 				while (!added || taskView.tasks.size >= DOWNLOADTHREADS())
 					delay(200)
 			}
@@ -268,12 +269,14 @@ class TabDownloader : VTab() {
 		// todo progress indicator
 		fill(taskView)
 		taskView.tasks.addListener(ListChangeListener {
-			if (it.list.isEmpty())
+			if (it.list.isEmpty()) {
+				threadPool.shutdown()
 				cancelButton.apply {
 					setOnMouseClicked { initialize() }
 					text = "Back"
 					isDisable = false
 				}
+			}
 		})
 	}
 	
@@ -293,7 +296,7 @@ class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
 			Tracks.tracks?.sortedBy { it.toString() }?.forEach {
 				root.internalChildren.add(FilterableTreeItem(it))
 			}
-			onJFX {
+			onFx {
 				root.value = Track(title = "Tracks")
 			}
 		}
@@ -318,7 +321,7 @@ class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")
 				roots[it.type]?.internalChildren?.add(FilterableTreeItem(it))
 						?: logger.warning("Unknown Release type: ${it.type}")
 			}
-			onJFX { root.internalChildren.addAll(roots.values) }
+			onFx { root.internalChildren.addAll(roots.values) }
 		}
 	}
 	

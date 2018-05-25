@@ -13,6 +13,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
+import xerus.monstercat.logger
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
@@ -180,7 +181,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				if (unstable)
 					update(latestVersion, true)
 				else
-					onJFX {
+					onFx {
 						val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
 						dialog.stage.icons.setAll(Image("updater.png"))
 						dialog.graphic = ImageView(Image("updater.png"))
@@ -239,7 +240,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			}
 		}
 		worker.launch()
-		checkJFX {
+		checkFx {
 			ProgressDialog(worker).run {
 				title = "Updater"
 				headerText = "Downloading Update"
@@ -252,7 +253,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	}
 	
 	fun showIntro() {
-		onJFX {
+		onFx {
 			val text = Label("""
 					MonsterUtilities enables you to access the Monstercat library with ease! Here a quick feature overview:
 					- The Catalog Tab serves you information about every track, freshly fetched from the MCatalog
@@ -272,7 +273,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		val c = Changelog().apply {
 			version("dev", "pre-Release",
 					"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
-					"Send feedback directly from the application!")
+					"Send feedback directly from the application!", "Every Slider is now scrollable with the mouse wheel")
 					.change("New Downloader!",
 							"Can download any combinations of Releases and Tracks", "Easy filtering",
 							"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
@@ -282,7 +283,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					.change("Catalog and Genre Tab now show Genre colors")
 					.change("Catalog improved",
 							"More filtering options", "Smart column size")
-					.change("Player now has a slick seekbar inspired by the website",
+					.change("Player now has a slick Seekbar inspired by the website",
 							"It can also be controlled via scrolling (suggested by AddiVF)")
 			
 			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
@@ -313,12 +314,12 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 							"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
 			
 		}
-		onJFX { c.show(App.stage) }
+		onFx { c.show(App.stage) }
 	}
 	
 	override fun showError(error: Throwable, title: String) {
 		logger.severe("$title: $error")
-		onJFX {
+		onFx {
 			val dialog = ExceptionDialog(error)
 			dialog.initOwner(App.stage)
 			dialog.headerText = title

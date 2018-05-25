@@ -1,6 +1,6 @@
 package xerus.monstercat.api
 
-import xerus.ktutil.*
+import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
@@ -87,6 +87,8 @@ object Releases : Refresher() {
 			false
 		}
 	}
+	
+	fun clear() = releases.clear()
 	
 }
 

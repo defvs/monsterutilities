@@ -5,20 +5,16 @@ import javafx.collections.ListChangeListener
 import javafx.scene.control.Label
 import javafx.scene.control.TableRow
 import javafx.scene.text.Font
-import xerus.ktutil.*
+import xerus.monstercat.logger
+import xerus.ktutil.XerusLogger
+import xerus.ktutil.containsAny
 import xerus.ktutil.helpers.KeyNotFoundException
-import xerus.ktutil.javafx.TableColumn
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.onJFX
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.textWidth
-import xerus.ktutil.javafx.ui.controls.MultiSearchable
-import xerus.ktutil.javafx.ui.controls.SearchView
-import xerus.ktutil.javafx.ui.controls.SearchableColumn
-import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.javafx.ui.controls.*
+import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
-import xerus.monstercat.logger
 import java.time.LocalTime
 import java.util.*
 import kotlin.math.absoluteValue
@@ -94,7 +90,7 @@ class TabCatalog : TableTab() {
 	override fun sheetToData(sheet: List<List<String>>) {
 		super.sheetToData(sheet)
 		Settings.LASTCATALOGCOLUMNS.putMulti(*cols.keys.toTypedArray())
-		onJFX {
+		onFx {
 			val skin = table.skin as TableViewSkin<*>
 			table.columns.forEach { col ->
 				@Suppress("UNCHECKED_CAST")

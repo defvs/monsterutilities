@@ -1,6 +1,7 @@
 package xerus.monstercat.api
 
 import javafx.event.EventHandler
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -15,7 +16,8 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
-import xerus.ktutil.javafx.ui.verticalTransition
+import xerus.ktutil.javafx.ui.transitionToHeight
+import xerus.ktutil.javafx.ui.verticalFade
 import xerus.ktutil.square
 import xerus.ktutil.toInt
 import xerus.monstercat.Settings
@@ -26,11 +28,12 @@ import java.net.URLEncoder
 import java.util.regex.Pattern
 import kotlin.math.pow
 
-object Player : FadingHBox(true, true, 25) {
+object Player : FadingHBox(true, targetHeight = 25) {
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
-		setSize(height = 6.0)
-		isVisible = false
+		setSize(height = 0.0)
+		Settings.PLAYERSEEKBARHEIGHT.listen { if(player != null) transitionToHeight(Settings.PLAYERSEEKBARHEIGHT()) }
+		
 		maxWidth = Double.MAX_VALUE
 		val handler = EventHandler<MouseEvent> { event ->
 			if (event.button == MouseButton.PRIMARY) {
@@ -47,7 +50,7 @@ object Player : FadingHBox(true, true, 25) {
 		onMouseDragged = handler
 		setOnScroll {
 			player?.run {
-				seek(Duration(currentTime.toMillis() + it.deltaY * 2.0.pow(Settings.PLAYERSEEKSENSITIVITY())))
+				seek(Duration(currentTime.toMillis() + it.deltaY * 2.0.pow(Settings.PLAYERSCROLLSENSITIVITY())))
 			}
 		}
 	}
@@ -57,9 +60,11 @@ object Player : FadingHBox(true, true, 25) {
 		setSize(height = 0.0)
 		opacity = 0.0
 	}
-	override val fader = box.verticalTransition(30, true)
+	override val fader = box.verticalFade(30, -1.0)
 	
 	init {
+		box.alignment = Pos.CENTER
+		maxHeight = Double.MAX_VALUE
 		resetNotification()
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 	}
@@ -67,14 +72,14 @@ object Player : FadingHBox(true, true, 25) {
 	private val label = Label()
 	private fun showText(text: String) {
 		ensureVisible()
-		checkJFX {
+		checkFx {
 			children.setAll(label)
 			label.text = text
 		}
 	}
 	
 	private fun showBack(text: String) {
-		checkJFX {
+		checkFx {
 			showText(text)
 			addButton(handler = { resetNotification() }).id("back")
 			fill(pos = 0)
@@ -89,7 +94,7 @@ object Player : FadingHBox(true, true, 25) {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
-			onJFX {
+			onFx {
 				add(buttonWithId("play") { play(latest) })
 				fill(pos = 0)
 				fill()
@@ -106,9 +111,8 @@ object Player : FadingHBox(true, true, 25) {
 	private fun disposePlayer() {
 		player?.dispose()
 		player = null
-		checkJFX { 
-			seekBar.progress = 0.0
-			seekBar.isVisible = false
+		checkFx {
+			seekBar.transitionToHeight(0.0)
 		}
 	}
 	
@@ -116,13 +120,13 @@ object Player : FadingHBox(true, true, 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
-	private val volumeSlider = Slider(0.1, 1.0, Settings.PLAYERVOLUME()).apply {
+	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> setVolume() }
 	}
 	
 	private fun playing(text: String) {
-		onJFX {
+		onFx {
 			showText(text)
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
@@ -153,7 +157,7 @@ object Player : FadingHBox(true, true, 25) {
 				label.text = "Now Playing: $track"
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
-				seekBar.isVisible = true
+				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
 			}
 		}
 	}
@@ -172,7 +176,7 @@ object Player : FadingHBox(true, true, 25) {
 					.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
 			val results = connection.getTracks().orEmpty()
 			if (results.isEmpty()) {
-				onJFX {
+				onFx {
 					showBack("Track not found")
 				}
 				logger.fine("No results for $connection")
@@ -183,9 +187,7 @@ object Player : FadingHBox(true, true, 25) {
 			results.forEach { track ->
 				var prob = 0.0
 				track.init()
-				if (track.titleRaw == title)
-					prob++
-				track.artists.forEach { artist -> prob += artists.contains(artist.name).toInt() }
+				track.artists.forEach { artist -> if(artists.contains(artist.name)) prob++ }
 				rater.update(track, prob / track.artists.size + (track.titleRaw == title).toInt())
 			}
 			// play
@@ -196,7 +198,7 @@ object Player : FadingHBox(true, true, 25) {
 	}
 	
 	fun play(release: Release) {
-		checkJFX { showText("Searching for $release") }
+		checkFx { showText("Searching for $release") }
 		launch {
 			val results = APIConnection("catalog", "release", release.id, "tracks").getTracks()?.takeUnless { it.isEmpty() }
 					?: run {
@@ -209,7 +211,7 @@ object Player : FadingHBox(true, true, 25) {
 	
 	fun play(tracks: MutableList<Track>, index: Int) {
 		playTrack(tracks[index])
-		onJFX {
+		onFx {
 			if (index > 0)
 				children.add(children.size - 3, buttonWithId("skipback") { play(tracks, index - 1) })
 			if (index < tracks.lastIndex)
