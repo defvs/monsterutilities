@@ -2,7 +2,11 @@ gradle.properties
 
 MonsterUtilities*.jar
 src/resources/version
+src/resources/sheets-api-key
+src/resources/client_secret.json
+src/test
 
-website/.ftpconfig
-website/downloads/latest
-website/downloads/unstable
+assets/website/materialize
+assets/website/.ftpconfig
+assets/website/downloads/latest
+assets/website/downloads/unstable
