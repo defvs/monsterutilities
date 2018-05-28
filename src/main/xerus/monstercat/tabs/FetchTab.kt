@@ -12,7 +12,7 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
-import xerus.monstercat.MCatalog.fetchSheet
+import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Releases
 import xerus.monstercat.logger
@@ -40,7 +40,7 @@ abstract class FetchTab : VTab() {
 		if (this::class != TabGenres::class) {
 			onFx { setPlaceholder(Label("Fetching...")) }
 			logger.fine("Fetching MCatalog $tabName")
-			val sheet = fetchSheet(tabName, request)
+			val sheet = fetchMCatalogTab(tabName, request)
 			if (sheet != null) {
 				readSheet(sheet)
 				writeCache(sheet)
@@ -77,7 +77,7 @@ abstract class FetchTab : VTab() {
 	fun readSheet(sheet: MutableList<List<String>>) {
 		readCols(sheet[0])
 		onFx {
-			sheetToData(sheet.subList(1, sheet.size))
+			sheetToData(sheet.drop(1))
 		}
 	}
 	

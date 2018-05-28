@@ -3,18 +3,17 @@ package xerus.monstercat.tabs
 import com.sun.javafx.scene.control.skin.TableViewSkin
 import javafx.collections.ListChangeListener
 import javafx.scene.control.Label
+import javafx.scene.control.TableColumn
 import javafx.scene.control.TableRow
 import javafx.scene.text.Font
-import xerus.monstercat.logger
-import xerus.ktutil.XerusLogger
 import xerus.ktutil.containsAny
-import xerus.ktutil.helpers.KeyNotFoundException
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
+import xerus.monstercat.logger
 import java.time.LocalTime
 import java.util.*
 import kotlin.math.absoluteValue
@@ -26,8 +25,6 @@ class TabCatalog : TableTab() {
 	
 	init {
 		prefWidth = 600.0
-		val columns = Settings.LASTCATALOGCOLUMNS.all
-		val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()
 		
 		table.setRowFactory {
 			TableRow<List<String>>().apply {
@@ -41,37 +38,9 @@ class TabCatalog : TableTab() {
 			}
 		}
 		
-		searchables.setAll(MultiSearchable("Any", Type.TEXT, { it }), MultiSearchable("Genre", Type.TEXT, { val c = cols.findAll("Genre"); it.filterIndexed { index, _ -> c.contains(index) } }))
+		searchables.setAll(MultiSearchable("Any", Type.TEXT, { it }), MultiSearchable("Genre", Type.TEXT, { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } }))
+		setColumns(Settings.LASTCATALOGCOLUMNS.all)
 		
-		for (colName in columns) {
-			try {
-				val colValue = { list: List<String> -> list[cols.findUnsafe(colName)] }
-				val col = when {
-					colName.contains("bpm", true) ->
-						SearchableColumn(colName, Type.INT, { it[cols.findUnsafe(colName)].toIntOrNull() }, colValue::invoke)
-					colName.contains("date", true) ->
-						SearchableColumn(colName, Type.DATE, converter@{ colValue(it).toLocalDate() }, colValue::invoke)
-					colName.containsAny("time", "length") ->
-						SearchableColumn(colName, Type.LENGTH, converter@{
-							val split = colValue(it).split(":").map {
-								it.toIntOrNull() ?: return@converter null
-							}; LocalTime.of(0, split[0], split[1])
-						}, colValue::invoke)
-					colName.contains("genre", true) ->
-						TableColumn<List<String>, String>(colName, { colValue(it.value) })
-					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
-				}
-				if (col is SearchableColumn<List<String>, *>)
-					searchables.add(col)
-				if (arrayOf("Date", "BPM", "Length").any { colName.contains(it, true) } || colName == "L")
-					col.style = "-fx-alignment: CENTER"
-				table.columns.add(col)
-				col.isVisible = visibleColumns.contains(colName)
-			} catch (_: KeyNotFoundException) {
-			} catch (e: Exception) {
-				XerusLogger.throwing("TabCatalog", "column initialization", e)
-			}
-		}
 		children.add(searchView)
 		predicate.bind(searchView.predicate)
 		
@@ -87,11 +56,51 @@ class TabCatalog : TableTab() {
 		}
 	}
 	
+	private fun setColumns(columns: List<String>) {
+		val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()
+		val newColumns = ArrayList<TableColumn<List<String>, *>>(columns.size)
+		for (colName in columns) {
+			val existing = table.columns.find { it.text == colName }
+			if (existing != null) {
+				newColumns.add(existing)
+				continue
+			}
+			try {
+				val colValue = { list: List<String> -> cols.find(colName)?.let { list[it] }.also { if (it == null) logger.warning("Column $colName not found!") } }
+				val col = when {
+					colName.contains("bpm", true) ->
+						SearchableColumn(colName, Type.INT, { colValue(it)!!.toIntOrNull() }, colValue::invoke)
+					colName.contains("date", true) ->
+						SearchableColumn(colName, Type.DATE, converter@{ colValue(it)!!.toLocalDate() }, colValue::invoke)
+					colName.containsAny("time", "length") ->
+						SearchableColumn(colName, Type.LENGTH, converter@{
+							val split = colValue(it)!!.split(":").map {
+								it.toIntOrNull() ?: return@converter null
+							}; LocalTime.of(0, split[0], split[1])
+						}, colValue::invoke)
+					colName.contains("genre", true) ->
+						TableColumn<List<String>, String>(colName, { colValue(it.value)!! })
+					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
+				}
+				if (col is SearchableColumn<List<String>, *>)
+					searchables.add(col)
+				if (colName.containsAny("Date", "BPM", "Length", "Key", "Brand") || colName == "FR")
+					col.style = "-fx-alignment: CENTER"
+				newColumns.add(col)
+				col.isVisible = visibleColumns.contains(colName, true)
+			} catch (e: Exception) {
+				logger.throwing("TabCatalog", "column initialization", e)
+			}
+		}
+		table.columns.setAll(newColumns)
+	}
+	
 	override fun sheetToData(sheet: List<List<String>>) {
-		super.sheetToData(sheet)
+		super.sheetToData(sheet.drop(1))
 		Settings.LASTCATALOGCOLUMNS.putMulti(*cols.keys.toTypedArray())
 		onFx {
 			val skin = table.skin as TableViewSkin<*>
+			setColumns(cols.keys)
 			table.columns.forEach { col ->
 				@Suppress("UNCHECKED_CAST")
 				val widths = ArrayList<Double>(table.items.size)
@@ -101,10 +110,11 @@ class TabCatalog : TableTab() {
 				}
 				val avg = widths.average()
 				val deviation = widths.sumByDouble { (it - avg).absoluteValue } / widths.size
-				col.prefWidth = avg
 				//(skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
-				col.minWidth = (avg - deviation).coerceAtLeast((skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.textWidth()?.plus(5)
-						?: 20.0)
+				col.prefWidth = avg
+				col.minWidth = (avg - deviation)
+						.coerceAtLeast((skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.textWidth()?.plus(5)
+								?.coerceAtLeast(30.0) ?: 30.0)
 				col.maxWidth = widths.max()!!
 				logger.finest("Catalog column %-11s avg %3.0f +-%2.0f  max %3.0f  min %2.0f".format(col.text, avg, deviation, col.maxWidth, col.minWidth))
 			}

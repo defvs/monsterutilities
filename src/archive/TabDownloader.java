@@ -154,12 +154,11 @@ public class TabDownloader extends JPanel implements BaseTab {
 		
 	}
 	
-	/* Signing in within the application did not return cookies, so I'll have to use the connect.sid for now
+	// Signing in within the application did not return cookies, so I'll have to use the connect.sid for now
+	/* private JTextField email; private JTextField password;
 	 *
-	 * private JTextField email; private JTextField password;
-	 *
-	 * email = new HintTextField("Email address"); password = //new
-	 * HintTextField("Password"); new JPasswordField(); reg(email); reg(password); regButton("Submit", 0, 2);
+	 * email = new HintTextField("Email address"); password = //new HintTextField("Password");
+	 * new JPasswordField(); reg(email); reg(password); regButton("Submit", 0, 2);
 	 *
 	 * CookieManager cookieJar = new CookieManager(null, CookiePolicy.ACCEPT_ALL); CookieHandler.setDefault(cookieJar);
 	 * HttpURLConnection connection = ConnectionTools.createConnection(MonstercatConnect.concat("signin"));
@@ -168,6 +167,7 @@ public class TabDownloader extends JPanel implements BaseTab {
 	 * ConnectionTools.Post(connection, "email="+email.getText(), "password="+password.getText());
 	 * ConnectionTools.dumpResponse(connection); //cookieJar.put(new URI(connect.concat("signin")),
 	 * connection.getHeaderFields()); for (String cookie : cookies) { connection.addRequestProperty("Cookie",
-	 * cookie.split(";", 2)[0]); } */
+	 * cookie.split(";", 2)[0]); }
+	 */
 	
 }

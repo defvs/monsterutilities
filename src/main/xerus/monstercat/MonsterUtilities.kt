@@ -9,11 +9,11 @@ import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
+import javafx.stage.Stage
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import org.controlsfx.dialog.ProgressDialog
-import xerus.monstercat.logger
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
@@ -44,6 +44,8 @@ lateinit var monsterUtilities: MonsterUtilities
 
 fun main(args: Array<String>) {
 	XerusLogger.parseArgs(*args, defaultLevel = "finer")
+	if(args.contains("--no-update"))
+		Settings.AUTOUPDATE.set(false)
 	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
 		logger.warning("Uncaught exception in $thread: ${ex.getStackTraceString()}")
 	}
@@ -75,9 +77,9 @@ fun main(args: Array<String>) {
 	}
 	logger.info("Version: $VERSION, Java version: ${javaVersion()}")
 	logger.config("Initializing Google Sheets API Service")
-	MCatalog.initService("MCatalog Reader", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
+	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	App.launch("MonsterUtilities $VERSION", { stage ->
-		stage.icons.addAll(arrayOf("icon64.png").map {
+		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 					?: null.apply { logger.warning("Resource $it not found") }
 		})
@@ -183,8 +185,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				else
 					onFx {
 						val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
-						dialog.stage.icons.setAll(Image("updater.png"))
-						dialog.graphic = ImageView(Image("updater.png"))
+						dialog.stage.icons.setAll(Image("img/updater.png"))
 						dialog.resultProperty().listen { type ->
 							if (type.buttonData == ButtonBar.ButtonData.YES) {
 								update(latestVersion)
@@ -235,7 +236,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					App.stage.close()
 					logger.warning("Exiting!")
 				} else {
-					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully")
+					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
 				}
 			}
 		}
@@ -245,9 +246,13 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				title = "Updater"
 				headerText = "Downloading Update"
 				contentText = "Downloading ${newFile.name} to ${newFile.absoluteFile.parent}"
-				dialogPane.scene.window.setOnCloseRequest { worker.cancel() }
 				initOwner(App.stage)
+				(dialogPane.scene.window as Stage).run {
+					setOnCloseRequest { worker.cancel() }
+					icons.setAll(Image("img/updater.png"))
+				}
 				show()
+				graphic = ImageView(Image("img/updater.png"))
 			}
 		}
 	}
@@ -280,7 +285,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 							"Greatly improved pattern syntax with higher flexibility")
 					.change("Settings reworked",
 							"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
-					.change("Catalog and Genre Tab now show Genre colors")
+					.change("Catalog and Genre Tab show Genre colors")
 					.change("Catalog improved",
 							"More filtering options", "Smart column size")
 					.change("Player now has a slick Seekbar inspired by the website",

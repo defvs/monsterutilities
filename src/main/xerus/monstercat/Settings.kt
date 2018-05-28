@@ -16,8 +16,8 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-val defaultColumns = arrayOf("Genre", "Artist(s)", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("Catalog #", "Date", "Genre", "Subgenre(s)", "Artist(s)", "Track", "BPM", "Length", "Key").joinToString(multiSeparator)
+val defaultColumns = arrayOf("Genre", "Artist", "Track", "Length").joinToString(multiSeparator)
+val availableColumns = arrayOf("ID", "Date", "Genre", "Subgenre", "Artist", "Track", "Brand", "Length", "BPM", "Key").joinToString(multiSeparator)
 
 val cachePath: Path
 	get() = (Paths.get("/var/tmp").takeIf { it.exists() } ?: Paths.get(System.getProperty("java.io.tmpdir")))

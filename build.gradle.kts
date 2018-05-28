@@ -7,7 +7,7 @@ import java.nio.file.*
 import java.util.Scanner
 
 val isUnstable = true
-version = "dev-" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
+version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
 		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
 file("src/resources/version").writeText(version as String)
 
