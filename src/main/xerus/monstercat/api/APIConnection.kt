@@ -11,7 +11,7 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.XerusLogger
 import xerus.ktutil.helpers.HTTPQuery
-import xerus.monstercat.MCatalog
+import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
@@ -32,7 +32,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	// Requesting
 	
 	/** @throws IOException when the connection fails */
-	fun <T> parseJSON(destination: Class<T>): T = MCatalog.JSON_FACTORY.fromInputStream(getContent(), destination)
+	fun <T> parseJSON(destination: Class<T>): T = Sheets.JSON_FACTORY.fromInputStream(getContent(), destination)
 	
 	/** @return null when the connection fails, else the parsed result */
 	fun getReleases() = try {

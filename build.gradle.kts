@@ -7,13 +7,15 @@ import java.nio.file.*
 import java.util.Scanner
 
 val isUnstable = true
-version = "1.0.0" + "-" + Scanner(Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD")).inputStream).next()
+version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
+		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
 file("src/resources/version").writeText(version as String)
 
 plugins {
 	kotlin("jvm") version "1.2.41"
 	application
-	id("com.github.johnrengelman.shadow") version "2.0.3"
+	id("com.github.johnrengelman.shadow") version "2.0.4"
+	id("com.github.ben-manes.versions") version "0.17.0"
 }
 
 // source directories
@@ -54,8 +56,7 @@ dependencies {
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev518-1.23.0")
 	
 	testCompile("com.google.api-client", "google-api-client-java6", "1.23.0")
-	testCompile("com.google.oauth-client", "google-oauth-client-jetty", "1.11.0-beta")
-	
+	testCompile("com.google.oauth-client", "google-oauth-client-jetty", "1.23.0")
 }
 
 val file
@@ -85,16 +86,16 @@ tasks {
 	val release by creating(Exec::class) {
 		group = MAIN
 		dependsOn("jar")
-		val path = "website/downloads/" + if (isUnstable) "unstable" else "latest"
+		val path = "../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest"
 		doFirst { file(path).writeText(version.toString()) }
 		// TODO temporary workaround until real release
-		val path2 = "website/downloads/latest"
+		val path2 = "../monsterutilities-extras/website/downloads/latest"
 		doFirst { file(path2).writeText(version.toString()) }
 		
-		val s = if(OperatingSystem.current().isWindows) "\\" else ""
+		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; 
 			open -u ${properties["credentials.ftp"]} -e $s"
-			cd /downloads; put $path; put $path2; 
+			cd /www/downloads; put $path; put $path2;
 			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
