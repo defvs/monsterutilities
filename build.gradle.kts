@@ -87,10 +87,10 @@ tasks {
 	val release by creating(Exec::class) {
 		group = MAIN
 		dependsOn("jar")
-		val path = "assets/website/downloads/" + if (isUnstable) "unstable" else "latest"
+		val path = "../monsterutilities-website/downloads/" + if (isUnstable) "unstable" else "latest"
 		doFirst { file(path).writeText(version.toString()) }
 		// TODO temporary workaround until real release
-		val path2 = "assets/website/downloads/latest"
+		val path2 = "../monsterutilities-website/downloads/latest"
 		doFirst { file(path2).writeText(version.toString()) }
 		
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
