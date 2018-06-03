@@ -1,5 +1,7 @@
 package xerus.monstercat.api
 
+import be.bluexin.drpc4k.jna.DiscordRichPresence
+import be.bluexin.drpc4k.jna.RPCHandler
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -25,6 +27,7 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.net.URLEncoder
+import java.time.LocalDateTime
 import java.util.regex.Pattern
 import kotlin.math.pow
 
@@ -105,6 +108,12 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private fun stopPlaying() {
 		resetNotification()
+		val presence = DiscordRichPresence {
+			details = "Idle"
+			largeImageKey = "icon"
+			smallImageKey = "idle"
+		}
+		RPCHandler.ifConnectedOrLater { RPCHandler.updatePresence(presence) }
 		disposePlayer()
 	}
 	
@@ -193,6 +202,29 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			// play
 			playTrack(rater.obj!!)
 			player?.setOnEndOfMedia { stopPlaying() }
+
+			RPCHandler.onErrored = {
+				errorCode, message -> logger.info("$errorCode : $message")
+			}
+
+			val discordapi = logger::class.java.getResourceAsStream("/discordapi").reader().run {
+				readText().also { close() }
+			}
+
+			if (!RPCHandler.connected.get()) RPCHandler.connect(discordapi)
+
+			val presence = DiscordRichPresence {
+				details = "Now Playing"
+				state = "$artists - $title"
+				smallImageKey = "playing_music"
+				smallImageText = "Playing Music"
+				largeImageKey = "icon"
+			}
+			RPCHandler.ifConnectedOrLater {
+				logger.info("${LocalDateTime.now()}: Discord Logged in")
+				RPCHandler.updatePresence(presence)
+				logger.info("Discord RPC updated. Is now $artists - $title")
+			}
 			return@launch
 		}
 	}

@@ -1,5 +1,7 @@
 package xerus.monstercat
 
+import be.bluexin.drpc4k.jna.DiscordRichPresence
+import be.bluexin.drpc4k.jna.RPCHandler
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.application.Platform
@@ -17,17 +19,25 @@ import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.*
+import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.Changelog
+import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.ui.SimpleFrame
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
-import xerus.monstercat.tabs.*
+import xerus.monstercat.tabs.BaseTab
+import xerus.monstercat.tabs.TabCatalog
+import xerus.monstercat.tabs.TabGenres
+import xerus.monstercat.tabs.TabSettings
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
+import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.swing.JTextArea
+import kotlin.concurrent.schedule
 import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
@@ -88,6 +98,10 @@ fun main(args: Array<String>) {
 		scene.applySkin(Settings.SKIN())
 		scene
 	})
+	RPCHandler.disconnect()
+	logger.info("RPC disconnected...")
+	logger.info("Shutting down")
+	RPCHandler.finishPending()
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
@@ -166,6 +180,24 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		fill(tabPane)
 		if (Settings.AUTOUPDATE())
 			checkForUpdate()
+		Timer().schedule(5000){
+			val discordapi = logger::class.java.getResourceAsStream("/discordapi").reader().run {
+				readText().also { close() }
+			}
+
+			if (!RPCHandler.connected.get()) RPCHandler.connect(discordapi)
+
+			val presence = DiscordRichPresence {
+				details = "Idle"
+				largeImageKey = "icon"
+				smallImageKey = "idle"
+			}
+			RPCHandler.ifConnectedOrLater {
+				logger.info("${LocalDateTime.now()}: Discord Logged in")
+				RPCHandler.updatePresence(presence)
+				logger.info("Discord RPC updated. Is now Idle")
+			}
+		}
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
