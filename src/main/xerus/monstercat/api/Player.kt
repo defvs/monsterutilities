@@ -98,7 +98,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onFx {
-				add(buttonWithId("play") { play(latest) })
+				add(buttonWithId("play") {
+					play(latest)
+					RichPresenceAPI.updatePresence(RichPresenceAPI.buildPresenceFromTitle(latest.renderedArtists, latest.title))
+				})
 				fill(pos = 0)
 				fill()
 				add(closeButton)
