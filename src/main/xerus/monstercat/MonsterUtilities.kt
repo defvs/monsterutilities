@@ -25,6 +25,7 @@ import xerus.ktutil.javafx.ui.JFXMessageDisplay
 import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.ui.SimpleFrame
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.RichPresenceAPI
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.BaseTab
 import xerus.monstercat.tabs.TabCatalog
@@ -98,10 +99,8 @@ fun main(args: Array<String>) {
 		scene.applySkin(Settings.SKIN())
 		scene
 	})
-	RPCHandler.disconnect()
-	logger.info("RPC disconnected...")
-	logger.info("Shutting down")
-	RPCHandler.finishPending()
+
+	RichPresenceAPI.disconnect()
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
@@ -180,24 +179,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		fill(tabPane)
 		if (Settings.AUTOUPDATE())
 			checkForUpdate()
-		Timer().schedule(5000){
-			val discordapi = logger::class.java.getResourceAsStream("/discordapi").reader().run {
-				readText().also { close() }
-			}
-
-			if (!RPCHandler.connected.get()) RPCHandler.connect(discordapi)
-
-			val presence = DiscordRichPresence {
-				details = "Idle"
-				largeImageKey = "icon"
-				smallImageKey = "idle"
-			}
-			RPCHandler.ifConnectedOrLater {
-				logger.info("${LocalDateTime.now()}: Discord Logged in")
-				RPCHandler.updatePresence(presence)
-				logger.info("Discord RPC updated. Is now Idle")
-			}
-		}
+		RichPresenceAPI.lateConnect(5000)
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }

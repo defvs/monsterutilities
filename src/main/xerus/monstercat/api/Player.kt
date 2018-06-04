@@ -107,13 +107,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private fun stopPlaying() {
+		RichPresenceAPI.connect()
+		RichPresenceAPI.updatePresence(RichPresenceAPI.idlePresencePreset)
+
 		resetNotification()
-		val presence = DiscordRichPresence {
-			details = "Idle"
-			largeImageKey = "icon"
-			smallImageKey = "idle"
-		}
-		RPCHandler.ifConnectedOrLater { RPCHandler.updatePresence(presence) }
 		disposePlayer()
 	}
 	
@@ -203,28 +200,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			playTrack(rater.obj!!)
 			player?.setOnEndOfMedia { stopPlaying() }
 
-			RPCHandler.onErrored = {
-				errorCode, message -> logger.info("$errorCode : $message")
-			}
+			RichPresenceAPI.connect()
+			RichPresenceAPI.updatePresence(RichPresenceAPI.buildPresenceFromTitle(artists, title))
 
-			val discordapi = logger::class.java.getResourceAsStream("/discordapi").reader().run {
-				readText().also { close() }
-			}
-
-			if (!RPCHandler.connected.get()) RPCHandler.connect(discordapi)
-
-			val presence = DiscordRichPresence {
-				details = "Now Playing"
-				state = "$artists - $title"
-				smallImageKey = "playing_music"
-				smallImageText = "Playing Music"
-				largeImageKey = "icon"
-			}
-			RPCHandler.ifConnectedOrLater {
-				logger.info("${LocalDateTime.now()}: Discord Logged in")
-				RPCHandler.updatePresence(presence)
-				logger.info("Discord RPC updated. Is now $artists - $title")
-			}
 			return@launch
 		}
 	}
