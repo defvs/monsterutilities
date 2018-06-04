@@ -11,7 +11,6 @@ object RichPresenceAPI {
     val idlePresencePreset = DiscordRichPresence {
         details = "Idle"
         largeImageKey = "icon"
-        smallImageKey = "idle"
     }
 
     fun connect(apiKey: String){
