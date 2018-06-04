@@ -100,7 +100,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			onFx {
 				add(buttonWithId("play") {
 					play(latest)
-					RichPresenceAPI.updatePresence(RichPresenceAPI.buildPresenceFromTitle(latest.renderedArtists, latest.title))
+					RichPresenceAPI.updatePresence(RichPresenceAPI(latest.renderedArtists, latest.title))
 				})
 				fill(pos = 0)
 				fill()
@@ -204,7 +204,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			player?.setOnEndOfMedia { stopPlaying() }
 
 			RichPresenceAPI.connect()
-			RichPresenceAPI.updatePresence(RichPresenceAPI.buildPresenceFromTitle(artists, title))
+			RichPresenceAPI.updatePresence(RichPresenceAPI(artists, title))
 
 			return@launch
 		}
