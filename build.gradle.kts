@@ -9,9 +9,7 @@ import java.util.Scanner
 val isUnstable = true
 version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
 		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
-var discordapi = "452444322004992001";
 file("src/resources/version").writeText(version as String)
-file("src/resources/discordapi").writeText(discordapi)
 
 plugins {
 	kotlin("jvm") version "1.2.41"
