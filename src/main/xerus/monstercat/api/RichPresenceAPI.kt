@@ -9,11 +9,10 @@ import kotlin.concurrent.schedule
 
 object RichPresenceAPI {
 
-	val idlePresencePreset = DiscordRichPresence {
-		details = "Idle"
-		largeImageKey = "icon"
-		smallImageKey = "idle"
-	}
+    val idlePresencePreset = DiscordRichPresence {
+        details = "Idle"
+        largeImageKey = "icon"
+    }
 
 	fun connect(apiKey: String = getKeyFromRes()) {
 		implementErrorHandler()
