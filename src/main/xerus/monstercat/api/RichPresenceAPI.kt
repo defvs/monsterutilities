@@ -2,6 +2,7 @@ package xerus.monstercat.api
 
 import be.bluexin.drpc4k.jna.DiscordRichPresence
 import be.bluexin.drpc4k.jna.RPCHandler
+import xerus.ktutil.getResource
 import xerus.monstercat.logger
 import java.util.*
 import kotlin.concurrent.schedule
@@ -11,68 +12,57 @@ object RichPresenceAPI {
     val idlePresencePreset = DiscordRichPresence {
         details = "Idle"
         largeImageKey = "icon"
-        smallImageKey = "idle"
     }
 
-    fun connect(apiKey: String){
-        implementErrorHandler()
-        if (!RPCHandler.connected.get()) {
-            RPCHandler.connect(apiKey)
-            logger.info("Connecting Discord RPC.")
-        }
-    }
-    fun connect(){
-        connect(getKeyFromRes())
-    }
-    fun getKeyFromRes(): String {
-        return logger::class.java.getResourceAsStream("/discordapi").reader().run {
-            readText().also { close() }
-        }
-    }
+	fun connect(apiKey: String = getKeyFromRes()) {
+		implementErrorHandler()
+		if (!RPCHandler.connected.get()) {
+			RPCHandler.connect(apiKey)
+			logger.info("Connecting Discord RPC.")
+		}
+	}
 
-    fun lateConnect(apiKey : String, millis: Long){
-        Timer().schedule(millis){
-            connect(apiKey)
-            updatePresence(idlePresencePreset)
-        }
-    }
-    fun lateConnect(millis: Long){
-        lateConnect(getKeyFromRes(),millis)
-    }
+	fun getKeyFromRes(): String = getResource("discordapi")!!.readText()
 
-    fun disconnect(){
-        if (RPCHandler.connected.get()) {
-            logger.info("Disconnecting Discord RPC.")
-            RPCHandler.disconnect()
-            RPCHandler.finishPending()
-        }
-    }
+	fun connectDelayed(millis: Long, apiKey: String = getKeyFromRes()) {
+		Timer().schedule(millis) {
+			connect(apiKey)
+			updatePresence(idlePresencePreset)
+		}
+	}
 
-    fun updatePresence(presence : DiscordRichPresence){
-        RPCHandler.ifConnectedOrLater {
-            logger.info("Connected to RPC, changing presence.")
-            RPCHandler.updatePresence(presence)
-            logger.info("Changed presence to ${presence.details}")
-        }
-    }
+	fun disconnect() {
+		if (RPCHandler.connected.get()) {
+			logger.info("Disconnecting Discord RPC.")
+			RPCHandler.disconnect()
+			RPCHandler.finishPending()
+		}
+	}
 
-    fun buildPresence(details: String? = "Idle", state: String? = null, largeKey: String? = "icon", smallKey: String? = null, smallText: String? = null): DiscordRichPresence {
-        return DiscordRichPresence {
-            if(details != null) this.details = details
-            if(state != null) this.state = state
-            if(largeKey != null) largeImageKey = largeKey
-            if(smallKey != null) smallImageKey = smallKey
-            if(smallText != null) smallImageText = smallText
-        }
-    }
+	fun updatePresence(presence: DiscordRichPresence) {
+		RPCHandler.ifConnectedOrLater {
+			logger.info("Connected to RPC, changing presence.")
+			RPCHandler.updatePresence(presence)
+			logger.info("Changed presence to ${presence.details}")
+		}
+	}
 
-    fun buildPresenceFromTitle(artists : String, title : String): DiscordRichPresence {
-        return buildPresence("Now Playing","$artists - $title", "icon", "playing_music", "Playing Music" )
-    }
+	operator fun invoke(details: String? = "Idle", state: String? = null, largeKey: String? = "icon", smallKey: String? = null, smallText: String? = null) = DiscordRichPresence {
+			if (details != null) this.details = details
+			if (state != null) this.state = state
+			if (largeKey != null) largeImageKey = largeKey
+			if (smallKey != null) smallImageKey = smallKey
+			if (smallText != null) smallImageText = smallText
+		}
 
-    private fun implementErrorHandler(){
-        RPCHandler.onErrored = {
-            errorCode, message ->  logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message")
-        }
-    }
+	operator fun invoke(artists: String, title: String) = invoke("Now Playing", "$artists - $title", "icon", "playing_music", "Playing Music")
+
+	private fun implementErrorHandler() {
+		RPCHandler.onErrored = { errorCode, message ->
+			logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message")
+		}
+		RPCHandler.onErrored = { errorCode, message ->
+			logger.warning("Discord RPC Disconnected, Code #$errorCode, $message")
+		}
+	}
 }

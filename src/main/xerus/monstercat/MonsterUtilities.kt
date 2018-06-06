@@ -1,7 +1,5 @@
 package xerus.monstercat
 
-import be.bluexin.drpc4k.jna.DiscordRichPresence
-import be.bluexin.drpc4k.jna.RPCHandler
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.application.Platform
@@ -34,11 +32,9 @@ import xerus.monstercat.tabs.TabSettings
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
-import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.swing.JTextArea
-import kotlin.concurrent.schedule
 import kotlin.reflect.KClass
 
 typealias logger = XerusLogger
@@ -179,7 +175,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		fill(tabPane)
 		if (Settings.AUTOUPDATE())
 			checkForUpdate()
-		RichPresenceAPI.lateConnect(5000)
+		RichPresenceAPI.connectDelayed(5000)
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
