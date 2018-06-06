@@ -61,5 +61,8 @@ object RichPresenceAPI {
 		RPCHandler.onErrored = { errorCode, message ->
 			logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message")
 		}
+		RPCHandler.onErrored = { errorCode, message ->
+			logger.warning("Discord RPC Disconnected, Code #$errorCode, $message")
+		}
 	}
 }

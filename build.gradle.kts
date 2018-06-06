@@ -53,7 +53,7 @@ dependencies {
 	
 	compile("org.controlsfx", "controlsfx", "8.40.+")
 
-	compile("be.bluexin:drpc4k:0.3-SNAPSHOT")
+	compile("be.bluexin:drpc4k:0.6-SNAPSHOT")
 	
 	compile("org.apache.httpcomponents", "httpmime", "4.5.4")
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev518-1.23.0")
