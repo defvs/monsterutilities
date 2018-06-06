@@ -22,7 +22,7 @@ import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
 import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.helpers.Cache
-import xerus.ktutil.helpers.PseudoParser.ParserException
+import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
@@ -40,7 +40,7 @@ import java.util.concurrent.Executors
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
-val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %album% - %track% %title%", "%artists|enumeration% - %title% - %album%", *trackPatterns.content)
+val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.content)
 
 val TreeItem<out MusicResponse>.normalisedValue
 	get() = value.toString().trim().toLowerCase()
@@ -122,7 +122,7 @@ class TabDownloader : VTab() {
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 				1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-				ReleaseFile("Gareth Emery & Standerwick - Saving Light (The Remixes) [feat. HALIENE] - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", false)),
+				ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]",  "Saving Light (The Remixes) [feat. HALIENE]")),
 				1, 3)
 		add(patternPane)
 		
@@ -139,13 +139,13 @@ class TabDownloader : VTab() {
 		}
 		
 		// add Views
-		val pane = gridPane()
-		pane.add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
-		pane.add(releaseView, 0, 1)
-		pane.add(trackView, 1, 0, 1, 2)
-		pane.maxWidth = Double.MAX_VALUE
-		pane.children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
-		fill(pane)
+		fill(gridPane().apply {
+			add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
+			add(releaseView, 0, 1)
+			add(trackView, 1, 0, 1, 2)
+			maxWidth = Double.MAX_VALUE
+			children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
+		})
 		
 		// Qualities
 		val buttons = ImmutableObservableList(*qualities.map {
@@ -259,7 +259,11 @@ class TabDownloader : VTab() {
 			}
 		}
 		
-		val cancelButton = Button("Finish").onClick { this.disableProperty().set(true); job.cancel() }
+		val cancelButton = Button("Finish").onClick {
+			isDisable = true
+			job.cancel()
+			threadPool.shutdown()
+		}
 		cancelButton.maxWidth = Double.MAX_VALUE
 		add(cancelButton)
 		

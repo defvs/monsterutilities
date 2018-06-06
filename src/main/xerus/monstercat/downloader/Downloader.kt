@@ -3,6 +3,7 @@ package xerus.monstercat.downloader
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
 import xerus.ktutil.createDirs
+import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicResponse
@@ -45,7 +46,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 			download()
 		} catch (e: Exception) {
 			logger.throwing("Downloader", "download", e)
-			updateMessage("Error: $e")
+			updateMessage("Error: " + if (e is ParserException) e.message else e)
 			try {
 				Thread.sleep(100_000_000_000)
 			} catch (_: Exception) {
@@ -134,7 +135,7 @@ class ReleaseDownloader(private val release: Release) : Downloader(release.toStr
 	}
 	
 	private fun resolve(name: String, path: Path = basepath): Path =
-			path.resolve(addFormat(ReleaseFile(name, !release.isMulti).toFileName()))
+			path.resolve(addFormat(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName()))
 	
 }
 
