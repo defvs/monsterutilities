@@ -1,10 +1,11 @@
 package xerus.monstercat.api
 
-import be.bluexin.drpc4k.jna.DiscordRichPresence
-import be.bluexin.drpc4k.jna.RPCHandler
 import javafx.event.EventHandler
 import javafx.geometry.Pos
-import javafx.scene.control.*
+import javafx.scene.control.Label
+import javafx.scene.control.ProgressBar
+import javafx.scene.control.Slider
+import javafx.scene.control.ToggleButton
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.VBox
@@ -27,7 +28,6 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.net.URLEncoder
-import java.time.LocalDateTime
 import java.util.regex.Pattern
 import kotlin.math.pow
 
@@ -129,6 +129,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title,s.artists) }
+	private val nextButton = buttonWithId("skip") { val s = Playlist.next(); play(s!!.title,s.artists) }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> setVolume() }
@@ -139,6 +141,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showText(text)
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
+			add(prevButton)
+			add(nextButton)
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
@@ -201,8 +205,16 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			}
 			// play
 			playTrack(rater.obj!!)
-			player?.setOnEndOfMedia { stopPlaying() }
-
+			if (Playlist.playlist.isEmpty()) {
+				player?.setOnEndOfMedia { stopPlaying() }
+			}else{
+				player?.setOnEndOfMedia {
+					val s = Playlist.next()
+					if (s != null) {
+						play(s.title, s.artists)
+					}else stopPlaying()
+				}
+			}
 			RichPresenceAPI.connect()
 			RichPresenceAPI.updatePresence(RichPresenceAPI(artists, title))
 
