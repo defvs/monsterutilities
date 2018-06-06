@@ -5,6 +5,7 @@ import javafx.collections.ListChangeListener
 import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableRow
+import javafx.scene.input.MouseButton
 import javafx.scene.text.Font
 import xerus.ktutil.containsAny
 import xerus.ktutil.javafx.*
@@ -13,6 +14,8 @@ import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.Song
 import xerus.monstercat.logger
 import java.time.LocalTime
 import java.util.*
@@ -49,9 +52,15 @@ class TabCatalog : TableTab() {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
 		table.setOnMouseClicked { me ->
-			if (me.clickCount == 2) {
+			if (me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
+				Playlist.clearTracks()
+				Playlist(Song(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+			}
+			if (me.clickCount == 1 && me.button == MouseButton.MIDDLE) {
+				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
+				Playlist(Song(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
 			}
 		}
 	}

@@ -133,6 +133,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			}
 		}
 		addTab(TabCatalog::class)
+		addTab(TabPlaylist::class)
 		addTab(TabGenres::class)
 		addTab(TabDownloader::class)
 		addTab(TabSound::class)

@@ -1,30 +1,16 @@
 package xerus.monstercat.api
 
-import javafx.event.EventHandler
-import javafx.geometry.Pos
-import javafx.scene.control.*
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
-import javafx.scene.layout.VBox
-import javafx.scene.media.Media
-import javafx.scene.media.MediaPlayer
-import javafx.util.Duration
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
-import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
-import xerus.ktutil.javafx.properties.dependOn
-import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
-import xerus.ktutil.javafx.ui.transitionToHeight
-import xerus.ktutil.javafx.ui.verticalFade
+import xerus.ktutil.to
+import xerus.ktutil.toInt
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
-import java.net.URLEncoder
-import java.util.regex.Pattern
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
@@ -156,6 +142,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artists) }
+	private val nextButton = buttonWithId("skip") { val s = Playlist.next(); play(s!!.title, s.artists) }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> updateVolume() }
@@ -166,6 +154,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showText(text)
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
+			add(prevButton)
+			add(nextButton)
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
@@ -201,6 +191,16 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
 						(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 			}!!)
+			if (Playlist.playlist.isEmpty()) {
+				player?.setOnEndOfMedia { stopPlaying() }
+			} else {
+				player?.setOnEndOfMedia {
+					val s = Playlist.next()
+					if (s != null) {
+						play(s.title, s.artists)
+					} else stopPlaying()
+				}
+			}
 			player?.setOnEndOfMedia { stopPlaying() }
 			return@launch
 		}
