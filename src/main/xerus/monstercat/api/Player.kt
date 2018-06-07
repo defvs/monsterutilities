@@ -1,16 +1,30 @@
 package xerus.monstercat.api
 
+import javafx.event.EventHandler
+import javafx.geometry.Pos
+import javafx.scene.control.*
+import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
+import javafx.scene.layout.VBox
+import javafx.scene.media.Media
+import javafx.scene.media.MediaPlayer
+import javafx.util.Duration
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.dependOn
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
-import xerus.ktutil.to
-import xerus.ktutil.toInt
+import xerus.ktutil.javafx.ui.transitionToHeight
+import xerus.ktutil.javafx.ui.verticalFade
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
+import java.net.URLEncoder
+import java.util.regex.Pattern
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
@@ -129,6 +143,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
 	fun stopPlaying() {
 		activeTrack.value = null
+		Playlist.clearTracks()
 		resetNotification()
 	}
 	
