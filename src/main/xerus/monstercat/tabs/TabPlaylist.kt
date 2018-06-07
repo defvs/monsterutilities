@@ -13,46 +13,44 @@ import xerus.monstercat.api.Playlist
 import xerus.monstercat.api.Song
 
 
-class TabPlaylist : VTab(){
-	var table = TablePlaylist()
+class TabPlaylist : VTab() {
+	var table = TableView<Song>()
+
 	init {
 		prefWidth = 600.0
 
-		fill(table)
-	}
-}
-class TablePlaylist : TableView<Song>() {
-	init {
-		items = Playlist.playlist
+		table.items = Playlist.playlist
 
-		val artistsCol = TableColumn<Song,String>("Artists")
-		artistsCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> {
-			p -> SimpleStringProperty(p.value.artists)
+		val artistsCol = TableColumn<Song, String>("Artists")
+		artistsCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> { p ->
+			SimpleStringProperty(p.value.artists)
 		}
 		artistsCol.prefWidthProperty().bind(widthProperty().divide(2))
 
-		val titleCol = TableColumn<Song,String>("Title")
-		titleCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> {
-			p -> SimpleStringProperty(p.value.title)
+		val titleCol = TableColumn<Song, String>("Title")
+		titleCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> { p ->
+			SimpleStringProperty(p.value.title)
 		}
 		titleCol.prefWidthProperty().bind(widthProperty().divide(2))
 
-		columns.addAll(artistsCol, titleCol)
+		table.columns.addAll(artistsCol, titleCol)
 
-		selectionModel.selectionMode = SelectionMode.SINGLE
+		table.selectionModel.selectionMode = SelectionMode.SINGLE
 
-		setOnMouseClicked { me ->
-			if (me.button == MouseButton.PRIMARY && me.clickCount == 2){
-				val selected = selectionModel.selectedIndex
+		table.setOnMouseClicked { me ->
+			if (me.button == MouseButton.PRIMARY && me.clickCount == 2) {
+				val selected = table.selectionModel.selectedIndex
 				val t = Playlist.select(selected)
 				if (t != null) {
-					Player.play(t.title,t.artists)
+					Player.play(t.title, t.artists)
 				}
 			}
-			if (me.button == MouseButton.MIDDLE && me.clickCount == 1){
-				val selected = selectionModel.selectedIndex
+			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
+				val selected = table.selectionModel.selectedIndex
 				Playlist.removeTrack(selected)
 			}
 		}
+
+		fill(table)
 	}
 }

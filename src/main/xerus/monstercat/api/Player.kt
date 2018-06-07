@@ -201,7 +201,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 					} else stopPlaying()
 				}
 			}
-			player?.setOnEndOfMedia { stopPlaying() }
 			return@launch
 		}
 	}
