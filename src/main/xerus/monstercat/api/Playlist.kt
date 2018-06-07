@@ -6,7 +6,7 @@ import javafx.collections.ObservableList
 object Playlist {
 	var playlist: ObservableList<Song> = FXCollections.observableArrayList()
 	var currentTrack = 0
-	var repeat = true
+	var repeat = false
 	var random: Boolean = false
 
 
