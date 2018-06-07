@@ -112,6 +112,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private fun stopPlaying() {
 		RichPresenceAPI.connect()
 		RichPresenceAPI.updatePresence(RichPresenceAPI.idlePresencePreset)
+		Playlist.clearTracks()
 
 		resetNotification()
 		disposePlayer()
