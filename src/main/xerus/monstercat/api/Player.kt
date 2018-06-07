@@ -132,6 +132,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
 	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artists) }
 	private val nextButton = buttonWithId("skip") { val s = Playlist.next(); play(s!!.title, s.artists) }
+	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
+	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> setVolume() }
@@ -144,6 +146,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			add(stopButton)
 			add(prevButton)
 			add(nextButton)
+			add(randomButton)
+			add(repeatButton)
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
@@ -209,11 +213,20 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			if (Playlist.playlist.isEmpty()) {
 				player?.setOnEndOfMedia { stopPlaying() }
 			} else {
-				player?.setOnEndOfMedia {
-					val s = Playlist.next()
-					if (s != null) {
-						play(s.title, s.artists)
-					} else stopPlaying()
+				if (Playlist.random){
+					player?.setOnEndOfMedia {
+						val s = Playlist.nextRandom()
+						if (s != null) {
+							play(s.title, s.artists)
+						} else stopPlaying()
+					}
+				}else {
+					player?.setOnEndOfMedia {
+						val s = Playlist.next()
+						if (s != null) {
+							play(s.title, s.artists)
+						} else stopPlaying()
+					}
 				}
 			}
 			RichPresenceAPI.connect()
