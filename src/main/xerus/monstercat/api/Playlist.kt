@@ -30,9 +30,7 @@ object Playlist {
 	}
 
 	fun getTracks() = playlist
-	fun setTracks(playlist: MutableList<Song>) {
-		Playlist.playlist = playlist as ObservableList<Song>
-	}
+	fun setTracks(playlist: MutableList<Song>) = this.playlist.addAll(playlist)
 
 	operator fun invoke() = getTracks()
 	operator fun invoke(playlist: MutableList<Song>) = setTracks(playlist)
@@ -48,21 +46,20 @@ object Playlist {
 	}
 
 	fun clearTracks() {
-		playlist.clear(); currentTrack = 0
+		playlist.clear()
+		currentTrack = 0
 	}
 
-	fun nextRandom(): Song? {
-		return select((Math.random() * (playlist.size)).toInt())
-	}
+	fun nextRandom(): Song? = select((Math.random() * (playlist.size)).toInt())
 }
 
-class Song(trim: String, s: String) {
+class Song(title: String, artists: String) {
 
 	var title = ""
 	var artists = ""
 
 	init {
-		title = trim
-		artists = s
+		this.title = title
+		this.artists = artists
 	}
 }

@@ -55,7 +55,13 @@ class TabCatalog : TableTab() {
 			if (me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
 				Playlist.clearTracks()
-				Playlist(Song(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+				val filtered = table.filteredData
+				val filteredList = mutableListOf<Song>()
+				for (v : List<String> in filtered){
+					filteredList.add(Song(v[cols.findUnsafe("Track")].trim(),v[cols.findUnsafe("Artist")]))
+				}
+				Playlist(filteredList)
+				Playlist.currentTrack = filtered.indexOf(selected)
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}
 			if (me.clickCount == 1 && me.button == MouseButton.MIDDLE) {
