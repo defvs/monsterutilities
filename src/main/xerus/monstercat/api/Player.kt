@@ -22,16 +22,16 @@ import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
-object Player : FadingHBox(true) {
+object Player: FadingHBox(true, true) {
 	private val seekBar = ProgressBar(0.0).apply {
-		id("seekBar")
+		id("seek-bar")
 		setSize(height = 7.0)
 		maxWidth = Double.MAX_VALUE
 		val handler = EventHandler<MouseEvent> { event ->
 			if (event.button == MouseButton.PRIMARY) {
 				val b1 = layoutBounds
 				val mouseX = event.sceneX
-				var percent = (mouseX - b1.minX) / (b1.maxX - b1.minX)
+				val percent = (mouseX - b1.minX) / (b1.maxX - b1.minX)
 				progress = percent + 2 / width
 				player?.run {
 					seek(Duration(totalDuration.toMillis().times(progress)))
@@ -41,12 +41,14 @@ object Player : FadingHBox(true) {
 		onMousePressed = handler
 		onMouseDragged = handler
 	}
-	internal val box = VBox(this)
 	
-	override val fader = box.verticalTransition(30)
+	internal val box = VBox(this).apply {
+		setSize(height = 0.0)
+		opacity = 0.0
+	}
+	override val fader = box.verticalTransition(30, true)
 	
 	init {
-		id("controls")
 		resetNotification()
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 	}
@@ -73,11 +75,11 @@ object Player : FadingHBox(true) {
 	fun resetNotification() {
 		fadeOut()
 		launch {
-			val latest = Releases.getReleases().last()
+			val latest = Releases.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onJFX {
-				add(Button().id("play").onClick { play(latest) })
+				add(buttonWithId("play") { play(latest) })
 				fill(pos = 0)
 				fill()
 				add(closeButton)
@@ -101,7 +103,7 @@ object Player : FadingHBox(true) {
 	// playing & controls
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = Button().id("stop").onClick { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { stopPlaying() }
 	private val volumeSlider = Slider(0.1, 1.0, 0.5).apply { prefWidth = 100.0; valueProperty().addListener { _ -> setVolume() } }
 	
 	private fun playing(text: String) {
@@ -124,19 +126,21 @@ object Player : FadingHBox(true) {
 	fun playTrack(track: Track) {
 		disposePlayer()
 		val hash = track.streamHash ?: run {
-			showBack("$track is currently not available for streaming! If it is Gold only, ensure that you've entered a valid connect.sid in the Download tab.")
+			showBack("$track is currently not available for streaming!")
 			return
 		}
 		player = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		setVolume()
-		player!!.play()
 		playing("Loading $track")
-		player!!.setOnReady {
-			label.text = "Now Playing: $track"
-			val total = player!!.totalDuration.toMillis()
-			player!!.currentTimeProperty().listen { seekBar.progress = it.toMillis() / total }
-			checkJFX {
-				box.children.add(0, seekBar)
+		player!!.run { 
+			play()
+			setOnReady {
+				label.text = "Now Playing: $track"
+				val total = totalDuration.toMillis()
+				currentTimeProperty().listen { seekBar.progress = it.toMillis() / total }
+				checkJFX {
+					box.children.add(0, seekBar)
+				}
 			}
 		}
 	}
@@ -194,9 +198,9 @@ object Player : FadingHBox(true) {
 		playTrack(tracks[index])
 		onJFX {
 			if (index > 0)
-				children.add(children.size - 3, Button().id("skipback").onClick { play(tracks, index - 1) })
+				children.add(children.size - 3, buttonWithId("skipback") { play(tracks, index - 1) })
 			if (index < tracks.lastIndex)
-				children.add(children.size - 3, Button().id("skip").onClick { play(tracks, index + 1) })
+				children.add(children.size - 3, buttonWithId("skip") { play(tracks, index + 1) })
 		}
 		player?.setOnEndOfMedia { if (tracks.lastIndex > index) play(tracks, index + 1) else stopPlaying() }
 	}

@@ -4,12 +4,10 @@ import javafx.beans.InvalidationListener
 import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.layout.VBox
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
-import xerus.ktutil.javafx.bold
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.format
-import xerus.ktutil.javafx.italic
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ConstantObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
@@ -23,16 +21,18 @@ val genreColor = { item: String? ->
 	}
 }
 
-class TabGenres : FetchTab() {
+class TabGenres: FetchTab() {
 	
 	private val view = TreeTableView<Row>().apply {
 		columnResizePolicy = TreeTableView.CONSTRAINED_RESIZE_POLICY
 	}
 	
 	init {
-		val searchfield = TextField()
+		styleClass("tab-genres")
+		val searchField = TextField()
+		VBox.setMargin(searchField, Insets(0.0, 0.0, 6.0, 0.0)) // apparently can't set this in css
 		val root = FilterableTreeItem(Row())
-		root.bindPredicate(searchfield.textProperty(), { row, text -> row.subList(0, 3).any { it.contains(text, true) } })
+		root.bindPredicate(searchField.textProperty(), { row, text -> row.subList(0, 3).any { it.contains(text, true) } })
 		view.isShowRoot = false
 		data.addListener(InvalidationListener {
 			view.root = root
@@ -50,7 +50,7 @@ class TabGenres : FetchTab() {
 				val row = Row(10, *list.toTypedArray())
 				val nextLevel = row.indexOfFirst { it.isNotEmpty() }
 				if (nextLevel < curLevel)
-					repeat(curLevel - nextLevel, { cur = cur.parent as FilterableTreeItem<Row> })
+					repeat(curLevel - nextLevel, { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warning("$cur should have a parent!") } })
 				
 				if (hex != null) {
 					if (nextLevel == 0) {
@@ -92,7 +92,7 @@ class TabGenres : FetchTab() {
 		arrayOf(genre, bpm, beat, examples).forEach {
 			it.isSortable = false
 			it.setCellFactory {
-				object : TreeTableCell<Row, String>() {
+				object: TreeTableCell<Row, String>() {
 					override fun updateItem(item: String?, empty: Boolean) {
 						super.updateItem(item, empty)
 						if (item == null || empty) {
@@ -116,11 +116,9 @@ class TabGenres : FetchTab() {
 			}
 		}
 		
-		children.add(searchfield)
+		children.add(searchField)
 		fill(view)
 	}
-	
-	override fun sheetToData(sheet: List<List<String>>) = super.sheetToData(sheet.subList(1, sheet.size))
 	
 	override fun setPlaceholder(n: Node) = view.setPlaceholder(n)
 	

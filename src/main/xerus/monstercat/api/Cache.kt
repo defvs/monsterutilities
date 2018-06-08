@@ -37,7 +37,7 @@ object Releases : Refresher() {
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())
 			readReleases()
 		val rel = releaseConnection.getReleases() ?: run {
-			logger.info("Could not refresh releases!")
+			logger.info("Could not refresh Releases!")
 			return
 		}
 		if (releases.containsAll(rel)) {
@@ -49,7 +49,7 @@ object Releases : Refresher() {
 		val ind = releases.lastIndexOf(rel.last())
 		
 		if (ind == -1) {
-			logger.fine("Full release refresh initiated")
+			logger.fine("Full Release refresh initiated")
 			releaseConnection.removeQuery("limit").getReleases()?.let {
 				releases.clear()
 				releases.addAll(it.asReversed())

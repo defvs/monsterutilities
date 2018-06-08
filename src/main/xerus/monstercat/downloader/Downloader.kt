@@ -74,7 +74,7 @@ abstract class Downloader(title: String, val coverUrl: String) : Task<Unit>() {
 	private val buffer = ByteArray(1024)
 	protected fun downloadFile(path: Path) {
 		val file = path.toFile()
-		logger.finest("Downloading " + file)
+		logger.finest("Downloading $file")
 		updateMessage(file.name)
 		val output = FileOutputStream(file)
 		try {

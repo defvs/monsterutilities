@@ -1,6 +1,7 @@
 package xerus.monstercat.tabs
 
 import javafx.scene.Node
+import xerus.ktutil.javafx.styleClass
 import xerus.ktutil.javafx.ui.controls.FilteredTableView
 
 open class TableTab : FetchTab() {
@@ -8,6 +9,10 @@ open class TableTab : FetchTab() {
     val table = FilteredTableView(data, true)
     val predicate = table.predicate.apply { addListener { _ -> showFoundSnackbar() } }
 
+    init {
+        styleClass("table-tab")
+    }
+    
     private fun showFoundSnackbar() {
         val rows = table.filteredData.size
         if (rows == data.size) {

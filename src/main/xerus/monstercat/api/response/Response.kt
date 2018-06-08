@@ -8,7 +8,6 @@ fun Class<*>.declaredKeys() =
 
 interface MusicResponse {
     var id: String
-    //fun path(): Path
 }
 
 data class Album(@Key var streamHash: String = "", @Key var albumId: String = "", @Key var trackNumber: Int = 0)

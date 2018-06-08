@@ -1,5 +1,5 @@
 
-/* fix alternating colors even through genre colors are the actual background */
+/* fix alternating colors appearing even though genre colors are the actual background */
 .table-row-cell, .table-row-cell:odd, .tree-table-cell, .tree-cell {
     -fx-background: derive(-fx-base, 20%);
 }
@@ -39,24 +39,30 @@
     -fx-background-color: null !important;
 }
 
-#seekBar .bar {
+#seek-bar .bar {
     -fx-background-insets: 0 0 0 0;
     -fx-background-radius: 0;
     -fx-padding: 0;
 }
 
-#seekBar .track {
+#seek-bar .track {
     -fx-background-color: null;
     -fx-background-insets: 0 0 0 0;
     -fx-background-radius: 0;
     -fx-padding: 0;
 }
 
+/* TABS */
+
 .vtab {
 	-fx-padding: 5;
 	-fx-spacing: 6;
 }
 
+.fetch-tab {
+	-fx-spacing: 0;
+}
+
 SearchView {
-	-fx-padding: 0;
+	-fx-padding: 0 0 6 0;
 }
