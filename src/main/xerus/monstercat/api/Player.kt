@@ -158,7 +158,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
 	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artists) }
-	private val nextButton = buttonWithId("skip") { val s = Playlist.next(); play(s!!.title, s.artists) }
+	private val nextButton = buttonWithId("skip") {
+		val s: Song? = if (!Playlist.random) Playlist.next() else Playlist.nextRandom()
+		play(s!!.title, s.artists)
+	}
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
 	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
