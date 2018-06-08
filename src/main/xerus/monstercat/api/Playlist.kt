@@ -11,11 +11,11 @@ object Playlist {
 
 
 	fun next(): Song? {
-		if (currentTrack + 1 < playlist.size)
-			currentTrack++
-		else if (repeat)
-			currentTrack = 0
-		else return null
+		when {
+			currentTrack + 1 < playlist.size -> currentTrack++
+			repeat -> currentTrack = 0
+			else -> return null
+		}
 		return playlist[currentTrack]
 	}
 
