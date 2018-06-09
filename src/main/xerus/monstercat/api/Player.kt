@@ -8,7 +8,6 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
-import javafx.scene.media.AudioEqualizer
 import javafx.util.Duration
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
@@ -96,7 +95,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onFx {
-				add(buttonWithId("play") { play(latest) })
+				add(buttonWithId("play") {
+					play(latest)
+					DiscordRPC.updatePresence(DiscordRPC(latest.renderedArtists, latest.title))
+				})
 				fill(pos = 0)
 				fill()
 				add(closeButton)
@@ -105,6 +107,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private fun stopPlaying() {
+		DiscordRPC.connect()
+		DiscordRPC.updatePresence(DiscordRPC.idlePresence)
+
 		resetNotification()
 		disposePlayer()
 	}
@@ -205,6 +210,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			// play
 			playTrack(rater.obj!!)
 			player?.setOnEndOfMedia { stopPlaying() }
+
+			DiscordRPC.connect()
+			DiscordRPC.updatePresence(DiscordRPC(artists, title))
+
 			return@launch
 		}
 	}

@@ -17,9 +17,13 @@ import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.*
+import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.Changelog
+import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.ui.SimpleFrame
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.*
 import java.io.File
@@ -86,6 +90,8 @@ fun main(args: Array<String>) {
 		scene.applySkin(Settings.SKIN())
 		scene
 	})
+
+	DiscordRPC.disconnect()
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
@@ -165,6 +171,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		fill(tabPane)
 		if (Settings.AUTOUPDATE())
 			checkForUpdate()
+		DiscordRPC.connectDelayed(5000)
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
