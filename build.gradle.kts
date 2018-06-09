@@ -6,7 +6,7 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.*
 import java.util.Scanner
 
-val isUnstable = true
+val isUnstable = properties["release"] == null
 version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
 		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
 file("src/resources/version").writeText(version as String)
@@ -23,9 +23,6 @@ java.sourceSets {
 	getByName("main") {
 		java.srcDir("src/main")
 		resources.srcDir("src/resources")
-	}
-	getByName("test") {
-		java.srcDir("src/test")
 	}
 }
 
@@ -52,14 +49,11 @@ dependencies {
 	compile(kotlin("stdlib-jdk8"))
 	
 	compile("org.controlsfx", "controlsfx", "8.40.+")
-
+	
 	compile("be.bluexin:drpc4k:0.6-SNAPSHOT")
 	
 	compile("org.apache.httpcomponents", "httpmime", "4.5.4")
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev518-1.23.0")
-	
-	testCompile("com.google.api-client", "google-api-client-java6", "1.23.0")
-	testCompile("com.google.oauth-client", "google-oauth-client-jetty", "1.23.0")
 }
 
 val file
@@ -73,13 +67,13 @@ tasks {
 	
 	"run"(JavaExec::class) {
 		group = MAIN
-		// gradle run -Dexec.args="FINE save"
+		// Usage: gradle run -Dexec.args="FINE save"
 		args = System.getProperty("exec.args", "").split(" ")
 	}
 	
 	"shadowJar"(ShadowJar::class) {
 		baseName = "MonsterUtilities"
-		classifier = null
+		classifier = ""
 		destinationDir = file(".")
 		doLast {
 			file(file).setExecutable(true)
@@ -88,18 +82,17 @@ tasks {
 	
 	val release by creating(Exec::class) {
 		group = MAIN
-		dependsOn("jar")
 		val path = "../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest"
-		doFirst { file(path).writeText(version.toString()) }
+		file(path).writeText(version.toString())
 		// TODO temporary workaround until real release
-		val path2 = "../monsterutilities-extras/website/downloads/latest"
-		doFirst { file(path2).writeText(version.toString()) }
+		val pathLatest = "../monsterutilities-extras/website/downloads/latest"
+		file(pathLatest).writeText(version.toString())
 		
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; 
 			open -u ${properties["credentials.ftp"]} -e $s"
-			cd /www/downloads; put $path; put $path2;
-			cd ./files; mrm ${rootProject.name}-*-*.jar; put $file; 
+			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
+			cd ./files; ${if (properties["noversion"] == null) "mrm ${rootProject.name}-*-*.jar;" else ""} put $file;
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	

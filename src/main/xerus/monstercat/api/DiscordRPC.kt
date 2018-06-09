@@ -5,6 +5,7 @@ import be.bluexin.drpc4k.jna.RPCHandler
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.getResource
+import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.logger
 
 object DiscordRPC {
@@ -12,28 +13,36 @@ object DiscordRPC {
 	private val apiKey
 		get() = getResource("discordapi")!!.readText()
 	
-	val idlePresence = DiscordRPC()
+	private val idlePresence = DiscordRPC()
+	
+	init {
+		Player.activeTrack.listen { track ->
+			updatePresence(if(track == null) idlePresence else invoke(track.artistsTitle, track.title))
+		}
+	}
 	
 	fun connect(apiKey: String = this.apiKey) {
 		if (!RPCHandler.connected.get()) {
 			RPCHandler.onErrored = { errorCode, message -> logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message") }
-			RPCHandler.onDisconnected = { errorCode, message -> logger.warning("Discord RPC Disconnected, Code #$errorCode, $message") }
 			RPCHandler.connect(apiKey)
-			logger.config("Connecting Discord RPC.")
+			logger.config("Connecting Discord RPC")
+			Runtime.getRuntime().addShutdownHook(Thread { disconnect() })
 		}
 	}
 	
 	fun connectDelayed(millis: Long, apiKey: String = this.apiKey) {
 		launch {
 			delay(millis)
-			connect(apiKey)
-			updatePresence(idlePresence)
+			if (!RPCHandler.connected.get()) {
+				connect(apiKey)
+				updatePresence(idlePresence)
+			}
 		}
 	}
 	
 	fun disconnect() {
 		if (RPCHandler.connected.get()) {
-			logger.config("Disconnecting Discord RPC.")
+			logger.config("Disconnecting Discord RPC")
 			RPCHandler.disconnect()
 			RPCHandler.finishPending()
 		}
@@ -41,9 +50,8 @@ object DiscordRPC {
 	
 	fun updatePresence(presence: DiscordRichPresence) {
 		RPCHandler.ifConnectedOrLater {
-			logger.finer("Connected to RPC, changing presence.")
 			RPCHandler.updatePresence(presence)
-			logger.fine("Changed presence to '${presence.details}'")
+			logger.finer("Changed Discord presence to '${presence.details} ${presence.state}'")
 		}
 	}
 	
@@ -57,6 +65,6 @@ object DiscordRPC {
 			}
 	
 	operator fun invoke(artists: String, title: String) =
-			invoke("Now Playing", "$artists - $title", "icon", "playing_music", "Playing Music")
+			invoke("Listening to", "$artists - $title", "icon", "playing_music", "Playing Music")
 	
 }

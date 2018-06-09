@@ -3,6 +3,7 @@ package xerus.monstercat.api.response
 import com.google.api.client.util.Key
 import xerus.ktutil.helpers.Parsable
 import xerus.ktutil.replaceIllegalFileChars
+import xerus.ktutil.to
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
@@ -55,6 +56,6 @@ open class Track(
 	}
 	
 	override fun toString(): String =
-			(if (artistsTitle.isEmpty()) "%2\$s" else "%s - %s").format(artistsTitle, title)
+			artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 }

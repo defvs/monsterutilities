@@ -90,8 +90,6 @@ fun main(args: Array<String>) {
 		scene.applySkin(Settings.SKIN())
 		scene
 	})
-
-	DiscordRPC.disconnect()
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
