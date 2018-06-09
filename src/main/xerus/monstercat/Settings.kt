@@ -28,6 +28,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERVOLUME = create("playerVolume", 0.4)
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
+	val ENABLEEQUALIZER = create("equalizerEnabled", false)
 	
 	val ENABLECACHE = create("cacheEnabled", true)
 	

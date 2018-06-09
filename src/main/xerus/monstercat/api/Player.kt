@@ -8,6 +8,7 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
+import javafx.scene.media.AudioEqualizer
 import javafx.util.Duration
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
@@ -108,9 +109,15 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		disposePlayer()
 	}
 	
+	private fun firePlayerListeners() {
+		playerListeners.forEach { it(player) }
+	}
+	
 	private fun disposePlayer() {
+		Settings.ENABLEEQUALIZER.unbind()
 		player?.dispose()
 		player = null
+		firePlayerListeners()
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
@@ -142,6 +149,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private var player: MediaPlayer? = null
+	// Listeners are notified when the MediaPlayer is swapped.
+	val playerListeners = mutableListOf<(MediaPlayer?) -> Unit>()
+	
 	fun playTrack(track: Track) {
 		disposePlayer()
 		val hash = track.streamHash ?: run {
@@ -160,6 +170,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
 			}
 		}
+		equalizer!!.enabledProperty().bind(Settings.ENABLEEQUALIZER)
+		firePlayerListeners()
 	}
 	
 	// find tracks and initiate player
@@ -220,4 +232,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		player?.setOnEndOfMedia { if (tracks.lastIndex > index) play(tracks, index + 1) else stopPlaying() }
 	}
 	
+	val equalizer
+		get() = player?.audioEqualizer
 }

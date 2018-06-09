@@ -131,6 +131,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		addTab(TabCatalog::class)
 		addTab(TabGenres::class)
 		addTab(TabDownloader::class)
+		addTab(TabSound::class)
 		addTab(TabSettings::class)
 		if (VERSION != Settings.LASTVERSION.get()) {
 			if (Settings.LASTVERSION().isEmpty()) {
