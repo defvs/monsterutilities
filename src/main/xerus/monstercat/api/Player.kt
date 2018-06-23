@@ -22,8 +22,8 @@ import xerus.ktutil.javafx.ui.verticalFade
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.logger
 import java.net.URLEncoder
+import java.util.logging.Level
 import java.util.regex.Pattern
 import kotlin.math.pow
 
@@ -68,36 +68,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		resetNotification()
 	}
 	
-	val activeTrack = SimpleObservable<Track?>(null)
-	val activePlayer = SimpleObservable<MediaPlayer?>(null)
-	val player get() = activePlayer.value
-	
-	init {
-		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
-		
-		activeTrack.listen { track ->
-			disposePlayer()
-			if (track != null) {
-				val hash = track.streamHash ?: run {
-					showBack("$track is currently not available for streaming!")
-					return@listen
-				}
-				activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
-				updateVolume()
-				playing("Loading $track")
-				player!!.run {
-					play()
-					setOnReady {
-						label.text = "Now Playing: $track"
-						val total = totalDuration.toMillis()
-						seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
-						seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-					}
-				}
-			}
-		}
-	}
-	
 	private val label = Label()
 	/** clears the [children] and shows the [label] with [text] */
 	private fun showText(text: String) {
@@ -131,6 +101,41 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				fill(pos = 0)
 				fill()
 				add(closeButton)
+			}
+		}
+	}
+	
+	val activeTrack = SimpleObservable<Track?>(null)
+	val activePlayer = SimpleObservable<MediaPlayer?>(null)
+	val player get() = activePlayer.value
+	
+	init {
+		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
+		
+		activeTrack.listen { track ->
+			disposePlayer()
+			if (track != null) {
+				val hash = track.streamHash ?: run {
+					showBack("$track is currently not available for streaming!")
+					return@listen
+				}
+				logger.finer("Loading $track from $hash")
+				activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
+				updateVolume()
+				playing("Loading $track")
+				player!!.run {
+					play()
+					setOnReady {
+						label.text = "Now Playing: $track"
+						val total = totalDuration.toMillis()
+						seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
+						seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
+					}
+					setOnError {
+						logger.log(Level.WARNING, "Error loading $track: $error", error)
+						showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
+					}
+				}
 			}
 		}
 	}
@@ -196,6 +201,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				return@launch
 			}
 			// play best match
+			logger.finest("Found $results for $connection")
 			playTrack(results.maxBy { track ->
 				track.init()
 				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
@@ -215,20 +221,20 @@ object Player : FadingHBox(true, targetHeight = 25) {
 						showBack("No tracks found for Release $release")
 						return@launch
 					}
-			play(results, 0)
+			playTracks(results, 0)
 		}
 	}
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
-	fun play(tracks: MutableList<Track>, index: Int) {
+	fun playTracks(tracks: MutableList<Track>, index: Int) {
 		playTrack(tracks[index])
 		onFx {
 			if (index > 0)
-				children.add(children.size - 3, buttonWithId("skipback") { play(tracks, index - 1) })
+				children.add(children.size - 3, buttonWithId("skipback") { playTracks(tracks, index - 1) })
 			if (index < tracks.lastIndex)
-				children.add(children.size - 3, buttonWithId("skip") { play(tracks, index + 1) })
+				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
 		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) play(tracks, index + 1) else stopPlaying() }
+		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else stopPlaying() }
 	}
 	
 }

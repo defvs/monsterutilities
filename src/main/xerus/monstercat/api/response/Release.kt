@@ -29,7 +29,7 @@ data class Release(
 	var isMulti: Boolean = false
 	
 	fun init(): Release {
-		renderedArtists = if (renderedArtists == "Various Artists" || renderedArtists == "Monstercat" && title.contains("Monstercat")) "" else renderedArtists.trim()
+		renderedArtists = if (renderedArtists == "Various Artists" || renderedArtists == "Various" || renderedArtists == "Monstercat" && title.contains("Monstercat")) "" else renderedArtists.trim()
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		

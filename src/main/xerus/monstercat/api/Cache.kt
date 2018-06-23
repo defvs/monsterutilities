@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import xerus.ktutil.XerusLogger
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.Settings
@@ -7,8 +8,9 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.cachePath
 import xerus.monstercat.downloader.CONNECTSID
-import xerus.monstercat.logger
 import java.io.File
+
+typealias logger = XerusLogger
 
 object Releases : Refresher() {
 	

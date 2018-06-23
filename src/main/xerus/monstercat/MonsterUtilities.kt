@@ -30,6 +30,8 @@ import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.swing.JTextArea
 import kotlin.reflect.KClass
@@ -43,6 +45,11 @@ val logDir: File
 	get() = cachePath.resolve("logs").createDirs().toFile()
 
 lateinit var monsterUtilities: MonsterUtilities
+
+val globalThreadPool: ExecutorService = Executors.newCachedThreadPool()
+
+val location: URL = MonsterUtilities::class.java.protectionDomain.codeSource.location
+var checkUpdate = Settings.AUTOUPDATE() && location.toString().endsWith(".jar")
 
 fun main(args: Array<String>) {
 	XerusLogger.parseArgs(*args, defaultLevel = "finer")
@@ -90,6 +97,8 @@ fun main(args: Array<String>) {
 		scene.applySkin(Settings.SKIN())
 		scene
 	})
+	globalThreadPool.shutdown()
+	logger.info("Main completed!")
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
@@ -223,13 +232,14 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			}
 			
 			override fun succeeded() {
-				if (isUnstable == unstable) {
-					val jar = File(MonsterUtilities::class.java.protectionDomain.codeSource.location.toURI())
-					logger.info("Scheduling $jar for delete")
+				if (isUnstable == unstable && location.toString().endsWith(".jar")) {
+					val jar = File(location.toURI())
+					logger.info("Scheduling '$jar' for delete")
 					Settings.DELETE.set(jar)
 				}
 				logger.warning("Exiting for update to $version!")
 				Settings.flush()
+				
 				newFile.setExecutable(true)
 				val cmd = arrayOf("${System.getProperty("java.home")}/bin/java", "-jar", newFile.toString())
 				logger.info("Executing '${cmd.joinToString(" ")}'")

@@ -37,6 +37,7 @@ open class Track(
 			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
+		artistsTitle = if (artistsTitle == "Various Artists" || artistsTitle == "Various" || artistsTitle == "Monstercat" && title.contains("Monstercat")) "" else artistsTitle.trim()
 		if (titleRaw.isNotEmpty())
 			return
 		val split = title.split('(', ')', '[', ']').map { it.trim() }

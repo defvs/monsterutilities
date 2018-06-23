@@ -56,7 +56,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		XerusLogger.finest("$this connecting to $uri")
+		XerusLogger.finest("$this connecting")
 		val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
 		response = HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
 	}
@@ -76,7 +76,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		return resp.entity.content
 	}
 	
-	override fun toString(): String = uri.toString()
+	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
 		private var cache: Pair<String, CookieValidity>? = null

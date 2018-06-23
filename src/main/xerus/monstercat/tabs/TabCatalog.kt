@@ -1,6 +1,5 @@
 package xerus.monstercat.tabs
 
-import com.sun.javafx.scene.control.skin.TableViewSkin
 import javafx.collections.ListChangeListener
 import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
@@ -13,7 +12,6 @@ import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
-import xerus.monstercat.logger
 import java.time.LocalTime
 import java.util.*
 import kotlin.math.absoluteValue
@@ -79,7 +77,7 @@ class TabCatalog : TableTab() {
 							}; LocalTime.of(0, split[0], split[1])
 						}, colValue::invoke)
 					colName.contains("genre", true) ->
-						TableColumn<List<String>, String>(colName, { colValue(it.value)!! })
+						TableColumn<List<String>, String>(colName) { colValue(it.value)!! }
 					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
 				}
 				if (col is SearchableColumn<List<String>, *>)
@@ -99,22 +97,18 @@ class TabCatalog : TableTab() {
 		super.sheetToData(sheet.drop(1))
 		Settings.LASTCATALOGCOLUMNS.putMulti(*cols.keys.toTypedArray())
 		onFx {
-			val skin = table.skin as TableViewSkin<*>
 			setColumns(cols.keys)
 			table.columns.forEach { col ->
 				@Suppress("UNCHECKED_CAST")
 				val widths = ArrayList<Double>(table.items.size)
 				for (item in table.items) {
-					// improve read font
+					// improve read font - (skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
 					widths.add(col.getCellData(item).toString().textWidth(Font.font("System", 11.0)) + 6)
 				}
 				val avg = widths.average()
 				val deviation = widths.sumByDouble { (it - avg).absoluteValue } / widths.size
-				//(skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
 				col.prefWidth = avg
-				col.minWidth = (avg - deviation)
-						.coerceAtLeast((skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.textWidth()?.plus(5)
-								?.coerceAtLeast(30.0) ?: 30.0)
+				col.minWidth = (avg - deviation).coerceAtLeast(Label(col.text).textWidth().plus(5).coerceAtLeast(30.0))
 				col.maxWidth = widths.max()!!
 				logger.finest("Catalog column %-11s avg %3.0f +-%2.0f  max %3.0f  min %2.0f".format(col.text, avg, deviation, col.maxWidth, col.minWidth))
 			}
