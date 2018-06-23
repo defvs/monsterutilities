@@ -9,13 +9,14 @@ import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
-import javafx.stage.Stage
+import kotlinx.coroutines.experimental.asCoroutineDispatcher
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
-import org.controlsfx.dialog.ProgressDialog
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.controlsfx.progressDialog
+import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.Changelog
@@ -30,9 +31,7 @@ import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import javax.swing.JTextArea
 import kotlin.reflect.KClass
 
@@ -42,7 +41,7 @@ private val VERSION = getResource("version")!!.readText()
 private val isUnstable = VERSION.contains('-')
 
 val logDir: File
-	get() = cachePath.resolve("logs").createDirs().toFile()
+	get() = cacheDir.resolve("logs").apply { mkdirs() }
 
 lateinit var monsterUtilities: MonsterUtilities
 
@@ -53,8 +52,8 @@ var checkUpdate = Settings.AUTOUPDATE() && location.toString().endsWith(".jar")
 
 fun main(args: Array<String>) {
 	XerusLogger.parseArgs(*args, defaultLevel = "finer")
-	if(args.contains("--no-update"))
-		Settings.AUTOUPDATE.set(false)
+	if (args.contains("--no-update"))
+		checkUpdate = false
 	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
 		logger.warning("Uncaught exception in $thread: ${ex.getStackTraceString()}")
 	}
@@ -79,9 +78,7 @@ fun main(args: Array<String>) {
 		showErrorSafe(t, "Can't log to $logfile!")
 	}
 	if (!javaVersion().startsWith("1.8")) {
-		SimpleFrame {
-			add(JTextArea("Please install and use Java 8!\nThe current version is ${javaVersion()}").apply { isEditable = false })
-		}
+		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${javaVersion()}").apply { isEditable = false }) }
 		return
 	}
 	logger.info("Version: $VERSION, Java version: ${javaVersion()}")
@@ -176,7 +173,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		
 		children.add(Player.box)
 		fill(tabPane)
-		if (Settings.AUTOUPDATE())
+		if (checkUpdate)
 			checkForUpdate()
 		DiscordRPC.connectDelayed(5000)
 	}
@@ -219,6 +216,11 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		val newFile = File(Settings.FILENAMEPATTERN().replace("%version%", version, true)).absoluteFile
 		logger.fine("Update initiated to $newFile")
 		val worker = object : Task<Unit>() {
+			init {
+				updateTitle("Downloading Update")
+				updateMessage("Downloading ${newFile.name} to ${newFile.absoluteFile.parent}")
+			}
+			
 			override fun call() {
 				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
@@ -245,10 +247,10 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				logger.info("Executing '${cmd.joinToString(" ")}'")
 				val p = Runtime.getRuntime().exec(cmd)
 				val exited = p.waitFor(3, TimeUnit.SECONDS)
+				
 				if (!exited) {
 					Platform.exit()
-					App.stage.close()
-					logger.warning("Exiting!")
+					logger.warning("Exiting $VERSION!")
 				} else {
 					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
 				}
@@ -256,15 +258,9 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		}
 		worker.launch()
 		checkFx {
-			ProgressDialog(worker).run {
+			worker.progressDialog().run {
 				title = "Updater"
-				headerText = "Downloading Update"
-				contentText = "Downloading ${newFile.name} to ${newFile.absoluteFile.parent}"
-				initOwner(App.stage)
-				(dialogPane.scene.window as Stage).run {
-					setOnCloseRequest { worker.cancel() }
-					icons.setAll(Image("img/updater.png"))
-				}
+				stage.icons.setAll(Image("img/updater.png"))
 				show()
 				graphic = ImageView(Image("img/updater.png"))
 			}
@@ -279,7 +275,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					- The Genres Tab provides you an overview of genres, also from the MCatalog
 					- The Downloader enables you to batch-download songs from the Monstercat library providing you have Gold
 					Clicking on a song name anywhere plays it if available
-					The Catalog, Genres and Releases are conveniently cached for offline use in $cachePath
+					The Catalog, Genres and Releases are conveniently cached for offline use in $cacheDir
 					Look out for Tooltips when you are stuck!""".trimIndent())
 			text.isWrapText = true
 			App.stage.createStage("Welcome to MonsterUtilities!", text).apply {

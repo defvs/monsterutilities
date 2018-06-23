@@ -3,47 +3,53 @@ package xerus.monstercat.downloader
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
 import javafx.beans.property.Property
-import javafx.collections.ListChangeListener
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
+import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import kotlinx.coroutines.experimental.*
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
-import org.controlsfx.control.CheckTreeView
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import org.controlsfx.dialog.ProgressDialog
+import xerus.ktutil.*
 import xerus.ktutil.helpers.Cache
 import xerus.ktutil.helpers.ParserException
+import xerus.ktutil.helpers.Timer
 import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
-import xerus.ktutil.toLocalDate
-import xerus.monstercat.api.*
+import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.CookieValidity
 import xerus.monstercat.api.response.*
-import xerus.monstercat.logger
+import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
-import java.util.concurrent.Executors
+import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.math.roundToLong
+
+typealias logger = XerusLogger
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.content)
 
-val TreeItem<out MusicResponse>.normalisedValue
+val TreeItem<out MusicItem>.normalisedValue
 	get() = value.toString().trim().toLowerCase()
+
+val String.normalised
+	get() = trim().toLowerCase()
 
 class TabDownloader : VTab() {
 	
@@ -81,6 +87,8 @@ class TabDownloader : VTab() {
 				pane.addRow(0, chooser.textField(), chooser.button().allowExpand(vertical = false))
 				pane.addRow(1, Label("Singles Subfolder").centerText(), TextField().bindText(SINGLEFOLDER).placeholder("Subfolder (root if empty)"))
 				pane.addRow(2, Label("Albums Subfolder").centerText(), TextField().bindText(ALBUMFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(3, Label("Mixes Subfolder").centerText(), TextField().bindText(MIXESFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(4, Label("Podcast Subfolder").centerText(), TextField().bindText(PODCASTFOLDER).placeholder("Subfolder (root if empty)"))
 				pane.children.forEach {
 					GridPane.setVgrow(it, Priority.SOMETIMES)
 					GridPane.setHgrow(it, if (it is TextField) Priority.ALWAYS else Priority.SOMETIMES)
@@ -122,7 +130,7 @@ class TabDownloader : VTab() {
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 				1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-				ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]",  "Saving Light (The Remixes) [feat. HALIENE]")),
+				ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
 				1, 3)
 		add(patternPane)
 		
@@ -161,31 +169,48 @@ class TabDownloader : VTab() {
 		addRow(/* todo hide downloaded
                  CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
                 .tooltip("Only works if the Patterns and Folders are correctly set"),*/
-				createButton("Select all Songs (DO NOT click this if you are not connected to the internet!)") {
+				createButton("Smart select") {
 					trackView.checkModel.clearChecks()
-					val albums = releaseView.get("Album")
-					albums.isSelected = true
-					ProgressDialog(SimpleTask("Updating", "Fetching") {
-						val deferred = albums.internalChildren.map {
-							async {
-								(APIConnection("catalog", "release", it.value.id, "tracks").getTracks()
-										?: throw Exception("No connection!")).map { it.toString().trim().toLowerCase() }
-							}
-						}
-						val allAlbumTracks = HashSet<String>()
-						var progress = 0
+					SimpleTask("", "Fetching Tracks for Releases") {
+						while (!releaseView.ready || !trackView.ready)
+							delay(100)
+						val albums = arrayOf(releaseView.roots["Album"], releaseView.roots["EP"]).filterNotNull()
+						albums.forEach { it.isSelected = true }
+						val context = newFixedThreadPoolContext(30, "Fetching Tracks for Releases")
+						val dont = arrayOf("Album", "EP", "Single")
+						val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.children }.filterNot { it.value.isMulti })
+								.map {
+									async(context) {
+										if (!isActive) return@async null
+										APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
+									}
+								}
+						logger.finer("Fetching Tracks for ${deferred.size} Releases")
 						val max = deferred.size
-						deferred.forEach {
-							allAlbumTracks.addAll(it.await())
+						val tracksToExclude = HashSet<String>(max)
+						var progress = 0
+						for (job in deferred) {
+							if (isCancelled) {
+								job.cancel()
+							} else {
+								tracksToExclude.addAll(job.await() ?: continue)
+							}
 							updateProgress(progress++, max)
 						}
-						onFx {
-							trackView.root.internalChildren.forEach {
-								(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in allAlbumTracks
+						context.close()
+						if (!isCancelled) {
+							if (tracksToExclude.isEmpty() && albums.isNotEmpty()) {
+								monsterUtilities.showMessage("You seem to have no internet connection at the moment!")
+								return@SimpleTask
+							}
+							onFx {
+								trackView.root.internalChildren.forEach {
+									(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in tracksToExclude
+								}
 							}
 						}
-					}).show()
-				}.tooltip("Selects all Albums and then all Tracks that are not included in these"))
+					}.progressDialog().show()
+				}.tooltip("Selects all Albums+EPs and then all Tracks that are not included in these"))
 		addRow(TextField().apply {
 			promptText = "connect.sid"
 			// todo better instructions
@@ -194,11 +219,9 @@ class TabDownloader : VTab() {
 			maxWidth = Double.MAX_VALUE
 		}.grow(), Button("Start Download").apply {
 			arrayOf<Observable>(patternValid, noItemsSelected, CONNECTSID, QUALITY).addListener {
-				refreshDownloadButton(this)
-			}
-			refreshDownloadButton(this)
+				checkFx { refreshDownloadButton(this) }
+			}.invalidated(CONNECTSID)
 		})
-		
 	}
 	
 	private fun refreshDownloadButton(button: Button) {
@@ -221,162 +244,143 @@ class TabDownloader : VTab() {
 			}
 			onFx {
 				button.text = text
-				if (valid)
-					button.setOnAction { startDownload() }
-				else
-					button.setOnAction { refreshDownloadButton(button) }
+				if (valid) button.setOnAction { Downloader() }
+				else button.setOnAction { refreshDownloadButton(button) }
 			}
 		}
 	}
 	
-	private fun startDownload() {
-		children.clear()
-		releaseView.clearPredicate()
-		trackView.clearPredicate()
+	inner class Downloader {
 		
-		val cache = Cache<String, Image>()
-		val taskView = TaskProgressView<Downloader>()
-		taskView.setGraphicFactory {
-			ImageView(cache.getOrPut(it.coverUrl) {
-				val url = "$it?image_width=64".replace(" ", "%20")
-				Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
-			})
-		}
+		private val timer = Timer()
+		private val log = LogTextArea()
+		private val items: List<MusicItem>
+		private var total: Int
 		
-		val threadPool = Executors.newCachedThreadPool()
-		val dispatcher = threadPool.asCoroutineDispatcher()
-		val job = launch {
-			val releases: List<MusicResponse> = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
-			val tracks: List<MusicResponse> = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
+		private lateinit var downloader: Job
+		private lateinit var tasks: ObservableList<Download>
+		
+		init {
+			releaseView.clearPredicate()
+			trackView.clearPredicate()
+			val releases: List<MusicItem> = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
+			val tracks: List<MusicItem> = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
 			logger.fine("Starting Downloader for ${releases.size} Releases and ${tracks.size} Tracks")
-			for (item in tracks + releases) {
-				val task = item.downloader()
-				var added = false
-				onFx { taskView.tasks.add(task); added = true }
-				task.launch(dispatcher)
-				while (!added || taskView.tasks.size >= DOWNLOADTHREADS())
-					delay(200)
+			items = tracks + releases
+			total = items.size
+			onFx {
+				buildUI()
+				startDownload()
 			}
 		}
 		
-		val cancelButton = Button("Finish").onClick {
-			isDisable = true
-			job.cancel()
-			threadPool.shutdown()
-		}
-		cancelButton.maxWidth = Double.MAX_VALUE
-		add(cancelButton)
-		
-		val threadSpinner = intSpinner(0, 5, initial = DOWNLOADTHREADS())
-		DOWNLOADTHREADS.bind(threadSpinner.valueProperty())
-		addLabeled("Download Threads", threadSpinner)
-		// todo progress indicator
-		fill(taskView)
-		taskView.tasks.addListener(ListChangeListener {
-			if (it.list.isEmpty()) {
-				threadPool.shutdown()
-				cancelButton.apply {
-					setOnMouseClicked { initialize() }
-					text = "Back"
-					isDisable = false
+		private fun buildUI() {
+			children.clear()
+			
+			val cancelButton = Button("Finish").onClick {
+				isDisable = true
+				downloader.cancel()
+			}.allowExpand(vertical = false)
+			add(cancelButton)
+			
+			val threadSpinner = intSpinner(0, 5) syncTo DOWNLOADTHREADS
+			addLabeled("Download Threads", threadSpinner)
+			val progressLabel = Label("0 / ${items.size} Errors: 0")
+			val progressBar = ProgressBar().allowExpand(vertical = false)
+			add(StackPane(progressBar, progressLabel))
+			add(log)
+			var counter: Job? = null
+			var time = 0L
+			arrayOf(success, errors).addListener {
+				counter?.cancel()
+				val s = success.value
+				val e = errors.value
+				val done = s + e
+				val estimatedLength = total * lengths.mapIndexed { index, element -> element * Math.pow(1.6, index.toDouble()) }.sum() / lengths.size.downTo(1).sum()
+				progressBar.progress = done / total.toDouble()
+				if (done == total)
+					progressLabel.text = "$done / $total Errors: $e"
+				else
+					counter = launch {
+						val estimate = ((estimatedLength / lengths.sum() + total / done - 2) * timer.time() / 1000).roundToLong()
+						time = if (time > 0) (time * 9 + estimate) / 10 else estimate
+						logger.finest("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
+						while (time > 0) {
+							onFx {
+								progressLabel.text =
+										"$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
+							}
+							delay(1, TimeUnit.SECONDS)
+							time--
+						}
+					}
+			}
+			
+			val taskView = TaskProgressView<Download>()
+			val thumbnailCache = Cache<String, Image>()
+			taskView.setGraphicFactory {
+				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
+					val url = "$it?image_width=64".replace(" ", "%20")
+					Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
+				})
+			}
+			tasks = taskView.tasks
+			tasks.listen {
+				if (it.isEmpty()) {
+					cancelButton.apply {
+						setOnMouseClicked { initialize() }
+						text = "Back"
+						isDisable = false
+					}
 				}
 			}
-		})
-	}
-	
-}
-
-class TrackView : FilterableCheckTreeView<Track>(Track(title = "Tracks")) {
-	init {
-		setOnMouseClicked {
-			if (it.clickCount == 2) {
-				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
-				if (selected.isLeaf)
-					Player.playTrack(selected.value)
+			fill(taskView)
+		}
+		
+		private val lengths = ArrayList<Double>(items.size)
+		private val success = SimpleIntegerProperty()
+		private val errors = SimpleIntegerProperty()
+		private fun startDownload() {
+			downloader = launch {
+				log("Download started")
+				for (item in items) {
+					val download = item.downloadTask()
+					download.setOnCancelled {
+						log("Cancelled $item")
+						total--
+					}
+					download.setOnSucceeded {
+						lengths.add(download.length.div(10000).toDouble())
+						success.value++
+						log("Downloaded $item")
+					}
+					download.setOnFailed {
+						errors.value++
+						val exception = download.exception
+						logger.throwing("Downloader", "download", exception)
+						log("Error downloading ${download.item}: " + if (exception is ParserException) exception.message else exception.str())
+					}
+					var added = false
+					try {
+						globalThreadPool.execute(download)
+						onFx { tasks.add(download); added = true }
+					} catch (e: Throwable) {
+						logger.throwing("TabDownloader", "downloader", e)
+						log("Could not start download for $item: $e")
+					}
+					while (!added || tasks.size >= DOWNLOADTHREADS())
+						delay(200)
+				}
 			}
 		}
-		root.value = Track(title = "Loading Tracks...")
-		launch {
-			Tracks.tracks?.sortedBy { it.toString() }?.forEach {
-				root.internalChildren.add(FilterableTreeItem(it))
-			}
-			onFx {
-				root.value = Track(title = "Tracks")
-			}
+		
+		private fun log(msg: String) {
+			log.appendln("${formattedTime()} $msg")
 		}
-	}
-}
-
-class ReleaseView : FilterableCheckTreeView<Release>(Release(title = "Releases")) {
-	
-	val categories = arrayOf("Single", "Album", "Monstercat Collection", "Best of", "Podcast", "Mixes")
-	
-	init {
-		setOnMouseClicked {
-			if (it.clickCount == 2) {
-				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
-				if (selected.isLeaf)
-					Player.play(selected.value)
-			}
-		}
-		launch {
-			val roots = categories.associate { Pair(it, FilterableTreeItem(Release(title = it))) }
-			Releases.getReleases().forEach {
-				roots[it.type]?.internalChildren?.add(FilterableTreeItem(it))
-						?: logger.warning("Unknown Release type: ${it.type}")
-			}
-			onFx { root.internalChildren.addAll(roots.values) }
-		}
+		
 	}
 	
-	fun get(name: String) = root.internalChildren[categories.indexOf(name)] as FilterableTreeItem
-	
 }
-
-open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
-	val root = FilterableTreeItem(rootValue)
-	val checkedItems: ObservableList<TreeItem<T>>
-		get() = checkModel.checkedItems
-	val predicate
-		get() = root.predicateProperty()
-	
-	init {
-		root.isExpanded = true
-		setRoot(root)
-	}
-	
-	fun clearPredicate() {
-		predicate.unbind()
-		predicate.set { _, _ -> true }
-	}
-}
-
-fun CheckBoxTreeItem<*>.updateSelection() {
-	children.firstOrNull()?.run {
-		val child = this as CheckBoxTreeItem
-		child.isSelected = !child.isSelected
-		child.isSelected = !child.isSelected
-	} ?: run { isIndeterminate = true }
-}
-
-/*
-private fun downloaded(code: Int, name: Any, additional: String? = null) {
-	downloadedCount++
-	if (code < downloaded.size)
-		downloaded[code] = downloaded[code] + 1
-	var message = messages[code] + " " + name
-	if (additional != null)
-		message += ": " + additional
-	log(message)
-	if (code < downloaded.size)
-		updateStatus("Done: %s / %s", downloadedCount, releases.size)
-	if (downloaded[0] > 0) {
-		val avgTime = (System.currentTimeMillis() - startTime) / downloaded[0]
-		estimatedTime.text = "Estimated time left: " + format.format(Date(avgTime * (releases.size - downloadedCount)))
-	}
-}
-*/
-
 
 /*override fun init() {
 	if () {

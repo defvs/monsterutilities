@@ -17,7 +17,7 @@ data class Release(
 		@Key var
 		coverUrl: String = "",
 		@Key var
-		downloadable: Boolean = false) : MusicResponse, Parsable {
+		downloadable: Boolean = false) : MusicItem, Parsable {
 	
 	constructor(line: Array<String>) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
 	

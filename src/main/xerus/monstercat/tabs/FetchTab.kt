@@ -15,11 +15,9 @@ import xerus.ktutil.writeObject
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Releases
-import xerus.monstercat.logger
+import xerus.monstercat.cacheDir
 import xerus.monstercat.monsterUtilities
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.ObjectInputStream
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -92,15 +90,15 @@ abstract class FetchTab : VTab() {
 	
 	// region caching
 	
-	private val cachePath: Path
-		get() = xerus.monstercat.cachePath.resolve("MCatalog $tabName")
+	private val cacheFile: File
+		get() = cacheDir.resolve("MCatalog $tabName")
 	
 	private fun writeCache(sheet: Any) {
 		if (!Settings.ENABLECACHE())
 			return
-		logger.fine("Writing cache file $cachePath")
+		logger.fine("Writing cache file $cacheFile")
 		try {
-			writeObject(cachePath.toFile(), sheet)
+			writeObject(cacheFile, sheet)
 		} catch (e: IOException) {
 			monsterUtilities.showError(e, "Couldn't write $tabName cache!")
 		}
@@ -110,13 +108,13 @@ abstract class FetchTab : VTab() {
 		if (!Settings.ENABLECACHE())
 			return
 		try {
-			readSheet(readObject(cachePath.toFile()))
-			logger.fine("Restored cache file $cachePath")
+			readSheet(readObject(cacheFile))
+			logger.fine("Restored cache file $cacheFile")
 			showNotification(snackbarTextCache)
 		} catch (ignored: FileNotFoundException) {
 		} catch (e: Throwable) {
 			logger.throwing(javaClass.simpleName, "restoreCache", e)
-			Files.delete(cachePath)
+			cacheFile.delete()
 		}
 	}
 	

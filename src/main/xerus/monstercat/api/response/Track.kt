@@ -22,7 +22,7 @@ open class Track(
 		@JvmField var
 		remix: String = "",
 		@JvmField var
-		feat: String = "") : MusicResponse, Parsable {
+		feat: String = "") : MusicItem, Parsable {
 	
 	val alb: Album
 		get() = albums.first()

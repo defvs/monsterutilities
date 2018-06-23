@@ -8,7 +8,7 @@ fun Class<*>.declaredKeys() =
 					?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
 		}.toTypedArray()
 
-interface MusicResponse {
+interface MusicItem {
 	var id: String
 }
 

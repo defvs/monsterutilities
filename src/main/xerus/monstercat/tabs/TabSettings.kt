@@ -15,7 +15,6 @@ import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
-import xerus.monstercat.logger
 import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
@@ -32,9 +31,9 @@ import java.util.zip.ZipOutputStream
 class TabSettings : VTab() {
 	
 	init {
-		addButton("Show Changelog", { monsterUtilities.showChangelog() })
-		addButton("Show Intro Dialog", { monsterUtilities.showIntro() })
-		addButton("Send Feedback", { feedback() })
+		addButton("Show Changelog") { monsterUtilities.showChangelog() }
+		addButton("Show Intro Dialog") { monsterUtilities.showIntro() }
+		addButton("Send Feedback") { feedback() }
 		
 		val startTab = ComboBox(FXCollections.observableArrayList("Previous"))
 		onFx {
@@ -61,16 +60,16 @@ class TabSettings : VTab() {
 		})
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
-		addButton("Check for Updates", { monsterUtilities.checkForUpdate(true) })
+		addButton("Check for Updates") { monsterUtilities.checkForUpdate(true) }
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
 		addRow(
-				createButton("Quick restart", {
+				createButton("Quick restart") {
 					Settings.refresh()
 					DownloaderSettings.refresh()
 					App.restart()
-				}).apply { prefWidth = 120.0 },
-				createButton("Reset", {
+				}.apply { prefWidth = 120.0 },
+				createButton("Reset") {
 					App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 						initStyle(StageStyle.UTILITY)
 						resultProperty().listen {
@@ -78,7 +77,7 @@ class TabSettings : VTab() {
 								try {
 									Settings.reset()
 									DownloaderSettings.reset()
-									cachePath.toFile().deleteRecursively()
+									cacheDir.deleteRecursively()
 									Releases.clear()
 								} catch (e: Exception) {
 									monsterUtilities.showError(e)
@@ -88,7 +87,7 @@ class TabSettings : VTab() {
 						}
 						show()
 					}
-				}).apply {
+				}.apply {
 					prefWidth = 120.0
 					textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
 				}
@@ -135,6 +134,7 @@ class TabSettings : VTab() {
 		}
 		dialog.show()
 		dialog.resultProperty().listen { result ->
+			logger.finest("Submitting: $result")
 			result?.run {
 				sendFeedback(first, second)
 			}
@@ -143,18 +143,18 @@ class TabSettings : VTab() {
 	
 	/** @return false if it should be retried */
 	private fun sendFeedback(subject: String, message: String) {
-		val zipFile = cachePath.resolve("logs.zip").toFile()
-		System.getProperties().list(PrintStream(logDir.resolve("System.properties.txt").outputStream()))
-		val logs = logDir.listFiles()
+		val zipFile = cacheDir.resolve("logs.zip")
+		System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
+		val files = cacheDir.listFiles() + logDir.listFiles()
 		ZipOutputStream(zipFile.outputStream()).use { zip ->
-			logs.forEach {
-				zip.putNextEntry(ZipEntry(it.name))
+			files.filter { it.isFile && it != zipFile }.forEach {
+				zip.putNextEntry(ZipEntry(it.toString().removePrefix(cacheDir.toString())))
 				FileInputStream(it).use {
 					it.copyTo(zip)
 				}
 			}
 		}
-		logger.config("Sending request with subject '$subject' and ${logs.size} logs with a packed size of ${zipFile.length().byteCountString()}")
+		logger.config("Sending request with subject '$subject' and ${files.size} logs with a packed size of ${zipFile.length().byteCountString()}")
 		val entity = MultipartEntityBuilder.create()
 				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 				.addTextBody("subject", subject)
