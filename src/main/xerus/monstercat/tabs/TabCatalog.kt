@@ -15,7 +15,7 @@ import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
-import xerus.monstercat.api.Song
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.time.LocalTime
 import java.util.*
@@ -55,9 +55,9 @@ class TabCatalog : TableTab() {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
 				Playlist.clearTracks()
 				val filtered = table.filteredData
-				val filteredList = mutableListOf<Song>()
+				val filteredList = mutableListOf<Track>()
 				for (v : List<String> in filtered){
-					filteredList.add(Song(v[cols.findUnsafe("Track")].trim(),v[cols.findUnsafe("Artist")]))
+					filteredList.add(Track("", v[cols.findUnsafe("Track")].trim(), v[cols.findUnsafe("Artist")]))
 				}
 				Playlist.setTracks(filteredList)
 				Playlist.currentTrack = filtered.indexOf(selected)
@@ -65,7 +65,7 @@ class TabCatalog : TableTab() {
 			}
 			if (me.clickCount == 1 && me.button == MouseButton.MIDDLE) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
-				Playlist(Song(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+				Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
 			}
 		}
 	}

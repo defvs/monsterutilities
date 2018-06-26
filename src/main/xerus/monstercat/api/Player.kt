@@ -79,7 +79,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			disposePlayer()
 			if (track != null) {
 				val hash = track.streamHash ?: run {
-					showBack("$track is currently not available for streaming!")
+					if (Playlist.playlist.size < 2)
+						showBack("$track is currently not available for streaming!")
+					else player?.onEndOfMedia
 					return@listen
 				}
 				activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
@@ -94,6 +96,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 						seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
 					}
 				}
+			}
+		}
+
+		player?.setOnEndOfMedia {
+			if (Playlist.playlist.isEmpty()) stopPlaying()
+			else {
+				val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+				if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
 			}
 		}
 	}
@@ -157,10 +167,10 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
-	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artists) }
+	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artistsTitle) }
 	private val nextButton = buttonWithId("skip") {
-		val s: Song? = if (!Playlist.random) Playlist.next() else Playlist.nextRandom()
-		play(s!!.title, s.artists)
+		val s: Track? = if (!Playlist.random) Playlist.next() else Playlist.nextRandom()
+		play(s!!.title, s.artistsTitle)
 	}
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
 	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
@@ -204,6 +214,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			val results = connection.getTracks().nullIfEmpty()
 			if (results == null) {
 				onFx { showBack("Track not found") }
+
 				logger.fine("No results for $connection")
 				return@launch
 			}
@@ -213,14 +224,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
 						(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 			}!!)
-
-			player?.setOnEndOfMedia {
-				if (Playlist.playlist.isEmpty()) stopPlaying()
-				else {
-					val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
-					if (s != null) play(s.title, s.artists) else stopPlaying()
-				}
-			}
 
 			return@launch
 		}
@@ -241,14 +244,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
 	fun play(tracks: MutableList<Track>, index: Int) {
-		playTrack(tracks[index])
-		onFx {
-			if (index > 0)
-				children.add(children.size - 3, buttonWithId("skipback") { play(tracks, index - 1) })
-			if (index < tracks.lastIndex)
-				children.add(children.size - 3, buttonWithId("skip") { play(tracks, index + 1) })
-		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) play(tracks, index + 1) else stopPlaying() }
+		Playlist.setTracks(tracks)
+		val song = Playlist.select(index)
+		play(song!!.title, song.artistsTitle)
 	}
 	
 }

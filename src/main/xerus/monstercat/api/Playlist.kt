@@ -2,15 +2,16 @@ package xerus.monstercat.api
 
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import xerus.monstercat.api.response.Track
 
 object Playlist {
-	var playlist: ObservableList<Song> = FXCollections.observableArrayList()
+	var playlist: ObservableList<Track> = FXCollections.observableArrayList()
 	var currentTrack = 0
 	var repeat = false
 	var random: Boolean = false
 
 
-	fun next(): Song? {
+	fun next(): Track? {
 		when {
 			currentTrack + 1 < playlist.size -> currentTrack++
 			repeat -> currentTrack = 0
@@ -19,22 +20,22 @@ object Playlist {
 		return playlist[currentTrack]
 	}
 
-	fun prev(): Song? {
+	fun prev(): Track? {
 		if (currentTrack > 0) currentTrack--
 		return playlist[currentTrack]
 	}
 
-	fun select(index: Int): Song? {
+	fun select(index: Int): Track? {
 		if (index >= 0 && index < playlist.size) currentTrack = index
 		return playlist[currentTrack]
 	}
 
 	fun getTracks() = playlist
-	fun setTracks(playlist: MutableList<Song>) = this.playlist.addAll(playlist)
+	fun setTracks(playlist: MutableList<Track>) = this.playlist.addAll(playlist)
 
-	fun addTrack(track: Song) = playlist.add(track)
-	operator fun invoke(track: Song) = addTrack(track)
-	operator fun invoke(vararg tracks: Song) = playlist.addAll(tracks)
+	fun addTrack(track: Track) = playlist.add(track)
+	operator fun invoke(track: Track) = addTrack(track)
+	operator fun invoke(vararg tracks: Track) = playlist.addAll(tracks)
 
 	fun removeTrack(index: Int?) {
 		if (index != null) playlist.removeAt(index)
@@ -47,16 +48,5 @@ object Playlist {
 		currentTrack = 0
 	}
 
-	fun nextRandom(): Song? = select((Math.random() * (playlist.size)).toInt())
-}
-
-class Song(title: String, artists: String) {
-
-	var title = ""
-	var artists = ""
-
-	init {
-		this.title = title
-		this.artists = artists
-	}
+	fun nextRandom(): Track? = select((Math.random() * (playlist.size)).toInt())
 }

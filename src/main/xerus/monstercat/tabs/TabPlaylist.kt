@@ -10,25 +10,25 @@ import javafx.util.Callback
 import xerus.ktutil.javafx.fill
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
-import xerus.monstercat.api.Song
+import xerus.monstercat.api.response.Track
 
 
 class TabPlaylist : VTab() {
-	var table = TableView<Song>()
+	var table = TableView<Track>()
 
 	init {
 		prefWidth = 600.0
 
 		table.items = Playlist.playlist
 
-		val artistsCol = TableColumn<Song, String>("Artists")
-		artistsCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> { p ->
-			SimpleStringProperty(p.value.artists)
+		val artistsCol = TableColumn<Track, String>("Artists")
+		artistsCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
+			SimpleStringProperty(p.value.artistsTitle)
 		}
 		artistsCol.prefWidthProperty().bind(widthProperty().divide(2))
 
-		val titleCol = TableColumn<Song, String>("Title")
-		titleCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Song, String>, ObservableValue<String>> { p ->
+		val titleCol = TableColumn<Track, String>("Title")
+		titleCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
 			SimpleStringProperty(p.value.title)
 		}
 		titleCol.prefWidthProperty().bind(widthProperty().divide(2))
@@ -42,7 +42,7 @@ class TabPlaylist : VTab() {
 				val selected = table.selectionModel.selectedIndex
 				val t = Playlist.select(selected)
 				if (t != null) {
-					Player.play(t.title, t.artists)
+					Player.play(t.title, t.artistsTitle)
 				}
 			}
 			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
