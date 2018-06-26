@@ -98,7 +98,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				}
 			}
 		}
-
+		
 		player?.setOnEndOfMedia {
 			if (Playlist.playlist.isEmpty()) stopPlaying()
 			else {
@@ -214,7 +214,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			val results = connection.getTracks().nullIfEmpty()
 			if (results == null) {
 				onFx { showBack("Track not found") }
-
+				
 				logger.fine("No results for $connection")
 				return@launch
 			}
@@ -224,7 +224,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
 						(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 			}!!)
-
+			
 			return@launch
 		}
 	}

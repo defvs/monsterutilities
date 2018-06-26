@@ -24,10 +24,10 @@ import kotlin.math.absoluteValue
 class TabCatalog : TableTab() {
 	private val searchView = SearchView<List<String>>()
 	private val searchables = searchView.options
-
+	
 	init {
 		prefWidth = 600.0
-
+		
 		table.setRowFactory {
 			TableRow<List<String>>().apply {
 				val genre = cols.find("Genre") ?: return@apply
@@ -39,13 +39,13 @@ class TabCatalog : TableTab() {
 				}
 			}
 		}
-
+		
 		searchables.setAll(MultiSearchable("Any", Type.TEXT, { it }), MultiSearchable("Genre", Type.TEXT, { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } }))
 		setColumns(Settings.LASTCATALOGCOLUMNS.all)
-
+		
 		children.add(searchView)
 		predicate.bind(searchView.predicate)
-
+		
 		fill(table)
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
@@ -56,7 +56,7 @@ class TabCatalog : TableTab() {
 				Playlist.clearTracks()
 				val filtered = table.filteredData
 				val filteredList = mutableListOf<Track>()
-				for (v : List<String> in filtered){
+				for (v: List<String> in filtered) {
 					filteredList.add(Track("", v[cols.findUnsafe("Track")].trim(), v[cols.findUnsafe("Artist")]))
 				}
 				Playlist.setTracks(filteredList)
@@ -69,7 +69,7 @@ class TabCatalog : TableTab() {
 			}
 		}
 	}
-
+	
 	private fun setColumns(columns: List<String>) {
 		val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()
 		val newColumns = ArrayList<TableColumn<List<String>, *>>(columns.size)
@@ -108,7 +108,7 @@ class TabCatalog : TableTab() {
 		}
 		table.columns.setAll(newColumns)
 	}
-
+	
 	override fun sheetToData(sheet: List<List<String>>) {
 		super.sheetToData(sheet.drop(1))
 		Settings.LASTCATALOGCOLUMNS.putMulti(*cols.keys.toTypedArray())
@@ -134,5 +134,5 @@ class TabCatalog : TableTab() {
 			}
 		}
 	}
-
+	
 }
