@@ -11,7 +11,6 @@ import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
-import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
@@ -19,6 +18,9 @@ import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
+import xerus.ktutil.square
+import xerus.ktutil.to
+import xerus.ktutil.toInt
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -123,7 +125,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 				updateVolume()
 				playing("Loading $track")
-				player!!.run {
+				player?.run {
 					play()
 					setOnReady {
 						label.text = "Now Playing: $track"
@@ -188,27 +190,29 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		launch {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
-			// fetch tracks with given title
-			val connection = APIConnection("catalog", "track").addQuery("fields", "artists", "artistsTitle", "title")
-			URLEncoder.encode(title, "UTF-8")
-					.split(Pattern.compile("%.."))
-					.filter { it.isNotBlank() }
-					.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
-			val results = connection.getTracks().nullIfEmpty()
-			if (results == null) {
+			val track = find(title, artists)
+			if (track == null) {
 				onFx { showBack("Track not found") }
-				logger.fine("No results for $connection")
 				return@launch
 			}
-			// play best match
-			logger.finest("Found $results for $connection")
-			playTrack(results.maxBy { track ->
-				track.init()
-				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
-						(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
-			}!!)
+			playTrack(track)
 			player?.setOnEndOfMedia { stopPlaying() }
-			return@launch
+		}
+	}
+	
+	/** Finds the best match for the given [title] and [artists] */
+	fun find(title: String, artists: String): Track? {
+		val connection = APIConnection("catalog", "track").addQuery("fields", "artists", "artistsTitle", "title")
+		URLEncoder.encode(title, "UTF-8")
+				.split(Pattern.compile("%.."))
+				.filter { it.isNotBlank() }
+				.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
+		val results = connection.getTracks()
+		logger.finest("Found $results for $connection")
+		return results?.maxBy { track ->
+			track.init()
+			track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
+					(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 		}
 	}
 	

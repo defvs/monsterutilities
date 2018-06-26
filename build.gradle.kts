@@ -20,9 +20,12 @@ plugins {
 
 // source directories
 java.sourceSets {
-	getByName("main") {
+	"main" {
 		java.srcDir("src/main")
 		resources.srcDir("src/resources")
+	}
+	"test" {
+		java.srcDir("src/test")
 	}
 }
 
@@ -54,6 +57,8 @@ dependencies {
 	
 	compile("org.apache.httpcomponents", "httpmime", "4.5.5")
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev527-1.23.0")
+	
+	testCompile("org.junit.jupiter", "junit-jupiter-api", "5.2.0")
 }
 
 val file
