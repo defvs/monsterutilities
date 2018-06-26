@@ -22,7 +22,6 @@ import java.util.*
 import kotlin.math.absoluteValue
 
 class TabCatalog : TableTab() {
-
 	private val searchView = SearchView<List<String>>()
 	private val searchables = searchView.options
 
@@ -60,7 +59,7 @@ class TabCatalog : TableTab() {
 				for (v : List<String> in filtered){
 					filteredList.add(Song(v[cols.findUnsafe("Track")].trim(),v[cols.findUnsafe("Artist")]))
 				}
-				Playlist(filteredList)
+				Playlist.setTracks(filteredList)
 				Playlist.currentTrack = filtered.indexOf(selected)
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}

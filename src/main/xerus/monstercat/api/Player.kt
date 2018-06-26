@@ -213,25 +213,15 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
 						(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 			}!!)
-			if (Playlist.playlist.isEmpty()) {
-				player?.setOnEndOfMedia { stopPlaying() }
-			} else {
-				if (Playlist.random){
-					player?.setOnEndOfMedia {
-						val s = Playlist.nextRandom()
-						if (s != null) {
-							play(s.title, s.artists)
-						} else stopPlaying()
-					}
-				}else {
-					player?.setOnEndOfMedia {
-						val s = Playlist.next()
-						if (s != null) {
-							play(s.title, s.artists)
-						} else stopPlaying()
-					}
+
+			player?.setOnEndOfMedia {
+				if (Playlist.playlist.isEmpty()) stopPlaying()
+				else {
+					val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+					if (s != null) play(s.title, s.artists) else stopPlaying()
 				}
 			}
+
 			return@launch
 		}
 	}

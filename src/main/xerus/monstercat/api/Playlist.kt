@@ -32,9 +32,6 @@ object Playlist {
 	fun getTracks() = playlist
 	fun setTracks(playlist: MutableList<Song>) = this.playlist.addAll(playlist)
 
-	operator fun invoke() = getTracks()
-	operator fun invoke(playlist: MutableList<Song>) = setTracks(playlist)
-
 	fun addTrack(track: Song) = playlist.add(track)
 	operator fun invoke(track: Song) = addTrack(track)
 	operator fun invoke(vararg tracks: Song) = playlist.addAll(tracks)
