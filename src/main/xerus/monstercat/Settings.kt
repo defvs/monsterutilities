@@ -19,9 +19,9 @@ import java.nio.file.Paths
 val defaultColumns = arrayOf("Genre", "Artist", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("ID", "Date", "Br", "Genre", "Subgenre", "Artist", "Track", "Length", "BPM", "Key").joinToString(multiSeparator)
 
-val cachePath: Path
-	get() = (Paths.get("/var/tmp").takeIf { it.exists() } ?: Paths.get(System.getProperty("java.io.tmpdir")))
-			.resolve("monsterutilities").createDirs()
+val cacheDir: File
+	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))
+			.resolve("monsterutilities").apply { mkdirs() }
 
 object Settings : SettingsNode("xerus/monsterutilities") {
 	

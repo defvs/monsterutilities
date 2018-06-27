@@ -12,17 +12,20 @@ version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD")
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.41"
+	kotlin("jvm") version "1.2.50"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.4"
-	id("com.github.ben-manes.versions") version "0.17.0"
+	id("com.github.ben-manes.versions") version "0.19.0"
 }
 
 // source directories
 java.sourceSets {
-	getByName("main") {
+	"main" {
 		java.srcDir("src/main")
 		resources.srcDir("src/resources")
+	}
+	"test" {
+		java.srcDir("src/test")
 	}
 }
 
@@ -41,7 +44,7 @@ application {
 
 repositories {
 	jcenter()
-	maven(url = "http://maven.bluexin.be/repository/snapshots/")
+	maven("http://maven.bluexin.be/repository/snapshots/")
 }
 
 dependencies {
@@ -50,10 +53,12 @@ dependencies {
 	
 	compile("org.controlsfx", "controlsfx", "8.40.+")
 	
-	compile("be.bluexin:drpc4k:0.6-SNAPSHOT")
+	compile("be.bluexin", "drpc4k", "0.6-SNAPSHOT")
 	
-	compile("org.apache.httpcomponents", "httpmime", "4.5.4")
-	compile("com.google.apis", "google-api-services-sheets", "v4-rev518-1.23.0")
+	compile("org.apache.httpcomponents", "httpmime", "4.5.5")
+	compile("com.google.apis", "google-api-services-sheets", "v4-rev527-1.23.0")
+	
+	testCompile("org.junit.jupiter", "junit-jupiter-api", "5.2.0")
 }
 
 val file
@@ -67,8 +72,8 @@ tasks {
 	
 	"run"(JavaExec::class) {
 		group = MAIN
-		// Usage: gradle run -Dexec.args="FINE save"
-		args = System.getProperty("exec.args", "").split(" ")
+		// Usage: gradle run -Dargs="FINE save"
+		args = System.getProperty("args", "").split(" ")
 	}
 	
 	"shadowJar"(ShadowJar::class) {
@@ -82,12 +87,13 @@ tasks {
 	
 	val release by creating(Exec::class) {
 		group = MAIN
-		val path = "../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest"
-		file(path).writeText(version.toString())
-		// TODO temporary workaround until real release
-		val pathLatest = "../monsterutilities-extras/website/downloads/latest"
-		file(pathLatest).writeText(version.toString())
-		
+		val path = file("../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest")
+		val pathLatest = path.resolveSibling("latest")
+		doFirst {
+			path.writeText(version.toString())
+			// TODO temporary workaround until real release
+			pathLatest.writeText(version.toString())
+		}
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; 
 			open -u ${properties["credentials.ftp"]} -e $s"

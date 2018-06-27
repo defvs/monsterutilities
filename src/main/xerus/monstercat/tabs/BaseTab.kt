@@ -4,6 +4,9 @@ import javafx.scene.control.Control
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
 import org.controlsfx.validation.decoration.GraphicValidationDecoration
+import xerus.ktutil.XerusLogger
+
+typealias logger = XerusLogger
 
 val minimalValidationDecorator = object : GraphicValidationDecoration() {
 	override fun applyRequiredDecoration(target: Control?) {}

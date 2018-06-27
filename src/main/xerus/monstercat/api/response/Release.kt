@@ -17,7 +17,7 @@ data class Release(
 		@Key var
 		coverUrl: String = "",
 		@Key var
-		downloadable: Boolean = false) : MusicResponse, Parsable {
+		downloadable: Boolean = false) : MusicItem, Parsable {
 	
 	constructor(line: Array<String>) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
 	
@@ -29,7 +29,7 @@ data class Release(
 	var isMulti: Boolean = false
 	
 	fun init(): Release {
-		renderedArtists = if (renderedArtists == "Various Artists" || renderedArtists == "Monstercat" && title.contains("Monstercat")) "" else renderedArtists.trim()
+		renderedArtists = if (renderedArtists == "Various Artists" || renderedArtists == "Various" || renderedArtists == "Monstercat" && title.contains("Monstercat")) "" else renderedArtists.trim()
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		

@@ -6,6 +6,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.getResource
 import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.ui.App
 import xerus.monstercat.logger
 
 object DiscordRPC {
@@ -17,16 +18,17 @@ object DiscordRPC {
 	
 	init {
 		Player.activeTrack.listen { track ->
-			updatePresence(if(track == null) idlePresence else invoke(track.artistsTitle, track.title))
+			updatePresence(if (track == null) idlePresence else invoke(track.artistsTitle, track.title))
 		}
 	}
 	
 	fun connect(apiKey: String = this.apiKey) {
 		if (!RPCHandler.connected.get()) {
+			RPCHandler.onReady = { logger.fine("Discord Rich Presence ready!") }
 			RPCHandler.onErrored = { errorCode, message -> logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message") }
 			RPCHandler.connect(apiKey)
 			logger.config("Connecting Discord RPC")
-			Runtime.getRuntime().addShutdownHook(Thread { disconnect() })
+			App.stage.setOnHiding { disconnect() }
 		}
 	}
 	
@@ -51,7 +53,8 @@ object DiscordRPC {
 	fun updatePresence(presence: DiscordRichPresence) {
 		RPCHandler.ifConnectedOrLater {
 			RPCHandler.updatePresence(presence)
-			logger.finer("Changed Discord presence to '${presence.details} ${presence.state}'")
+			if (presence != idlePresence)
+				logger.finer("Changed Discord presence to '${presence.details} ${presence.state}'")
 		}
 	}
 	
