@@ -1,19 +1,25 @@
 language: java
-before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-cache:
-  directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
-sudo: false
+sudo: required
+dist: trusty
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+    - oracle-java8-installer
 script:
-  - gradle test
+- "sudo gradle assemble"
+- "sudo gradle jar"
+- "sudo gradle test"
 before_install:
-  - cd ..
-  - git clone https://github.com/defvs/util.git
-  - cd ..
+- cd ..
+- git clone --branch=playlist-icons https://github.com/defvs/util.git
+- cd monsterutilities
+- rm -rf "/.gradle/caches/"
+- gradle wrapper --gradle-version 4.8-rc-2 --distribution-type all
+deploy:
+  provider: releases
+  api_key:
+    secure: EI6htI3Jl9jJms/XCjtD7pKolVghx/oQw2SjczZPfhmrd1KCjBgflAn8Lpi1U4NVL7vFEwIS4Yyf9s+KSL6eva2e9i6pbWE+WEeH+vd2KUGtsuTVHqL9cpjAAYixq4K6Df9mPdCNMyPZX98U10H4a3pqqa+slmSP5yD8wV1f093hc4lGYOH/LlA8q5pldEkKj3sKs3zMznCQ6hEDRcx2neQ9pmEpeouRNyvP9/ISOjsmopiBsQ/qIlBNrYqdiPRKU8ZeI6JKkMbTqaDfYbqP7/waA1WmS/ZgNqpujnscg44DjFSaMAKqGJxP11tNwIVXSgG3x1wjqtLVRhlS1UW+uQ+BJyFcJ8ictbF7SQvYYxI2XKFhjCdykfWdCPNUmb9WpN2ePu58fEIhmHPWfZfS0fUMvJ0M5SIiy7ZS/oIBqkG+7qd5GALxRs99tQJg6KXyff5FXIor5SnSb0kpWJJQA3xv6EQ9Hk2T7KzFJHztSBPJb6nU0bE2KIw7oQf+LgZ4sV5Ppi3PYqIobOc97oe0OYBxet5X1L8MEtPeVMscm4itDv+TdoVZNeR1xgtHfKZ9t302LurLETA4xZ7DgcA5gKrTr4QoHM0GOMVUu2Jjb0ZPZSC+sbrje2Ij1IFcB8apS8RN1uEVqqooXmmG4q7LwSb/XS4TOUHDDijHfE+aGNE=
+  file: MonsterUtilities
+  on:
+    repo: defvs/monsterutilities
+    branch: playlist
