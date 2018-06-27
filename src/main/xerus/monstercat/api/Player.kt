@@ -145,6 +145,13 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun playTrack(track: Track) {
 		activeTrack.value = track
+		player?.setOnEndOfMedia {
+			if (Playlist.playlist.isEmpty()) stopPlaying()
+			else {
+				val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+				if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
+			}
+		}
 	}
 	
 	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
@@ -208,7 +215,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				return@launch
 			}
 			playTrack(track)
-			player?.setOnEndOfMedia { stopPlaying() }
 		}
 	}
 	
@@ -243,14 +249,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
 	fun playTracks(tracks: MutableList<Track>, index: Int) {
-		playTrack(tracks[index])
-		onFx {
-			if (index > 0)
-				children.add(children.size - 3, buttonWithId("skipback") { playTracks(tracks, index - 1) })
-			if (index < tracks.lastIndex)
-				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
-		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else stopPlaying() }
+		Playlist.setTracks(tracks)
+		val s = Playlist.select(index)
+		playTrack(s!!)
 	}
 	
 }
