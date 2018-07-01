@@ -44,11 +44,12 @@ application {
 
 repositories {
 	jcenter()
+	maven("https://jitpack.io")
 	maven("http://maven.bluexin.be/repository/snapshots/")
 }
 
 dependencies {
-	compile("xerus.util", "javafx")
+	compile("com.github.Xerus2000", "util", "master-SNAPSHOT") // Always builds the current version
 	compile(kotlin("stdlib-jdk8"))
 	
 	compile("org.controlsfx", "controlsfx", "8.40.+")
