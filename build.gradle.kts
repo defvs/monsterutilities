@@ -51,6 +51,7 @@ repositories {
 dependencies {
 	compile("com.github.Xerus2000", "util", "master-SNAPSHOT")
 	compile(kotlin("stdlib-jdk8"))
+	compile(kotlin("reflect"))
 	
 	compile("org.controlsfx", "controlsfx", "8.40.14")
 	

@@ -190,29 +190,13 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		launch {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
-			val track = find(title, artists)
+			val track = API.find(title, artists)
 			if (track == null) {
 				onFx { showBack("Track not found") }
 				return@launch
 			}
 			playTrack(track)
 			player?.setOnEndOfMedia { stopPlaying() }
-		}
-	}
-	
-	/** Finds the best match for the given [title] and [artists] */
-	fun find(title: String, artists: String): Track? {
-		val connection = APIConnection("catalog", "track").addQuery("fields", "artists", "artistsTitle", "title")
-		URLEncoder.encode(title, "UTF-8")
-				.split(Pattern.compile("%.."))
-				.filter { it.isNotBlank() }
-				.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
-		val results = connection.getTracks()
-		logger.finest("Found $results for $connection")
-		return results?.maxBy { track ->
-			track.init()
-			track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
-					(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 		}
 	}
 	

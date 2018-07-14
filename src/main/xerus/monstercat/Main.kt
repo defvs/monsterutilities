@@ -76,7 +76,7 @@ fun main(args: Array<String>) {
 		scene
 	})
 	globalThreadPool.shutdown()
-	logger.info("Main completed!")
+	logger.info("Main has shut down!")
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {

@@ -1,7 +1,6 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import xerus.ktutil.helpers.Parsable
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.ktutil.to
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
@@ -11,7 +10,7 @@ import java.util.Collections.emptyList
 open class Track(
 		@Key("_id") override var
 		id: String = "",
-		@Key @JvmField var
+		@Key override var
 		title: String = "",
 		@Key @JvmField var
 		artistsTitle: String = "",
@@ -22,7 +21,7 @@ open class Track(
 		@JvmField var
 		remix: String = "",
 		@JvmField var
-		feat: String = "") : MusicItem {
+		feat: String = "") : MusicItem() {
 	
 	val alb: Album
 		get() = albums.first()
@@ -37,7 +36,7 @@ open class Track(
 			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
-		artistsTitle = if (artistsTitle == "Various Artists" || artistsTitle == "Various" || artistsTitle == "Monstercat" && title.contains("Monstercat")) "" else artistsTitle.trim()
+		artistsTitle = formatArtists(artistsTitle)
 		if (titleRaw.isNotEmpty())
 			return
 		val split = title.split('(', ')', '[', ']').map { it.trim() }
@@ -56,7 +55,6 @@ open class Track(
 		return super.toString(pattern)
 	}
 	
-	override fun toString(): String =
-			artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
+	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 }

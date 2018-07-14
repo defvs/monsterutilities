@@ -2,15 +2,21 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 import xerus.ktutil.helpers.Parsable
+import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaField
 
-fun Class<*>.declaredKeys() =
-		declaredFields.mapNotNull {
-			((it.annotations.find { it is Key } as Key?)
-					?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
-		}.toTypedArray()
+val KClass<*>.declaredKeys
+	get() = memberProperties.mapNotNull {
+		(it.javaField?.getDeclaredAnnotation(Key::class.java)
+				?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
+	}
 
-interface MusicItem : Parsable {
-	var id: String
+abstract class MusicItem : Parsable {
+	abstract var id: String
+	abstract var title: String
+	fun formatArtists(artists: String) =
+			if (artists == "Various Artists" || artists == "Various" || artists == "Monstercat" && title.contains("Monstercat")) "" else artists.trim()
 }
 
 data class Album(@Key var streamHash: String = "", @Key var albumId: String = "", @Key var trackNumber: Int = 0)
