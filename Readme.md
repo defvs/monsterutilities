@@ -1,4 +1,4 @@
-# ![icon](assets/favicon.png) MonsterUtilities ![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord) [![Build status](https://semaphoreci.com/api/v1/xerus2000/monsterutilities/branches/dev/badge.svg)](https://semaphoreci.com/xerus2000/monsterutilities)
+# ![icon](assets/favicon.png) MonsterUtilities ![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord) [![Build Status](https://semaphoreci.com/api/v1/xerus2000/monsterutilities/branches/master/shields_badge.svg)](https://semaphoreci.com/xerus2000/monsterutilities)
 
 Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog
 
@@ -47,5 +47,3 @@ The application has multiple available skins and other options if the defaults d
 ## Development 
 
 Gradle is used for building the project.
-
-Before building, my [util project](https://github.com/Xerus2000/util) needs to be checked out in the parent directory.

@@ -12,6 +12,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.util.StringConverter
 import kotlinx.coroutines.experimental.*
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
@@ -35,6 +36,8 @@ import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
@@ -60,18 +63,45 @@ class TabDownloader : VTab() {
 	private val noItemsSelected = SimpleObservable(true)
 	
 	private val searchField = TextField()
-	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE, { it.releaseDate.substring(0, 10).toLocalDate() }))
+	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
 	
 	init {
 		FilterableTreeItem.autoExpand = true
 		FilterableTreeItem.autoLeaf = false
 		
-		// Check if views are empty
+		// Check if no items in the views are selected
 		val itemListener = InvalidationListener { noItemsSelected.value = releaseView.checkedItems.size + trackView.checkedItems.size == 0 }
 		releaseView.checkedItems.addListener(itemListener)
 		trackView.checkedItems.addListener(itemListener)
 		
+		releaseSearch.conditionBox.select(releaseSearch.conditionBox.items[1])
+		(releaseSearch.searchField as DatePicker).run {
+			converter = object : StringConverter<LocalDate>() {
+				override fun toString(`object`: LocalDate?) = `object`?.toString()
+				override fun fromString(string: String?) = string?.toLocalDate()
+			}
+			if (LASTDOWNLOADTIME() > 0)
+				(releaseSearch.searchField as DatePicker).value =
+						LocalDateTime.ofEpochSecond(LASTDOWNLOADTIME().toLong(), 0, OffsetDateTime.now().offset).toLocalDate()
+		}
+		
+		// Apply filters
+		releaseView.predicate.bind({
+			if (releaseSearch.predicate == alwaysTruePredicate && searchField.text.isEmpty()) null
+			else { parent, value -> parent != releaseView.root && value.toString().contains(searchField.text, true) && releaseSearch.predicate.test(value) }
+		}, searchField.textProperty(), releaseSearch.predicateProperty)
+		trackView.root.bindPredicate(searchField.textProperty())
+		searchField.textProperty().addListener { _ ->
+			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
+			trackView.root.updateSelection()
+		}
+		
 		initialize()
+	}
+	
+	private suspend fun awaitReady() {
+		while (!releaseView.ready || !trackView.ready)
+			delay(100)
 	}
 	
 	private fun initialize() {
@@ -85,10 +115,11 @@ class TabDownloader : VTab() {
 				val pane = gridPane(padding = 5)
 				scene = Scene(pane)
 				pane.addRow(0, chooser.textField(), chooser.button().allowExpand(vertical = false))
-				pane.addRow(1, Label("Singles Subfolder").centerText(), TextField().bindText(SINGLEFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(2, Label("Albums Subfolder").centerText(), TextField().bindText(ALBUMFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(3, Label("Mixes Subfolder").centerText(), TextField().bindText(MIXESFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(4, Label("Podcast Subfolder").centerText(), TextField().bindText(PODCASTFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(1, Label("Tracks Subfolder").centerText(), TextField().bindText(TRACKFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(2, Label("Singles Subfolder").centerText(), TextField().bindText(SINGLEFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(3, Label("Albums Subfolder").centerText(), TextField().bindText(ALBUMFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(4, Label("Mixes Subfolder").centerText(), TextField().bindText(MIXESFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(5, Label("Podcast Subfolder").centerText(), TextField().bindText(PODCASTFOLDER).placeholder("Subfolder (root if empty)"))
 				pane.children.forEach {
 					GridPane.setVgrow(it, Priority.SOMETIMES)
 					GridPane.setHgrow(it, if (it is TextField) Priority.ALWAYS else Priority.SOMETIMES)
@@ -102,7 +133,6 @@ class TabDownloader : VTab() {
 		}))
 		
 		// Patterns
-		val patternPane = gridPane()
 		fun patternLabel(pattern: Property<String>, track: Track) =
 				Label().apply {
 					textProperty().dependOn(pattern) {
@@ -113,11 +143,13 @@ class TabDownloader : VTab() {
 							"No such field: " + e.cause?.cause?.message
 						} catch (e: Exception) {
 							patternValid.value = false
-							monsterUtilities.showError(e, "Error parsing pattern")
+							monsterUtilities.showError(e, "Error while parsing filename pattern")
 							e.toString()
 						}
 					}
 				}
+		
+		val patternPane = gridPane()
 		patternPane.add(Label("Singles pattern"),
 				0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
@@ -134,19 +166,8 @@ class TabDownloader : VTab() {
 				1, 3)
 		add(patternPane)
 		
-		// Apply filters
-		add(searchField)
-		releaseView.predicate.bind({
-			if (releaseSearch.predicate == alwaysTruePredicate && searchField.text.isEmpty()) null
-			else { parent, value -> parent != releaseView.root && value.toString().contains(searchField.text, true) && releaseSearch.predicate.test(value) }
-		}, searchField.textProperty(), releaseSearch.predicateProperty)
-		trackView.root.bindPredicate(searchField.textProperty())
-		searchField.textProperty().addListener { _ ->
-			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
-			trackView.root.updateSelection()
-		}
-		
 		// add Views
+		add(searchField)
 		fill(gridPane().apply {
 			add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
 			add(releaseView, 0, 1)
@@ -166,51 +187,73 @@ class TabDownloader : VTab() {
 		QUALITY.listen { buttons.forEach { button -> button.isSelected = button.userData == it } }
 		
 		// Misc options
-		addRow(/* todo hide downloaded
-                 CheckBox("Hide songs I have already downloaded").bind(HIDEDOWNLOADED)
-                .tooltip("Only works if the Patterns and Folders are correctly set"),*/
-				createButton("Smart select") {
-					trackView.checkModel.clearChecks()
-					SimpleTask("", "Fetching Tracks for Releases") {
-						while (!releaseView.ready || !trackView.ready)
-							delay(100)
-						val albums = arrayOf(releaseView.roots["Album"], releaseView.roots["EP"]).filterNotNull()
-						albums.forEach { it.isSelected = true }
-						val context = newFixedThreadPoolContext(30, "Fetching Tracks for Releases")
-						val dont = arrayOf("Album", "EP", "Single")
-						val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.children }.filterNot { it.value.isMulti })
-								.map {
-									async(context) {
-										if (!isActive) return@async null
-										APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
+		addRow(CheckBox("Treat EPs with less than"), intSpinner(2, 20, 3), Label(" Songs as Singles"))
+		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
+				.also {
+					it.selectedProperty().listen {
+						if (it) {
+							launch {
+								awaitReady()
+								releaseView.roots.forEach {
+									it.value.internalChildren.removeIf {
+										it.value.path().exists()
 									}
 								}
-						logger.finer("Fetching Tracks for ${deferred.size} Releases")
-						val max = deferred.size
-						val tracksToExclude = HashSet<String>(max)
-						var progress = 0
-						for (job in deferred) {
-							if (isCancelled) {
-								job.cancel()
-							} else {
-								tracksToExclude.addAll(job.await() ?: continue)
+								trackView.root.internalChildren.removeIf { it.value.path().exists() }
 							}
-							updateProgress(progress++, max)
-						}
-						context.close()
-						if (!isCancelled) {
-							if (tracksToExclude.isEmpty() && albums.isNotEmpty()) {
-								monsterUtilities.showMessage("You seem to have no internet connection at the moment!")
-								return@SimpleTask
-							}
-							onFx {
-								trackView.root.internalChildren.forEach {
-									(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in tracksToExclude
-								}
+						} else {
+							releaseView.root.internalChildren.clear()
+							releaseView.roots.clear()
+							trackView.root.internalChildren.clear()
+							launch {
+								releaseView.load()
+								trackView.load()
 							}
 						}
-					}.progressDialog().show()
-				}.tooltip("Selects all Albums+EPs and then all Tracks that are not included in these"))
+					}
+				})
+		addRow(createButton("Smart select") {
+			trackView.checkModel.clearChecks()
+			SimpleTask("", "Fetching Tracks for Releases") {
+				awaitReady()
+				val albums = arrayOf(releaseView.roots["Album"], releaseView.roots["EP"]).filterNotNull()
+				albums.forEach { it.isSelected = true }
+				val context = newFixedThreadPoolContext(30, "Fetching Tracks for Releases")
+				val dont = arrayOf("Album", "EP", "Single")
+				val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.internalChildren }.filterNot { it.value.isMulti })
+						.map {
+							async(context) {
+								if (!isActive) return@async null
+								APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
+							}
+						}
+				logger.finer("Fetching Tracks for ${deferred.size} Releases")
+				val max = deferred.size
+				val tracksToExclude = HashSet<String>(max)
+				var progress = 0
+				for (job in deferred) {
+					if (isCancelled) {
+						job.cancel()
+					} else {
+						tracksToExclude.addAll(job.await() ?: continue)
+					}
+					updateProgress(progress++, max)
+				}
+				logger.finest { "Tracks to exclude: " + tracksToExclude.joinToString() }
+				context.close()
+				if (!isCancelled) {
+					if (tracksToExclude.isEmpty() && albums.isNotEmpty()) {
+						monsterUtilities.showMessage("You seem to have no internet connection at the moment!")
+						return@SimpleTask
+					}
+					onFx {
+						trackView.root.internalChildren.forEach {
+							(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in tracksToExclude
+						}
+					}
+				}
+			}.progressDialog().show()
+		}.tooltip("Selects all Albums+EPs and then all Tracks that are not included in these"))
 		addRow(TextField().apply {
 			promptText = "connect.sid"
 			// todo better instructions
@@ -371,6 +414,7 @@ class TabDownloader : VTab() {
 					while (!added || tasks.size >= DOWNLOADTHREADS())
 						delay(200)
 				}
+				LASTDOWNLOADTIME.set(currentSeconds())
 			}
 		}
 		

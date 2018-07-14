@@ -1,6 +1,7 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
+import xerus.ktutil.helpers.Parsable
 
 fun Class<*>.declaredKeys() =
 		declaredFields.mapNotNull {
@@ -8,7 +9,7 @@ fun Class<*>.declaredKeys() =
 					?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
 		}.toTypedArray()
 
-interface MusicItem {
+interface MusicItem : Parsable {
 	var id: String
 }
 

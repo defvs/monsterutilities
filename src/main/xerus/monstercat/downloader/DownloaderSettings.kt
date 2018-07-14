@@ -7,6 +7,7 @@ import java.nio.file.Paths
 object DownloaderSettings : SettingsNode("xerus/monsterutilities/downloader")
 
 val DOWNLOADDIR = DownloaderSettings.create("directory", Paths.get("Monstercat"))
+val TRACKFOLDER = DownloaderSettings.create("directoryTracks", "Tracks")
 val SINGLEFOLDER = DownloaderSettings.create("directorySingles")
 val ALBUMFOLDER = DownloaderSettings.create("directoryAlbums", "{%renderedArtists% - }%title%")
 val PODCASTFOLDER = DownloaderSettings.create("directoryPodcasts", "Podcast")
@@ -16,7 +17,7 @@ val ALBUMMIXES = DownloaderSettings.create("albummixes", "Include")
 val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatterns[0])
 val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", albumTrackPatterns[0])
 
-//val HIDEDOWNLOADED = DownloaderSettings.create("hidedownloaded", false)
+val LASTDOWNLOADTIME = DownloaderSettings.create("lastdownloadtime", 0)
 
 val QUALITY = DownloaderSettings.create("quality")
 val CONNECTSID = DownloaderSettings.create("connect.sid")
