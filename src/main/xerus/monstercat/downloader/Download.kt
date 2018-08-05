@@ -26,7 +26,8 @@ fun MusicItem.folder(): Path = basePath.resolve(when {
 	else -> SINGLEFOLDER() // Single
 })
 
-fun Release.path(): Path = if(isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty() ?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
+		?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 fun Track.path(): Path = folder().createDirs().resolve(toFileName().addFormatSuffix())
 
@@ -49,24 +50,27 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 	var length: Long = 0
 		private set
 	
-	private lateinit var con: APIConnection
-	private lateinit var cis: CountingInputStream
+	private lateinit var connection: APIConnection
+	private lateinit var inputStream: CountingInputStream
 	
 	protected fun <T : InputStream> createConnection(releaseId: String, streamConverter: (InputStream) -> T, vararg queries: String): T {
-		con = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
-		val entity = con.getResponse().entity
+		connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
+		val entity = connection.getResponse().entity
 		length = entity.contentLength
 		if (length == 0L)
 			throw EmptyResponseException(releaseId)
 		updateProgress(0, length)
 		val input = streamConverter(entity.content)
-		cis = CountingInputStream(input)
+		inputStream = CountingInputStream(input)
 		return input
 	}
 	
 	override fun failed() = abort()
 	
-	protected fun abort() = con.abort()
+	protected fun abort() {
+		if (::connection.isInitialized)
+			connection.abort()
+	}
 	
 	private val buffer = ByteArray(1024)
 	protected fun downloadFile(path: Path) {
@@ -76,18 +80,18 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		val partFile = file.resolveSibling(file.name + ".part")
 		val output = FileOutputStream(partFile)
 		try {
-			var length = cis.read(buffer)
+			var length = inputStream.read(buffer)
 			while (length > 0) {
 				output.write(buffer, 0, length)
-				updateProgress(cis.count)
+				updateProgress(inputStream.count)
 				if (isCancelled) {
 					output.close()
 					partFile.delete()
 					return
 				}
-				length = cis.read(buffer)
+				length = inputStream.read(buffer)
 			}
-			if(!isCancelled) {
+			if (!isCancelled) {
 				file.delete()
 				partFile.renameTo(file)
 			}
@@ -108,14 +112,20 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 	
 	override fun download() {
 		val folder = release.folder()
-		val path = folder.resolveSibling(folder.fileName.toString() + ".part").createDirs()
+		val part = folder.resolveSibling(folder.fileName.toString() + ".part")
+		val path =
+				if (!folder.exists())
+					part.createDirs()
+				else
+					folder
 		val zis = createConnection(release.id, { ZipInputStream(it) })
+		// TODO EPS_TO_SINGLES
 		zip@ do {
 			val entry = zis.nextEntry ?: break
 			if (entry.isDirectory)
 				continue
 			val name = entry.name.split("/").last()
-			if (name == "cover.false" || !release.isMulti && name.contains("cover."))
+			if (name == "cover.false" || (name.contains("cover.") && (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti)))
 				continue
 			val target = when {
 				name.contains("cover.") -> path.resolve(name)
@@ -129,9 +139,9 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 			}
 			downloadFile(target)
 		} while (!isCancelled)
-		if(!isCancelled) {
+		if (!isCancelled && part.exists()) {
 			folder.toFile().deleteRecursively()
-			path.renameTo(folder)
+			part.renameTo(folder)
 		}
 	}
 	

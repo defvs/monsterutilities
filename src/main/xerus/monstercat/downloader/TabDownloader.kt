@@ -46,7 +46,7 @@ typealias logger = XerusLogger
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
-val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.content)
+val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
 
 val TreeItem<out MusicItem>.normalisedValue
 	get() = value.toString().trim().toLowerCase()
@@ -187,7 +187,19 @@ class TabDownloader : VTab() {
 		QUALITY.listen { buttons.forEach { button -> button.isSelected = button.userData == it } }
 		
 		// Misc options
-		addRow(CheckBox("Treat EPs with less than"), intSpinner(2, 20, 3), Label(" Songs as Singles"))
+		addLabeled("Keep separate cover arts for ", ComboBox<String>(ImmutableObservableList("Nothing", "Albums", "Albums & Singles")).apply {
+			selectionModel.select(DOWNLOADCOVERS())
+			selectionModel.selectedIndexProperty().listen { DOWNLOADCOVERS.set(it.toInt()) }
+		})
+		
+		val epAsSingle = CheckBox("Treat EPs with less than")
+		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
+		val epAsSingleAmount = intSpinner(2, 20, EPS_TO_SINGLES().takeIf { it != 0 } ?: 4)
+		arrayOf(epAsSingle.selectedProperty(), epAsSingleAmount.valueProperty()).addListener {
+			EPS_TO_SINGLES.set(if (epAsSingle.isSelected) epAsSingleAmount.value else 0)
+		}
+		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles (TODO)"))
+		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 				.also {
 					it.selectedProperty().listen {
@@ -212,6 +224,7 @@ class TabDownloader : VTab() {
 						}
 					}
 				})
+		
 		addRow(createButton("Smart select") {
 			trackView.checkModel.clearChecks()
 			SimpleTask("", "Fetching Tracks for Releases") {
@@ -236,8 +249,8 @@ class TabDownloader : VTab() {
 						job.cancel()
 					} else {
 						tracksToExclude.addAll(job.await() ?: continue)
+						updateProgress(progress++, max)
 					}
-					updateProgress(progress++, max)
 				}
 				logger.finest { "Tracks to exclude: " + tracksToExclude.joinToString() }
 				context.close()
@@ -254,6 +267,7 @@ class TabDownloader : VTab() {
 				}
 			}.progressDialog().show()
 		}.tooltip("Selects all Albums+EPs and then all Tracks that are not included in these"))
+		
 		addRow(TextField().apply {
 			promptText = "connect.sid"
 			// todo better instructions

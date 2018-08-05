@@ -84,7 +84,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private fun showBack(text: String) {
 		checkFx {
 			showText(text)
-			addButton(handler = { resetNotification() }).id("back")
+			addButton { resetNotification() }.id("back")
 			fill(pos = 0)
 			fill()
 			add(closeButton)
