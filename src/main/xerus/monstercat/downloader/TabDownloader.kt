@@ -166,7 +166,8 @@ class TabDownloader : VTab() {
 				1, 3)
 		add(patternPane)
 		
-		// add Views
+		// TODO EPS_TO_SINGLES
+		// SongView
 		add(searchField)
 		fill(gridPane().apply {
 			add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
@@ -176,7 +177,7 @@ class TabDownloader : VTab() {
 			children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
 		})
 		
-		// Qualities
+		// Quality selector
 		val buttons = ImmutableObservableList(*qualities.map {
 			ToggleButton(it.replace('_', ' ').toUpperCase()).apply {
 				userData = it
@@ -192,13 +193,14 @@ class TabDownloader : VTab() {
 			selectionModel.selectedIndexProperty().listen { DOWNLOADCOVERS.set(it.toInt()) }
 		})
 		
+		/* TODO EPs to Singles
 		val epAsSingle = CheckBox("Treat EPs with less than")
 		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
 		val epAsSingleAmount = intSpinner(2, 20, EPS_TO_SINGLES().takeIf { it != 0 } ?: 4)
 		arrayOf(epAsSingle.selectedProperty(), epAsSingleAmount.valueProperty()).addListener {
 			EPS_TO_SINGLES.set(if (epAsSingle.isSelected) epAsSingleAmount.value else 0)
 		}
-		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles (TODO)"))
+		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles")) */
 		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 				.also {
@@ -364,8 +366,7 @@ class TabDownloader : VTab() {
 						logger.finest("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
 						while (time > 0) {
 							onFx {
-								progressLabel.text =
-										"$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
+								progressLabel.text = "$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
 							}
 							delay(1, TimeUnit.SECONDS)
 							time--

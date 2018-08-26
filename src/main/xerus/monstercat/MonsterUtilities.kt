@@ -208,7 +208,8 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					.change("New Downloader!",
 							"Can download any combinations of Releases and Tracks", "Easy filtering",
 							"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
-							"Greatly improved pattern syntax with higher flexibility")
+							"Greatly improved pattern syntax with higher flexibility",
+							"Creates part-files while downloading so your files are safe from crashes")
 					.change("Settings reworked",
 							"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 					.change("Catalog and Genre Tab show Genre colors")

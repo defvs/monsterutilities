@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.scene.Scene
 import javafx.scene.image.Image
+import kotlinx.coroutines.experimental.asCoroutineDispatcher
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.*
@@ -27,6 +28,7 @@ val logDir: File
 lateinit var monsterUtilities: MonsterUtilities
 
 val globalThreadPool: ExecutorService = Executors.newCachedThreadPool()
+val globalDispatcher = globalThreadPool.asCoroutineDispatcher()
 
 val location: URL = MonsterUtilities::class.java.protectionDomain.codeSource.location
 var checkUpdate = Settings.AUTOUPDATE() && location.toString().endsWith(".jar")
@@ -71,7 +73,7 @@ fun main(args: Array<String>) {
 					?: null.apply { logger.warning("Resource $it not found") }
 		})
 	}, {
-		val scene = Scene(MonsterUtilities(), 800.0, 600.0)
+		val scene = Scene(MonsterUtilities(), 800.0, 700.0)
 		scene.applySkin(Settings.SKIN())
 		scene
 	})

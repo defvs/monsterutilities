@@ -18,8 +18,6 @@ import xerus.monstercat.api.Releases
 import xerus.monstercat.cacheDir
 import xerus.monstercat.monsterUtilities
 import java.io.*
-import java.nio.file.Files
-import java.nio.file.Path
 
 const val snackbarTextCache = "MCatalog was restored from cache"
 

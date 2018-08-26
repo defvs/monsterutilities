@@ -1,6 +1,9 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
+import xerus.ktutil.to
+import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.logger
 
 data class Release(
 		@Key("_id") override var
@@ -35,7 +38,7 @@ data class Release(
 		if (!isType("Mixes", "Podcast")) {
 			isMulti = true
 			type = when {
-				title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") -> "Monstercat Collection"
+				title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") -> "Monstercat Collection"
 				title.contains("Best of") || title.endsWith("Anniversary") -> "Best of"
 				type == "EP" || type == "Album" -> "Album"
 				else -> {
@@ -48,7 +51,7 @@ data class Release(
 	}
 	
 	override fun toString(): String =
-			(if (renderedArtists.isEmpty()) "%2\$s" else "%s - %s").format(renderedArtists, title)
+			renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
 	
 	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
 	

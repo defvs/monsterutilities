@@ -19,14 +19,10 @@ import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
 import xerus.ktutil.square
-import xerus.ktutil.to
-import xerus.ktutil.toInt
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import java.net.URLEncoder
 import java.util.logging.Level
-import java.util.regex.Pattern
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {

@@ -85,6 +85,8 @@ object Releases : Refresher() {
 			}
 			true
 		} catch (e: Throwable) {
+			logger.finer("Cache corrupted - clearing: $e")
+			releaseCache.delete()
 			releases.clear()
 			false
 		}

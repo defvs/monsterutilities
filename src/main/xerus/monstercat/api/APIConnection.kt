@@ -50,7 +50,9 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	}
 	
 	/** Aborts this connection and thus terminates the InputStream if active */
-	fun abort() { httpGet?.abort() }
+	fun abort() {
+		httpGet?.abort()
+	}
 	
 	// Direct Requesting
 	

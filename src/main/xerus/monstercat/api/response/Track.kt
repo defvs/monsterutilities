@@ -16,7 +16,7 @@ open class Track(
 		artistsTitle: String = "",
 		@Key var
 		albums: List<Album> = emptyList(),
-		@Key @JvmField var
+		@Key("artistRelationships") @JvmField var
 		artists: List<Artist> = emptyList(),
 		@JvmField var
 		remix: String = "",
@@ -36,9 +36,9 @@ open class Track(
 			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
-		artistsTitle = formatArtists(artistsTitle)
 		if (titleRaw.isNotEmpty())
 			return
+		artistsTitle = formatArtists(artistsTitle)
 		val split = title.split('(', ')', '[', ']').map { it.trim() }
 		titleRaw = split[0]
 		if (split.size > 1)
@@ -56,5 +56,10 @@ open class Track(
 	}
 	
 	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
+	
+	override fun equals(other: Any?): Boolean =
+			this === other || (other is Track && id == other.id)
+	
+	override fun hashCode() = id.hashCode()
 	
 }
