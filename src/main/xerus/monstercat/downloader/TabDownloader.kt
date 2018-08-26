@@ -13,7 +13,9 @@ import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
@@ -23,7 +25,6 @@ import xerus.ktutil.helpers.Cache
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.helpers.Timer
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.FileChooser
@@ -38,7 +39,6 @@ import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -48,16 +48,13 @@ private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac"
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
 
-val TreeItem<out MusicItem>.normalisedValue
-	get() = value.toString().trim().toLowerCase()
-
 val String.normalised
 	get() = trim().toLowerCase()
 
+// Todo selecting items is not recursive for track-items
 class TabDownloader : VTab() {
 	
-	private val releaseView = ReleaseView()
-	private val trackView = TrackView()
+	private val songView = SongView()
 	
 	private val patternValid = SimpleObservable(false)
 	private val noItemsSelected = SimpleObservable(true)
@@ -70,9 +67,8 @@ class TabDownloader : VTab() {
 		FilterableTreeItem.autoLeaf = false
 		
 		// Check if no items in the views are selected
-		val itemListener = InvalidationListener { noItemsSelected.value = releaseView.checkedItems.size + trackView.checkedItems.size == 0 }
-		releaseView.checkedItems.addListener(itemListener)
-		trackView.checkedItems.addListener(itemListener)
+		val itemListener = InvalidationListener { noItemsSelected.value = songView.checkedItems.size == 0 }
+		songView.checkedItems.addListener(itemListener)
 		
 		releaseSearch.conditionBox.select(releaseSearch.conditionBox.items[1])
 		(releaseSearch.searchField as DatePicker).run {
@@ -86,21 +82,33 @@ class TabDownloader : VTab() {
 		}
 		
 		// Apply filters
-		releaseView.predicate.bind({
+		songView.predicate.bind({
 			if (releaseSearch.predicate == alwaysTruePredicate && searchField.text.isEmpty()) null
-			else { parent, value -> parent != releaseView.root && value.toString().contains(searchField.text, true) && releaseSearch.predicate.test(value) }
+			else { parent, value -> parent != songView.root && value.toString().contains(searchField.text, true) && (value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false }
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
-		trackView.root.bindPredicate(searchField.textProperty())
 		searchField.textProperty().addListener { _ ->
-			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
-			trackView.root.updateSelection()
+			songView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
 		}
+		
+		val defaultItems = {
+			arrayOf(MenuItem("Expand all") { songView.expandAll() },
+					MenuItem("Collapse all") { songView.expandAll(false) })
+		}
+		val defaultMenu = ContextMenu(*defaultItems())
+		songView.contextMenu = defaultMenu
+		/*songView.contextMenuProperty().bind({
+			val selected = songView.selectionModel.selectedItem ?: return@bind defaultMenu
+			when {
+				selected.parent == songView.root -> rootMenu
+				else -> defaultMenu
+			}
+		}, songView.selectionModel.selectedItemProperty())*/
 		
 		initialize()
 	}
 	
 	private suspend fun awaitReady() {
-		while (!releaseView.ready || !trackView.ready)
+		while (!songView.ready)
 			delay(100)
 	}
 	
@@ -115,11 +123,10 @@ class TabDownloader : VTab() {
 				val pane = gridPane(padding = 5)
 				scene = Scene(pane)
 				pane.addRow(0, chooser.textField(), chooser.button().allowExpand(vertical = false))
-				pane.addRow(1, Label("Tracks Subfolder").centerText(), TextField().bindText(TRACKFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(2, Label("Singles Subfolder").centerText(), TextField().bindText(SINGLEFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(3, Label("Albums Subfolder").centerText(), TextField().bindText(ALBUMFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(4, Label("Mixes Subfolder").centerText(), TextField().bindText(MIXESFOLDER).placeholder("Subfolder (root if empty)"))
-				pane.addRow(5, Label("Podcast Subfolder").centerText(), TextField().bindText(PODCASTFOLDER).placeholder("Subfolder (root if empty)"))
+				pane.addRow(2, Label("Singles Subfolder").centerText(), TextField().bindText(DOWNLOADDIRSINGLE).placeholder("Subfolder (root if empty)"))
+				pane.addRow(3, Label("Albums Subfolder").centerText(), TextField().bindText(DOWNLOADDIRALBUM).placeholder("Subfolder (root if empty)"))
+				pane.addRow(4, Label("Mixes Subfolder").centerText(), TextField().bindText(DOWNLOADDIRMIXES).placeholder("Subfolder (root if empty)"))
+				pane.addRow(5, Label("Podcast Subfolder").centerText(), TextField().bindText(DOWNLOADDIRPODCAST).placeholder("Subfolder (root if empty)"))
 				pane.children.forEach {
 					GridPane.setVgrow(it, Priority.SOMETIMES)
 					GridPane.setHgrow(it, if (it is TextField) Priority.ALWAYS else Priority.SOMETIMES)
@@ -169,13 +176,8 @@ class TabDownloader : VTab() {
 		// TODO EPS_TO_SINGLES
 		// SongView
 		add(searchField)
-		fill(gridPane().apply {
-			add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField), 0, 0)
-			add(releaseView, 0, 1)
-			add(trackView, 1, 0, 1, 2)
-			maxWidth = Double.MAX_VALUE
-			children.forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
-		})
+		add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField))
+		fill(songView)
 		
 		// Quality selector
 		val buttons = ImmutableObservableList(*qualities.map {
@@ -204,71 +206,47 @@ class TabDownloader : VTab() {
 		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 				.also {
-					it.selectedProperty().listen {
-						if (it) {
-							launch {
-								awaitReady()
-								releaseView.roots.forEach {
+					it.selectedProperty().listen { selected ->
+						launch {
+							awaitReady()
+							if (selected) {
+								songView.roots.forEach {
 									it.value.internalChildren.removeIf {
-										it.value.path().exists()
+										(it.value as Release).path().exists()
 									}
 								}
-								trackView.root.internalChildren.removeIf { it.value.path().exists() }
-							}
-						} else {
-							releaseView.root.internalChildren.clear()
-							releaseView.roots.clear()
-							trackView.root.internalChildren.clear()
-							launch {
-								releaseView.load()
-								trackView.load()
+							} else {
+								songView.root.internalChildren.clear()
+								songView.roots.clear()
+								launch {
+									songView.load()
+								}
 							}
 						}
 					}
 				})
 		
 		addRow(createButton("Smart select") {
-			trackView.checkModel.clearChecks()
-			SimpleTask("", "Fetching Tracks for Releases") {
+			launch {
 				awaitReady()
-				val albums = arrayOf(releaseView.roots["Album"], releaseView.roots["EP"]).filterNotNull()
+				val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
 				albums.forEach { it.isSelected = true }
-				val context = newFixedThreadPoolContext(30, "Fetching Tracks for Releases")
-				val dont = arrayOf("Album", "EP", "Single")
-				val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.internalChildren }.filterNot { it.value.isMulti })
-						.map {
-							async(context) {
-								if (!isActive) return@async null
-								APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
-							}
-						}
-				logger.finer("Fetching Tracks for ${deferred.size} Releases")
-				val max = deferred.size
-				val tracksToExclude = HashSet<String>(max)
-				var progress = 0
-				for (job in deferred) {
-					if (isCancelled) {
-						job.cancel()
-					} else {
-						tracksToExclude.addAll(job.await() ?: continue)
-						updateProgress(progress++, max)
+				@Suppress("UNCHECKED_CAST")
+				val selectedItems = albums.flatMap { it.children } as List<FilterableTreeItem<MusicItem>>
+				val selectedReleases = selectedItems.mapTo(ArrayList()) { it.value as Release }
+				val selectedTracks = selectedItems.flatMapTo(ArrayList()) { it.children.map { it.value as Track } }
+				logger.finest("Filtered out " + selectedItems.filter {
+					val tracks = it.children.mapTo(ArrayList()) { it.value as Track }
+					if (tracks.all { selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it) }) {
+						it.isSelected = false
+						selectedReleases.remove(it.value)
+						selectedTracks.removeIf { track -> (track in tracks).also { bool -> if (bool) tracks.remove(track) } }
+						return@filter true
 					}
-				}
-				logger.finest { "Tracks to exclude: " + tracksToExclude.joinToString() }
-				context.close()
-				if (!isCancelled) {
-					if (tracksToExclude.isEmpty() && albums.isNotEmpty()) {
-						monsterUtilities.showMessage("You seem to have no internet connection at the moment!")
-						return@SimpleTask
-					}
-					onFx {
-						trackView.root.internalChildren.forEach {
-							(it as CheckBoxTreeItem).isSelected = it.normalisedValue !in tracksToExclude
-						}
-					}
-				}
-			}.progressDialog().show()
-		}.tooltip("Selects all Albums+EPs and then all Tracks that are not included in these"))
+					false
+				})
+			}
+		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
 		
 		addRow(TextField().apply {
 			promptText = "connect.sid"
@@ -313,19 +291,16 @@ class TabDownloader : VTab() {
 		
 		private val timer = Timer()
 		private val log = LogTextArea()
-		private val items: List<MusicItem>
+		private val items: Map<Release, Collection<Track>>
 		private var total: Int
 		
 		private lateinit var downloader: Job
 		private lateinit var tasks: ObservableList<Download>
 		
 		init {
-			releaseView.clearPredicate()
-			trackView.clearPredicate()
-			val releases: List<MusicItem> = releaseView.checkedItems.filter { it.isLeaf }.map { it.value }
-			val tracks: List<MusicItem> = trackView.checkedItems.filter { it.isLeaf }.map { it.value }
-			logger.fine("Starting Downloader for ${releases.size} Releases and ${tracks.size} Tracks")
-			items = tracks + releases
+			songView.clearPredicate()
+			items = songView.checkedItems.filter { it.value is Release }.associate { (it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.map { it.value as Track } }
+			logger.fine("Starting Downloader for ${items.size} Releases")
 			total = items.size
 			onFx {
 				buildUI()
@@ -402,7 +377,7 @@ class TabDownloader : VTab() {
 			downloader = launch {
 				log("Download started")
 				for (item in items) {
-					val download = item.downloadTask()
+					val download = ReleaseDownload(item.key)
 					download.setOnCancelled {
 						log("Cancelled $item")
 						total--

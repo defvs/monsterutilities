@@ -21,7 +21,7 @@ import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.*
-import xerus.monstercat.api.Releases
+import xerus.monstercat.api.Cache
 import xerus.monstercat.downloader.DownloaderSettings
 import java.io.FileInputStream
 import java.io.PrintStream
@@ -78,7 +78,7 @@ class TabSettings : VTab() {
 									Settings.clear()
 									DownloaderSettings.clear()
 									cacheDir.deleteRecursively()
-									Releases.clear()
+									Cache.clear()
 								} catch (e: Exception) {
 									monsterUtilities.showError(e)
 								}

@@ -1,28 +1,25 @@
 package xerus.monstercat.api
 
+import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.XerusLogger
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
-import xerus.monstercat.Settings
+import xerus.monstercat.*
 import xerus.monstercat.api.response.Release
-import xerus.monstercat.api.response.Track
-import xerus.monstercat.cacheDir
+import xerus.monstercat.api.response.ReleaseList
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
 
 typealias logger = XerusLogger
 
-object Releases : Refresher() {
-	
-	private const val SEPARATOR = ";;"
+object Cache : Refresher() {
 	
 	private val releaseCache: File
-		get() = cacheDir.resolve("releases.txt")
+		get() = cacheDir.resolve("releases.json")
 	
 	private var lastRefresh = 0
 	private var lastCookie: String = ""
 	
-	private val releases = ArrayList<Release>()
 	suspend fun getReleases(): ArrayList<Release> {
 		if (lastCookie != CONNECTSID() || releases.isEmpty() || currentSeconds() - lastRefresh > 1000)
 			refresh(true)
@@ -31,28 +28,33 @@ object Releases : Refresher() {
 	}
 	
 	override suspend fun doRefresh() {
+		refreshReleases()
+	}
+	
+	private val releases = ArrayList<Release>()
+	private suspend fun refreshReleases() {
 		logger.finer("Release refresh requested")
-		val releaseConnection = APIConnection("catalog", "release")
+		val request = APIConnection("catalog", "release")
 				.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())
-			readReleases()
-		val rel = releaseConnection.getReleases() ?: run {
+			readCache()
+		val results = request.getReleases() ?: run {
 			logger.info("Release refresh failed!")
 			return
 		}
-		if (releases.containsAll(rel)) {
+		if (releases.containsAll(results)) {
 			logger.finer("Releases are already up to date!")
 			if (!releaseCache.exists() && Settings.ENABLECACHE())
-				writeReleases()
+				writeCache()
 			return
 		}
-		val ind = releases.lastIndexOf(rel.last())
+		val ind = releases.lastIndexOf(results.last())
 		
 		if (ind == -1) {
 			logger.fine("Full Release refresh initiated")
-			releaseConnection.removeQuery("limit").getReleases()?.let {
+			request.removeQuery("limit").getReleases()?.let {
 				releases.clear()
 				releases.addAll(it.asReversed())
 			} ?: run {
@@ -63,26 +65,34 @@ object Releases : Refresher() {
 		} else {
 			val s = releases.size
 			releases.removeAll(releases.subList(ind, releases.size))
-			releases.addAll(rel.asReversed())
+			releases.addAll(results.asReversed())
 			logger.fine("${releases.size - s} new Releases added, now at ${releases.size}")
 		}
-		if (Settings.ENABLECACHE())
-			writeReleases()
-	}
-	
-	private fun writeReleases() {
-		releaseCache.bufferedWriter().use {
-			for (r in releases)
-				it.appendln(r.serialize().joinToString(SEPARATOR))
-		}
-		logger.fine("Wrote ${releases.size} Releases to Cache")
-	}
-	
-	private fun readReleases(): Boolean {
-		return try {
-			releaseCache.bufferedReader().forEachLine {
-				releases.add(Release(it.split(SEPARATOR).toTypedArray()).init())
+		var cancelled = false
+		releases.map { release ->
+			launch(globalDispatcher) {
+				if (cancelled)
+					return@launch
+				val releaseTracks = release.tracks
+				if (releaseTracks == null) {
+					logger.warning("Couldn't fetch tracks for $release")
+					cancelled = true
+				}
 			}
+		}.forEach { it.join() }
+		if (Settings.ENABLECACHE())
+			writeCache()
+	}
+	
+	private fun writeCache() {
+		releaseCache.writeText(Sheets.JSON_FACTORY.toPrettyString(releases))
+		logger.fine("Wrote ${releases.size} Releases to $releaseCache")
+	}
+	
+	private fun readCache(): Boolean {
+		return try {
+			releases.addAll(Sheets.JSON_FACTORY.fromString(releaseCache.reader().readText(), ReleaseList::class.java))
+			logger.finer("Read ${releases.size} Releases from $releaseCache")
 			true
 		} catch (e: Throwable) {
 			logger.finer("Cache corrupted - clearing: $e")
@@ -94,8 +104,4 @@ object Releases : Refresher() {
 	
 	fun clear() = releases.clear()
 	
-}
-
-object Tracks {
-	val tracks: ArrayList<Track>? = APIConnection("catalog", "track").fields(Track::class).getTracks()
 }

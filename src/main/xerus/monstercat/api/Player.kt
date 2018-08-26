@@ -91,7 +91,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	fun resetNotification() {
 		fadeOut()
 		launch {
-			val latest = Releases.getReleases().lastOrNull() ?: return@launch
+			val latest = Cache.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
 			onFx {

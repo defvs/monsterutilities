@@ -14,7 +14,7 @@ import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.Settings
-import xerus.monstercat.api.Releases
+import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
 import xerus.monstercat.monsterUtilities
 import java.io.*
@@ -141,7 +141,7 @@ abstract class FetchTab : VTab() {
 		}
 		
 		fun writeCache() {
-			Releases.refresh()
+			Cache.refresh()
 			forAllFetchTabs { sheetFetcher.refresh() }
 		}
 		

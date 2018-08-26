@@ -21,11 +21,16 @@ data class Release(
 		@Key var
 		downloadable: Boolean = false) : MusicItem() {
 	
-	constructor(line: Array<String>) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
+	@Key
+	var tracks: List<Track>? = null
+		get() {
+			if (field == null) fetchTracks()
+			return field
+		}
 	
-	fun serialize(): Array<String> {
-		val (v1, v2, v3, v4, v5, v6, v7) = this
-		return arrayOf(v1, v2, v3, v4, v5, v6, if (v7) "1" else "0")
+	private fun fetchTracks() {
+		logger.finest("Fetching tracks for $this")
+		tracks = APIConnection("catalog", "release", id, "tracks").getTracks()
 	}
 	
 	var isMulti: Boolean = false

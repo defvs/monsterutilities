@@ -94,7 +94,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 				when {
 					session.user == null -> CookieValidity.NOUSER
 					session.user!!.goldService -> {
-						Releases.refresh(true)
+						Cache.refresh(true)
 						CookieValidity.GOLD
 					}
 					else -> CookieValidity.NOGOLD
