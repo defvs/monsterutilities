@@ -12,7 +12,7 @@ version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD")
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.51"
+	kotlin("jvm") version "1.2.61"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.4"
 	id("com.github.ben-manes.versions") version "0.19.0"
