@@ -11,3 +11,6 @@ open class ListResponse<T> {
 
 class ReleaseResponse : ListResponse<Release>()
 class TrackResponse : ListResponse<Track>()
+
+class ReleaseList : ArrayList<Release>()
+class TrackList : ArrayList<Track>()

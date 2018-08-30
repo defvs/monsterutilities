@@ -11,11 +11,11 @@ val delimiters = arrayOf(" & ", ", ", " and ", " x ")
 val exceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns")
 val artistMasker = Masker("artist", *exceptions)
 
-val namePattern = Pattern.compile("([^-]+) - (.+ - )?(\\d+) (.+)")
+/** artists - tracknumber title */
+val namePattern: Pattern = Pattern.compile("([^-]+) - (.+ - )?(\\d+) (.+)")
 
 class ReleaseFile(filename: String, @JvmField val album: String? = null) : Track() {
 	
-	// These are visible JvmFields for reflection
 	@JvmField
 	internal val track: Int
 	
@@ -34,7 +34,7 @@ class ReleaseFile(filename: String, @JvmField val album: String? = null) : Track
 			track = m.group(3).toInt()
 			var title = m.group(4)
 			val dot = title.lastIndexOf(".")
-			if (dot > title.length - 6)
+			if (dot > title.length - 6 && dot > 0)
 				title = title.substring(0, dot)
 			this.title = title
 		} else {

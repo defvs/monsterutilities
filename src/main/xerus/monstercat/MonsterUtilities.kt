@@ -1,16 +1,11 @@
 package xerus.monstercat
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.application.Platform
 import javafx.concurrent.Task
-import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
-import kotlinx.coroutines.experimental.asCoroutineDispatcher
-import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import xerus.ktutil.*
@@ -18,96 +13,17 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.App
-import xerus.ktutil.javafx.ui.Changelog
-import xerus.ktutil.javafx.ui.JFXMessageDisplay
-import xerus.ktutil.javafx.ui.stage
-import xerus.ktutil.ui.SimpleFrame
-import xerus.monstercat.api.Player
+import xerus.ktutil.javafx.ui.*
 import xerus.monstercat.api.DiscordRPC
+import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.*
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
-import java.util.concurrent.*
-import javax.swing.JTextArea
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
-
-typealias logger = XerusLogger
-
-private val VERSION = getResource("version")!!.readText()
-private val isUnstable = VERSION.contains('-')
-
-val logDir: File
-	get() = cacheDir.resolve("logs").apply { mkdirs() }
-
-lateinit var monsterUtilities: MonsterUtilities
-
-val globalThreadPool: ExecutorService = Executors.newCachedThreadPool()
-
-val location: URL = MonsterUtilities::class.java.protectionDomain.codeSource.location
-var checkUpdate = Settings.AUTOUPDATE() && location.toString().endsWith(".jar")
-
-fun main(args: Array<String>) {
-	XerusLogger.parseArgs(*args, defaultLevel = "finer")
-	if (args.contains("--no-update"))
-		checkUpdate = false
-	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
-		logger.warning("Uncaught exception in $thread: ${ex.getStackTraceString()}")
-	}
-	val logfile = logDir.resolve("log${currentSeconds()}.txt")
-	try {
-		XerusLogger.logToFile(logfile)
-		logger.config("Logging to $logfile")
-		launch {
-			val logs = logDir.listFiles()
-			if (logs.size > 10) {
-				logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
-					val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull() ?: return@filter true
-					timestamp + 200_000 < currentSeconds()
-				}.also {
-					val count = it.count()
-					if (count > 0)
-						logger.finer("Deleting $count old logs")
-				}.forEach { it.delete() }
-			}
-		}
-	} catch (t: Throwable) {
-		showErrorSafe(t, "Can't log to $logfile!")
-	}
-	if (!javaVersion().startsWith("1.8")) {
-		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${javaVersion()}").apply { isEditable = false }) }
-		return
-	}
-	logger.info("Version: $VERSION, Java version: ${javaVersion()}")
-	logger.config("Initializing Google Sheets API Service")
-	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
-	App.launch("MonsterUtilities $VERSION", { stage ->
-		stage.icons.addAll(arrayOf("img/icon64.png").map {
-			getResource(it)?.let { Image(it.toExternalForm()) }
-					?: null.apply { logger.warning("Resource $it not found") }
-		})
-	}, {
-		val scene = Scene(MonsterUtilities(), 800.0, 600.0)
-		scene.applySkin(Settings.SKIN())
-		scene
-	})
-	globalThreadPool.shutdown()
-	logger.info("Main completed!")
-}
-
-fun showErrorSafe(error: Throwable, title: String = "Error") {
-	launch {
-		var i = 0
-		while (i < 100 && !::monsterUtilities.isInitialized) {
-			delay(200)
-			i++
-		}
-		monsterUtilities.showError(error, title)
-	}
-}
 
 class MonsterUtilities : VBox(), JFXMessageDisplay {
 	
@@ -161,7 +77,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 							res = f.delete()
 						} while (!res && time + 10 > currentSeconds())
 						if (res) {
-							Settings.DELETE.reset()
+							Settings.DELETE.clear()
 							logger.config("Deleted $f!")
 						} else
 							logger.warning("Couldn't delete older version residing in $f")
@@ -293,7 +209,8 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 					.change("New Downloader!",
 							"Can download any combinations of Releases and Tracks", "Easy filtering",
 							"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
-							"Greatly improved pattern syntax with higher flexibility")
+							"Greatly improved pattern syntax with higher flexibility",
+							"Creates part-files while downloading so your files are safe from crashes")
 					.change("Settings reworked",
 							"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 					.change("Catalog and Genre Tab show Genre colors")

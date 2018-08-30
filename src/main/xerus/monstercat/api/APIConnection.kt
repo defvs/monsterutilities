@@ -18,6 +18,7 @@ import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI
+import kotlin.reflect.KClass
 
 /** eases query creation to the Monstercat API */
 class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
@@ -26,7 +27,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	val uri: URI
 		get() = URI("https", "connect.monstercat.com", path, getQuery(), null)
 	
-	fun fields(clazz: Class<*>) = addQuery("fields", *clazz.declaredKeys())
+	fun fields(clazz: KClass<*>) = addQuery("fields", *clazz.declaredKeys.toTypedArray())
 	fun limit(limit: Int) = addQuery("limit", limit.toString())
 	
 	// Requesting
@@ -49,7 +50,9 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	}
 	
 	/** Aborts this connection and thus terminates the InputStream if active */
-	fun abort() { httpGet?.abort() }
+	fun abort() {
+		httpGet?.abort()
+	}
 	
 	// Direct Requesting
 	

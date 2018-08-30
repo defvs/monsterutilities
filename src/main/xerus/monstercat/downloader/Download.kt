@@ -2,8 +2,7 @@ package xerus.monstercat.downloader
 
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
-import xerus.ktutil.createDirs
-import xerus.ktutil.replaceIllegalFileChars
+import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -19,19 +18,23 @@ fun MusicItem.downloadTask() = when (this) {
 	else -> throw NoWhenBranchMatchedException()
 }
 
-fun Release.path() = basePath.resolve(when {
+fun MusicItem.folder(): Path = basePath.resolve(when {
+	this !is Release -> TRACKFOLDER() // Track
 	isMulti -> toString(ALBUMFOLDER()).replaceIllegalFileChars() // Album, Monstercat Collection
 	type == "Podcast" -> PODCASTFOLDER()
 	type == "Mixes" -> MIXESFOLDER()
 	else -> SINGLEFOLDER() // Single
 })
 
-fun Track.path() = basePath.resolve(SINGLEFOLDER()).createDirs().resolve(addFormat(toFileName()))
+fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
+		?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+
+fun Track.path(): Path = folder().createDirs().resolve(toFileName().addFormatSuffix())
 
 private inline val basePath
 	get() = DOWNLOADDIR()
 
-private fun addFormat(fileName: String) = "$fileName.${QUALITY().split('_')[0]}"
+private fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>() {
 	
@@ -47,42 +50,50 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 	var length: Long = 0
 		private set
 	
-	private lateinit var con: APIConnection
-	private lateinit var cis: CountingInputStream
+	private lateinit var connection: APIConnection
+	private lateinit var inputStream: CountingInputStream
 	
 	protected fun <T : InputStream> createConnection(releaseId: String, streamConverter: (InputStream) -> T, vararg queries: String): T {
-		con = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
-		val entity = con.getResponse().entity
+		connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
+		val entity = connection.getResponse().entity
 		length = entity.contentLength
 		if (length == 0L)
 			throw EmptyResponseException(releaseId)
 		updateProgress(0, length)
 		val input = streamConverter(entity.content)
-		cis = CountingInputStream(input)
+		inputStream = CountingInputStream(input)
 		return input
 	}
 	
 	override fun failed() = abort()
 	
-	protected fun abort() = con.abort()
+	protected fun abort() {
+		if (::connection.isInitialized)
+			connection.abort()
+	}
 	
 	private val buffer = ByteArray(1024)
 	protected fun downloadFile(path: Path) {
 		val file = path.toFile()
 		logger.finest("Downloading $file")
 		updateMessage(file.name)
-		val output = FileOutputStream(file)
+		val partFile = file.resolveSibling(file.name + ".part")
+		val output = FileOutputStream(partFile)
 		try {
-			while (true) {
-				val length = cis.read(buffer)
-				if (length < 1) return
+			var length = inputStream.read(buffer)
+			while (length > 0) {
 				output.write(buffer, 0, length)
-				updateProgress(cis.count)
+				updateProgress(inputStream.count)
 				if (isCancelled) {
 					output.close()
-					file.delete()
+					partFile.delete()
 					return
 				}
+				length = inputStream.read(buffer)
+			}
+			if (!isCancelled) {
+				file.delete()
+				partFile.renameTo(file)
 			}
 		} catch (e: Exception) {
 			logger.throwing("Download", "downloadFile", e)
@@ -100,22 +111,27 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 class ReleaseDownload(private val release: Release) : Download(release, release.coverUrl) {
 	
 	override fun download() {
-		val path = release.path().createDirs()
-		logger.finer("Downloading $release to $path")
-		
+		val folder = release.folder()
+		val part = folder.resolveSibling(folder.fileName.toString() + ".part")
+		val path =
+				if (!folder.exists())
+					part.createDirs()
+				else
+					folder
 		val zis = createConnection(release.id, { ZipInputStream(it) })
+		// TODO EPS_TO_SINGLES
 		zip@ do {
 			val entry = zis.nextEntry ?: break
 			if (entry.isDirectory)
 				continue
 			val name = entry.name.split("/").last()
-			if (name == "cover.false" || !release.isMulti && name.contains("cover."))
+			if (name == "cover.false" || (name.contains("cover.") && (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti)))
 				continue
 			val target = when {
 				name.contains("cover.") -> path.resolve(name)
 				name.contains("Album Mix") ->
 					when (ALBUMMIXES()) {
-						"Separate" -> resolve(name, basePath.resolve("Album Mixes").createDirs())
+						"Separate" -> resolve(name, basePath.resolve("Mixes").createDirs())
 						"Exclude" -> continue@zip
 						else -> resolve(name, path)
 					}
@@ -123,10 +139,14 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 			}
 			downloadFile(target)
 		} while (!isCancelled)
+		if (!isCancelled && part.exists()) {
+			folder.toFile().deleteRecursively()
+			part.renameTo(folder)
+		}
 	}
 	
 	private fun resolve(name: String, path: Path = basePath): Path =
-			path.resolve(addFormat(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName()))
+			path.resolve(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName().addFormatSuffix())
 	
 }
 

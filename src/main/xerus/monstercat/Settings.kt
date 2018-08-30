@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
+import xerus.ktutil.containsAny
 import xerus.monstercat.logger
 import xerus.ktutil.createDirs
 import xerus.ktutil.exists
@@ -12,12 +13,11 @@ import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
 import xerus.ktutil.preferences.multiSeparator
 import xerus.monstercat.tabs.FetchTab
+import xerus.monstercat.tabs.availableColumns
+import xerus.monstercat.tabs.defaultColumns
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-
-val defaultColumns = arrayOf("Genre", "Artist", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("ID", "Date", "Br", "Genre", "Subgenre", "Artist", "Track", "Length", "BPM", "Key").joinToString(multiSeparator)
 
 val cacheDir: File
 	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))

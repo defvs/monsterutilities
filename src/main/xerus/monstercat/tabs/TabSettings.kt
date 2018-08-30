@@ -75,8 +75,8 @@ class TabSettings : VTab() {
 						resultProperty().listen {
 							if (it.buttonData == ButtonBar.ButtonData.YES) {
 								try {
-									Settings.reset()
-									DownloaderSettings.reset()
+									Settings.clear()
+									DownloaderSettings.clear()
 									cacheDir.deleteRecursively()
 									Releases.clear()
 								} catch (e: Exception) {
@@ -105,7 +105,7 @@ class TabSettings : VTab() {
 			val subjectField = TextField()
 			val messageArea = TextArea()
 			messageArea.prefRowCount = 6
-			val support = ValidationSupport().apply {
+			val validation = ValidationSupport().apply {
 				validationDecorator = minimalValidationDecorator
 				registerValidator(subjectField, Validator<String> { control, value ->
 					ValidationResult()
@@ -117,7 +117,7 @@ class TabSettings : VTab() {
 					ValidationResult().addMessageIf(control, "The message is too long!", Severity.ERROR, value.length > 100_000)
 				})
 			}
-			dialogPane.lookupButton(send).disableProperty().bind(support.invalidProperty())
+			dialogPane.lookupButton(send).disableProperty().bind(validation.invalidProperty())
 			
 			dialogPane.content = GridPane().apply {
 				spacing(5)

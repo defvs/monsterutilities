@@ -12,7 +12,7 @@ version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD")
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.50"
+	kotlin("jvm") version "1.2.61"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.4"
 	id("com.github.ben-manes.versions") version "0.19.0"
@@ -39,19 +39,21 @@ val kotlinVersion: String by extra {
 
 application {
 	applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
-	mainClassName = "xerus.monstercat.MonsterUtilitiesKt"
+	mainClassName = "xerus.monstercat.MainKt"
 }
 
 repositories {
 	jcenter()
+	maven("https://jitpack.io")
 	maven("http://maven.bluexin.be/repository/snapshots/")
 }
 
 dependencies {
-	compile("xerus.util", "javafx")
+	compile("com.github.Xerus2000", "util", "master-SNAPSHOT")
 	compile(kotlin("stdlib-jdk8"))
+	compile(kotlin("reflect"))
 	
-	compile("org.controlsfx", "controlsfx", "8.40.+")
+	compile("org.controlsfx", "controlsfx", "8.40.14")
 	
 	compile("be.bluexin", "drpc4k", "0.6-SNAPSHOT")
 	
@@ -59,6 +61,7 @@ dependencies {
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev527-1.23.0")
 	
 	testCompile("org.junit.jupiter", "junit-jupiter-api", "5.2.0")
+	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", "5.2.0")
 }
 
 val file
@@ -110,6 +113,10 @@ tasks {
 		group = MAIN
 		dependsOn("shadowJar")
 		setDelete(file(".").listFiles { f -> f.name.run { startsWith("${rootProject.name}-") && endsWith("jar") && this != file } })
+	}
+	
+	"test"(Test::class) {
+		useJUnitPlatform()
 	}
 	
 }

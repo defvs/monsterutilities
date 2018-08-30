@@ -18,7 +18,7 @@ object DiscordRPC {
 	
 	init {
 		Player.activeTrack.listen { track ->
-			updatePresence(if (track == null) idlePresence else invoke(track.artistsTitle, track.title))
+			updatePresence(if (track == null) idlePresence else createPresence(track.artistsTitle, track.title))
 		}
 	}
 	
@@ -58,6 +58,9 @@ object DiscordRPC {
 		}
 	}
 	
+	fun createPresence(artists: String, title: String) =
+			invoke(artists, title, "icon", "playing_music", "Playing Music")
+	
 	operator fun invoke(details: String? = "", state: String? = null, largeKey: String? = "icon", smallKey: String? = null, smallText: String? = null) =
 			DiscordRichPresence {
 				if (details != null) this.details = details
@@ -66,8 +69,5 @@ object DiscordRPC {
 				if (smallKey != null) smallImageKey = smallKey
 				if (smallText != null) smallImageText = smallText
 			}
-	
-	operator fun invoke(artists: String, title: String) =
-			invoke("Listening to", "$artists - $title", "icon", "playing_music", "Playing Music")
 	
 }

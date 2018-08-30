@@ -7,9 +7,11 @@ import javafx.scene.control.TableRow
 import javafx.scene.input.MouseButton
 import javafx.scene.text.Font
 import xerus.ktutil.containsAny
+import xerus.ktutil.helpers.ArraySet
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.*
+import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
@@ -17,16 +19,17 @@ import xerus.monstercat.api.Playlist
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.time.LocalTime
-import java.util.*
 import kotlin.math.absoluteValue
+
+val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
+val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
+fun isColumnCentered(colName: String) = colName.containsAny("ID", "Date", "BPM", "Length", "Key", "Comp") || colName == "B"
 
 class TabCatalog : TableTab() {
 	private val searchView = SearchView<List<String>>()
 	private val searchables = searchView.options
 	
 	init {
-		prefWidth = 600.0
-		
 		table.setRowFactory {
 			TableRow<List<String>>().apply {
 				val genre = cols.find("Genre") ?: return@apply
@@ -39,7 +42,7 @@ class TabCatalog : TableTab() {
 			}
 		}
 		
-		searchables.setAll(MultiSearchable("Any", Type.TEXT, { it }), MultiSearchable("Genre", Type.TEXT, { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } }))
+		searchables.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre", Type.TEXT) { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } })
 		setColumns(Settings.LASTCATALOGCOLUMNS.all)
 		
 		children.add(searchView)
@@ -79,25 +82,32 @@ class TabCatalog : TableTab() {
 				continue
 			}
 			try {
-				val colValue = { list: List<String> -> cols.find(colName)?.let { list[it] }.also { if (it == null) logger.warning("Column $colName not found!") } }
+				val notFound = ArraySet<String>()
+				val colValue = { list: List<String> ->
+					cols.find(colName)?.let { list[it] }.also {
+						if (it == null && notFound.add(colName)) {
+							logger.warning("Column $colName not found!")
+						}
+					}
+				}
 				val col = when {
 					colName.contains("bpm", true) ->
-						SearchableColumn(colName, Type.INT, { colValue(it)!!.toIntOrNull() }, colValue::invoke)
+						SearchableColumn(colName, Type.INT, { colValue(it)?.toIntOrNull() }, colValue::invoke)
 					colName.contains("date", true) ->
-						SearchableColumn(colName, Type.DATE, converter@{ colValue(it)!!.toLocalDate() }, colValue::invoke)
+						SearchableColumn(colName, Type.DATE, converter@{ colValue(it)?.toLocalDate() }, colValue::invoke)
 					colName.containsAny("time", "length") ->
 						SearchableColumn(colName, Type.LENGTH, converter@{
-							val split = colValue(it)!!.split(":").map {
+							colValue(it)?.split(":")?.map {
 								it.toIntOrNull() ?: return@converter null
-							}; LocalTime.of(0, split[0], split[1])
+							}?.let { LocalTime.of(0, it[0], it[1]) }
 						}, colValue::invoke)
 					colName.contains("genre", true) ->
-						TableColumn<List<String>, String>(colName) { colValue(it.value)!! }
+						TableColumn<List<String>, String>(colName) { colValue(it.value) ?: "" }
 					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
 				}
 				if (col is SearchableColumn<List<String>, *>)
 					searchables.add(col)
-				if (colName.containsAny("Date", "BPM", "Length", "Key", "Brand") || colName == "FR")
+				if (isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"
 				newColumns.add(col)
 				col.isVisible = visibleColumns.contains(colName, true)

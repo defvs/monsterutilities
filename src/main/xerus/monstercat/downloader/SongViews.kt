@@ -27,39 +27,46 @@ abstract class SongView<T : MusicItem>(root: T) : FilterableCheckTreeView<T>(roo
 				}
 			}
 		}
+		load()
+	}
+	
+	fun load() {
 		launch {
-			load()
-			ready = true
+			fetchItems()
+			onFx {
+				onReady()
+				ready = true
+			}
 		}
 	}
 	
-	protected abstract suspend fun load()
+	abstract suspend fun fetchItems()
+	abstract fun onReady()
 }
 
 class TrackView : SongView<Track>(Track(title = "Loading Tracks...")) {
-	override suspend fun load() {
+	override suspend fun fetchItems() {
 		Tracks.tracks?.sortedBy { it.toString() }?.forEach {
 			root.internalChildren.add(FilterableTreeItem(it))
 		}
-		onFx {
-			root.value = Track(title = "Tracks")
-			ready = true
-		}
+	}
+	
+	override fun onReady() {
+		root.value = Track(title = "Tracks")
 	}
 }
 
 class ReleaseView : SongView<Release>(Release(title = "Releases")) {
 	val roots = HashMap<String, FilterableTreeItem<Release>>()
-	override suspend fun load() {
+	override suspend fun fetchItems() {
 		Releases.getReleases().forEach {
 			roots.getOrPut(it.type) {
 				FilterableTreeItem(Release(title = it.type))
 			}.internalChildren.add(FilterableTreeItem(it))
 		}
-		onFx {
-			root.internalChildren.addAll(roots.values)
-			ready = true
-		}
 	}
 	
+	override fun onReady() {
+		root.internalChildren.addAll(roots.values)
+	}
 }
