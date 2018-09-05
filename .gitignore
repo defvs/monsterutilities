@@ -5,9 +5,9 @@ out
 build
 gradle.properties
 
-*.jar
-*.sh
-*.ps1
+/*.jar
+/*.sh
+/*.ps1
 
 src/resources/version
 src/resources/sheets-api-key

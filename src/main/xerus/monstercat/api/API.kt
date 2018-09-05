@@ -3,6 +3,7 @@ package xerus.monstercat.api
 import xerus.ktutil.to
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.api.response.declaredKeys
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
@@ -10,7 +11,7 @@ object API {
 	
 	/** Finds the best match for the given [title] and [artists] */
 	fun find(title: String, artists: String): Track? {
-		val connection = APIConnection("catalog", "track").addQuery("fields", "artists", "artistsTitle", "title")
+		val connection = APIConnection("catalog", "track").addQuery("fields", *Track::class.declaredKeys.toTypedArray())
 		URLEncoder.encode(title, "UTF-8")
 				.split(Pattern.compile("%.."))
 				.filter { it.isNotBlank() }
