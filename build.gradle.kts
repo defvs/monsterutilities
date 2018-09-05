@@ -19,14 +19,12 @@ plugins {
 }
 
 // source directories
-java.sourceSets {
-	"main" {
+sourceSets {
+	getByName("main") {
 		java.srcDir("src/main")
 		resources.srcDir("src/resources")
 	}
-	"test" {
-		java.srcDir("src/test")
-	}
+	getByName("test").java.srcDir("src/test")
 }
 
 
@@ -65,7 +63,7 @@ dependencies {
 }
 
 val file
-	get() = "$name-$version.jar"
+	get() = "MonsterUtilities-$version.jar"
 
 val MAIN = "_Main"
 tasks {
@@ -83,25 +81,24 @@ tasks {
 		baseName = "MonsterUtilities"
 		classifier = ""
 		destinationDir = file(".")
-		doLast {
-			file(file).setExecutable(true)
-		}
+		doLast { file(file).setExecutable(true) }
 	}
 	
-	val release by creating(Exec::class) {
+	create<Exec>("release") {
+		dependsOn("jar")
 		group = MAIN
 		val path = file("../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest")
-		val pathLatest = path.resolveSibling("latest")
+		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {
 			path.writeText(version.toString())
-			// TODO temporary workaround until real release
 			pathLatest.writeText(version.toString())
+			exec { commandLine("git", "tag", version) }
 		}
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
-		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; 
+		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
 			open -u ${properties["credentials.ftp"]} -e $s"
 			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
-			cd ./files; ${if (properties["noversion"] == null) "mrm ${rootProject.name}-*-*.jar;" else ""} put $file;
+			cd ./files; put $file;
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	
@@ -109,7 +106,7 @@ tasks {
 		kotlinOptions.jvmTarget = "1.8"
 	}
 	
-	tasks.replace("jar", Delete::class.java).apply {
+	replace("jar", Delete::class).run {
 		group = MAIN
 		dependsOn("shadowJar")
 		setDelete(file(".").listFiles { f -> f.name.run { startsWith("${rootProject.name}-") && endsWith("jar") && this != file } })
