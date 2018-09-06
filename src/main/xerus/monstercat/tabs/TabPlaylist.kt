@@ -2,12 +2,10 @@ package xerus.monstercat.tabs
 
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
-import javafx.scene.control.Label
-import javafx.scene.control.SelectionMode
-import javafx.scene.control.TableColumn
-import javafx.scene.control.TableView
+import javafx.scene.control.*
 import javafx.scene.input.MouseButton
 import javafx.util.Callback
+import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.fill
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
@@ -46,13 +44,31 @@ class TabPlaylist : VTab() {
 					Player.play(t.title, t.artistsTitle)
 				}
 			}
-			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
-				val selected = table.selectionModel.selectedIndex
-				Playlist.removeTrack(selected)
-			}
 		}
 		
-		table.placeholder = Label("Nothing's in your playlist. Middle Click any song in the catalog to add it here !")
+		table.placeholder = Label("Nothing's in your playlist. Right Click any song in the catalog to add it here !")
+		
+		val rightClickMenu = ContextMenu()
+		val item1 = MenuItem("Play") {
+			val selected = table.selectionModel.selectedIndex
+			val t = Playlist.select(selected)
+			if (t != null) {
+				Player.play(t.title, t.artistsTitle)
+			}
+		}
+		val item2 = MenuItem("Play Next") {
+			val selected = table.selectionModel.selectedIndex
+			val t = Playlist.playlist[selected]
+			if (t != null) {
+				Playlist.addNext(t)
+			}
+		}
+		val item3 = MenuItem("Remove") {
+			val selected = table.selectionModel.selectedIndex
+			Playlist.removeTrack(selected)
+		}
+		rightClickMenu.items.addAll(item1, item2, item3)
+		table.contextMenu = rightClickMenu
 
 		fill(table)
 	}

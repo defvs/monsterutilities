@@ -1,6 +1,8 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
+import javafx.event.EventHandler
+import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableRow
@@ -20,6 +22,8 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.time.LocalTime
 import kotlin.math.absoluteValue
+import javafx.scene.input.ContextMenuEvent
+
 
 val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
@@ -48,7 +52,41 @@ class TabCatalog : TableTab() {
 		children.add(searchView)
 		predicate.bind(searchView.predicate)
 		
+		val rightClickMenu = ContextMenu()
+		val item1 = MenuItem("Play") {
+			val selected = table.selectionModel.selectedItem ?: return@MenuItem
+			Playlist.clearTracks()
+			Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+			Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+		}
+		val item2 = MenuItem("Play All") {
+			val selected = table.selectionModel.selectedItem ?: return@MenuItem
+			Playlist.clearTracks()
+			val filtered = table.filteredData
+			val filteredList = mutableListOf<Track>()
+			for (v: List<String> in filtered) {
+				filteredList.add(Track("", v[cols.findUnsafe("Track")].trim(), v[cols.findUnsafe("Artist")]))
+			}
+			Playlist.setTracks(filteredList)
+			Playlist.currentTrack = filtered.indexOf(selected)
+			Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+		}
+		val item3 = MenuItem("Play Next") {
+			val selected = table.selectionModel.selectedItem ?: return@MenuItem
+			Playlist.addNext(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+		}
+		val item4 = MenuItem("Add to Playlist") {
+			val selected = table.selectionModel.selectedItem ?: return@MenuItem
+			Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+			if (Playlist.playlist.size == 1){
+				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+			}
+		}
+		rightClickMenu.items.addAll(item1, item2, item3, item4)
+		table.contextMenu = rightClickMenu
+		
 		fill(table)
+		
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
@@ -64,10 +102,6 @@ class TabCatalog : TableTab() {
 				Playlist.setTracks(filteredList)
 				Playlist.currentTrack = filtered.indexOf(selected)
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-			}
-			if (me.clickCount == 1 && me.button == MouseButton.MIDDLE) {
-				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
-				Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
 			}
 		}
 	}
