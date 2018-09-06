@@ -22,22 +22,18 @@ object DiscordRPC {
 		}
 	}
 	
-	fun connect(apiKey: String = this.apiKey) {
-		if (!RPCHandler.connected.get()) {
-			RPCHandler.onReady = { logger.fine("Discord Rich Presence ready!") }
-			RPCHandler.onErrored = { errorCode, message -> logger.warning("Discord RPC API failed to execute. Error #$errorCode, $message") }
-			RPCHandler.connect(apiKey)
-			logger.config("Connecting Discord RPC")
-			App.stage.setOnHiding { disconnect() }
-		}
-	}
-	
-	fun connectDelayed(millis: Long, apiKey: String = this.apiKey) {
+	fun connect(delay: Int = 0) {
 		launch {
-			delay(millis)
+			delay(delay)
 			if (!RPCHandler.connected.get()) {
-				connect(apiKey)
-				updatePresence(idlePresence)
+				RPCHandler.onReady = {
+					logger.fine("Discord Rich Presence ready!")
+					RPCHandler.updatePresence(idlePresence)
+				}
+				RPCHandler.onErrored = { errorCode, message -> logger.warning("Discord RPC Error #$errorCode, $message") }
+				RPCHandler.connect(apiKey)
+				logger.config("Connecting Discord RPC")
+				App.stage.setOnHiding { disconnect() }
 			}
 		}
 	}
@@ -47,6 +43,7 @@ object DiscordRPC {
 			logger.config("Disconnecting Discord RPC")
 			RPCHandler.disconnect()
 			RPCHandler.finishPending()
+			logger.finer("Disconnected Discord RPC")
 		}
 	}
 	
@@ -54,7 +51,7 @@ object DiscordRPC {
 		RPCHandler.ifConnectedOrLater {
 			RPCHandler.updatePresence(presence)
 			if (presence != idlePresence)
-				logger.finer("Changed Discord presence to '${presence.details} ${presence.state}'")
+				logger.finer("Changed Discord RPC to '${presence.details} - ${presence.state}'")
 		}
 	}
 	

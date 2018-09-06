@@ -91,7 +91,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		fill(tabPane)
 		if (checkUpdate)
 			checkForUpdate()
-		DiscordRPC.connectDelayed(5000)
+		DiscordRPC.connect()
 	}
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }

@@ -1,7 +1,6 @@
 package xerus.monstercat.api
 
 import kotlinx.coroutines.experimental.launch
-import xerus.ktutil.XerusLogger
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.*
@@ -9,8 +8,6 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
-
-typealias logger = XerusLogger
 
 object Cache : Refresher() {
 	

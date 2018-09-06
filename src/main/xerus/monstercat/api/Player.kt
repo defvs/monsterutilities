@@ -22,6 +22,7 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.logger
 import java.util.logging.Level
 import kotlin.math.pow
 
@@ -109,38 +110,35 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	init {
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
-		
-		activeTrack.listen { track ->
-			disposePlayer()
-			if (track != null) {
-				val hash = track.streamHash ?: run {
-					showBack("$track is currently not available for streaming!")
-					return@listen
-				}
-				logger.finer("Loading $track from $hash")
-				activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
-				updateVolume()
-				playing("Loading $track")
-				player?.run {
-					play()
-					setOnReady {
-						label.text = "Now Playing: $track"
-						val total = totalDuration.toMillis()
-						seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
-						seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-					}
-					setOnError {
-						logger.log(Level.WARNING, "Error loading $track: $error", error)
-						showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
-					}
-				}
-			}
-		}
 	}
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun playTrack(track: Track) {
-		activeTrack.value = track
+		activeTrack.value = null
+		val hash = track.streamHash ?: run {
+			showBack("$track is currently not available for streaming!")
+			return
+		}
+		logger.finer("Loading $track from $hash")
+		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
+		updateVolume()
+		playing("Loading $track")
+		player?.run {
+			play()
+			setOnReady {
+				label.text = "Now Playing: $track"
+				val total = totalDuration.toMillis()
+				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
+				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
+				onFx {
+					activeTrack.value = track
+				}
+			}
+			setOnError {
+				logger.log(Level.WARNING, "Error loading $track: $error", error)
+				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
+			}
+		}
 	}
 	
 	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */

@@ -47,8 +47,8 @@ class TabSettings : VTab() {
 		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Skins.availableSkins)).apply {
 			valueProperty().bindBidirectional(Settings.SKIN)
 		})
-		val slider = Slider(0.0, 255.0, Settings.GENRECOLORS().toDouble()).scrollable(15.0)
-		Settings.GENRECOLORS.dependOn(slider.valueProperty()) { it.toInt() }
+		val slider = Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0)
+		Settings.GENRECOLORINTENSITY.dependOn(slider.valueProperty()) { it.toInt() }
 		addLabeled("Genre color intensity", slider)
 		
 		addLabeled("Player Seekbar scroll sensitivity", doubleSpinner(0.0, initial = Settings.PLAYERSCROLLSENSITIVITY()).apply {

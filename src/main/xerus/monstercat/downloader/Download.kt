@@ -6,6 +6,7 @@ import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
+import xerus.monstercat.logger
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
