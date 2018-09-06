@@ -17,7 +17,6 @@ import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Releases
 import java.io.*
 
-const val snackbarTextCache = "MCatalog was restored from cache"
 
 abstract class FetchTab : VTab() {
 	
@@ -87,7 +86,10 @@ abstract class FetchTab : VTab() {
 	// region caching
 	
 	private val cacheFile: File
-		get() = cacheDir.resolve("MCatalog $tabName")
+		get() = cacheDir.resolve(tabName)
+	
+	protected val snackbarTextCache
+		get() = "$tabName was restored from cache"
 	
 	private fun writeCache(sheet: Any) {
 		if (!Settings.ENABLECACHE())
@@ -127,7 +129,7 @@ abstract class FetchTab : VTab() {
 	
 	companion object {
 		init {
-			Settings.GENRECOLORS.addListener { _ -> viewRefresher() }
+			Settings.GENRECOLORINTENSITY.addListener { _ -> viewRefresher() }
 		}
 		
 		private val viewRefresher = DelayedRefresher(400) {

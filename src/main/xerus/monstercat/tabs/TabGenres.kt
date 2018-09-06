@@ -5,18 +5,19 @@ import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.VBox
-import xerus.monstercat.logger
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.Row
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.monstercat.Settings.GENRECOLORS
+import xerus.monstercat.Settings.GENRECOLORINTENSITY
+import xerus.monstercat.Sheets
+import xerus.monstercat.logger
 
 val genreColors = RoughMap<String>()
 val genreColor = { item: String? ->
 	item?.let {
-		"-fx-background-color: %s%02x".format(it, GENRECOLORS())
+		"-fx-background-color: %s%02x".format(it, GENRECOLORINTENSITY())
 	}
 }
 
@@ -71,7 +72,7 @@ class TabGenres : FetchTab() {
 		
 		view.setRowFactory {
 			TreeTableRow<Row>().apply {
-				if (GENRECOLORS() > 0) {
+				if (GENRECOLORINTENSITY() > 0) {
 					val hex = cols.find("Hex") ?: return@apply
 					itemProperty().listen { style = genreColor(it?.get(hex)) }
 				}

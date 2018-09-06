@@ -4,20 +4,13 @@ import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
-import xerus.ktutil.containsAny
-import xerus.monstercat.logger
-import xerus.ktutil.createDirs
-import xerus.ktutil.exists
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
-import xerus.ktutil.preferences.multiSeparator
 import xerus.monstercat.tabs.FetchTab
 import xerus.monstercat.tabs.availableColumns
 import xerus.monstercat.tabs.defaultColumns
 import java.io.File
-import java.nio.file.Path
-import java.nio.file.Paths
 
 val cacheDir: File
 	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))
@@ -37,7 +30,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	
 	val LASTCATALOGCOLUMNS = create("catalogLastColumns", availableColumns)
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
-	val GENRECOLORS = create("genrecolors", 80)
+	val GENRECOLORINTENSITY = create("genrecolors", 80)
 	
 	val SKIN = create("skin", "black")
 	

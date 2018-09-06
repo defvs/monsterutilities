@@ -109,7 +109,7 @@ tasks {
 	replace("jar", Delete::class).run {
 		group = MAIN
 		dependsOn("shadowJar")
-		setDelete(file(".").listFiles { f -> f.name.run { startsWith("${rootProject.name}-") && endsWith("jar") && this != file } })
+		setDelete(file(".").listFiles { f -> f.name.run { startsWith("MonsterUtilities-") && endsWith("jar") && this != file } })
 	}
 	
 	"test"(Test::class) {
