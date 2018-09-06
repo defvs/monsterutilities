@@ -16,8 +16,6 @@ class TabPlaylist : VTab() {
 	var table = TableView<Track>()
 
 	init {
-		prefWidth = 600.0
-
 		table.items = Playlist.playlist
 
 		val artistsCol = TableColumn<Track, String>("Artists")
