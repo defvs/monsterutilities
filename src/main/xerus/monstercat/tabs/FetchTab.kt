@@ -12,11 +12,9 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readObject
 import xerus.ktutil.writeObject
+import xerus.monstercat.*
 import xerus.monstercat.Sheets.fetchMCatalogTab
-import xerus.monstercat.Settings
 import xerus.monstercat.api.Releases
-import xerus.monstercat.cacheDir
-import xerus.monstercat.monsterUtilities
 import java.io.*
 
 const val snackbarTextCache = "MCatalog was restored from cache"
@@ -60,7 +58,7 @@ abstract class FetchTab : VTab() {
 	
 	init {
 		onFx {
-			if(this !is TabGenres)
+			if (this !is TabGenres)
 				add(notification)
 			setPlaceholder(Label("Loading..."))
 		}

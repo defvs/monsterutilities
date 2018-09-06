@@ -22,6 +22,7 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.logger
 import java.util.logging.Level
 import kotlin.math.pow
 

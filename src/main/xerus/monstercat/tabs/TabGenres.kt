@@ -49,7 +49,7 @@ class TabGenres : FetchTab() {
 				val row = Row(10, *list.toTypedArray())
 				val nextLevel = row.indexOfFirst { it.isNotEmpty() }
 				if (nextLevel < curLevel)
-					repeat(curLevel - nextLevel, { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warning("$cur should have a parent!") } })
+					repeat(curLevel - nextLevel) { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warning("$cur should have a parent!") } }
 				
 				if (hex != null) {
 					if (nextLevel == 0) {
