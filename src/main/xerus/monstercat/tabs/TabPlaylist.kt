@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
+import javafx.scene.control.Label
 import javafx.scene.control.SelectionMode
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
@@ -50,6 +51,8 @@ class TabPlaylist : VTab() {
 				Playlist.removeTrack(selected)
 			}
 		}
+		
+		table.placeholder = Label("Nothing's in your playlist. Middle Click any song in the catalog to add it here !")
 
 		fill(table)
 	}
