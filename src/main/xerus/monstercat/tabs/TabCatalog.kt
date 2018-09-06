@@ -14,6 +14,7 @@ import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
+import xerus.monstercat.logger
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 

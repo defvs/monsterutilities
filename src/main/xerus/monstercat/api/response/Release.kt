@@ -2,8 +2,6 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 import xerus.ktutil.to
-import xerus.monstercat.api.APIConnection
-import xerus.monstercat.api.logger
 
 data class Release(
 		@Key("_id") override var

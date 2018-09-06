@@ -7,6 +7,7 @@ import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.logger
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path

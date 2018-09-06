@@ -33,6 +33,7 @@ import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
 import xerus.monstercat.api.response.*
 import xerus.monstercat.globalThreadPool
+import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
@@ -41,8 +42,6 @@ import java.time.OffsetDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
-
-typealias logger = XerusLogger
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")

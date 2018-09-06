@@ -4,6 +4,7 @@ import xerus.ktutil.to
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
