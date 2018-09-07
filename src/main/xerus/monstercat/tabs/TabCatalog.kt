@@ -51,38 +51,27 @@ class TabCatalog : TableTab() {
 		children.add(searchView)
 		predicate.bind(searchView.predicate)
 		
-		val rightClickMenu = ContextMenu()
-		val item1 = MenuItem("Play") {
-			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist.tracks.setAll(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
-			Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-		}
-		val item2 = MenuItem("Play All") {
-			val filtered = table.filteredData
-			Playlist.setTracks(filtered.map { Track("", it[cols.findUnsafe("Track")].trim(), it[cols.findUnsafe("Artist")]) })
-			
-			var item = filtered.first()
-			table.selectionModel.selectedItem?.let { selected ->
-				Playlist.currentTrack = filtered.indexOf(selected)
-				item = selected
-			} ?: run {
-				Playlist.currentTrack = 0
-			}
-			Player.play(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-		}
-		val item3 = MenuItem("Play Next") {
-			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist.addNext(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
-		}
-		val item4 = MenuItem("Add to Playlist") {
-			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist.tracks.add(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
-			if (Playlist.tracks.size == 1) {
-				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-			}
-		}
-		rightClickMenu.items.addAll(item1, item2, item3, item4)
-		table.contextMenu = rightClickMenu
+		table.contextMenu = ContextMenu(
+				MenuItem("Play") {
+					playRow(table.selectionModel.selectedItem ?: return@MenuItem)
+				},
+				MenuItem("Play All") {
+					val filtered = table.filteredData
+					Playlist.setTracks(filtered.mapNotNull { trackFromRow(it) })
+					
+					val selected = table.selectionModel.selectedItem
+					playRow(selected)
+				},
+				MenuItem("Play Next") {
+					Playlist.addNext(trackFromRow(table.selectionModel.selectedItem ?: return@MenuItem))
+				},
+				MenuItem("Add to Playlist") {
+					val selected = table.selectionModel.selectedItem ?: return@MenuItem
+					Playlist.tracks.add(trackFromRow(selected))
+					if (Playlist.tracks.size == 1)
+						playRow(selected)
+				}
+		)
 		
 		fill(table)
 		
@@ -102,6 +91,9 @@ class TabCatalog : TableTab() {
 			}
 		}
 	}
+	
+	private fun playRow(row: List<String>) = Player.play(row[cols.findUnsafe("Track")].trim(), row[cols.findUnsafe("Artist")])
+	private fun trackFromRow(row: List<String>) = Track("", row[cols.findUnsafe("Track")].trim(), row[cols.findUnsafe("Artist")])
 	
 	private fun setColumns(columns: List<String>) {
 		val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()
