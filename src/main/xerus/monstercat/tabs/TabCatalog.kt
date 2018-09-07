@@ -15,6 +15,7 @@ import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
+import xerus.monstercat.api.API
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
 import xerus.monstercat.api.response.Track
@@ -91,14 +92,12 @@ class TabCatalog : TableTab() {
 		table.setOnMouseClicked { me ->
 			if (me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
-				Playlist.clearTracks()
 				val filtered = table.filteredData
 				val filteredList = mutableListOf<Track>()
 				for (v: List<String> in filtered) {
 					filteredList.add(Track("", v[cols.findUnsafe("Track")].trim(), v[cols.findUnsafe("Artist")]))
 				}
 				Playlist.setTracks(filteredList)
-				Playlist.currentTrack = filtered.indexOf(selected)
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}
 		}

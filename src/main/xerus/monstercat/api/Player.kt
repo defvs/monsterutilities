@@ -29,6 +29,10 @@ import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
 	
+	val activeTrack = SimpleObservable<Track?>(null)
+	val activePlayer = SimpleObservable<MediaPlayer?>(null)
+	val player get() = activePlayer.value
+	
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
 		setSize(height = 0.0)
@@ -62,13 +66,16 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	override val fader = box.verticalFade(30, -1.0)
 	
+	private val label = Label()
+	
 	init {
 		box.alignment = Pos.CENTER
+		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 		maxHeight = Double.MAX_VALUE
 		resetNotification()
+		activeTrack.listen { if(it != null) Playlist.history.add(it) }
 	}
 	
-	private val label = Label()
 	/** clears the [children] and shows the [label] with [text] */
 	private fun showText(text: String) {
 		ensureVisible()
@@ -111,14 +118,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				add(closeButton)
 			}
 		}
-	}
-	
-	val activeTrack = SimpleObservable<Track?>(null)
-	val activePlayer = SimpleObservable<MediaPlayer?>(null)
-	val player get() = activePlayer.value
-	
-	init {
-		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 	}
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
@@ -169,7 +168,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
-	private val prevButton = buttonWithId("skipback") { play(Playlist.prev()) }
+	private val prevButton = buttonWithId("skipback") { Playlist.getPrev()?.let { play(it) } }
 	private val nextButton = buttonWithId("skip") { playNext() }
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
 	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
@@ -229,7 +228,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
 	fun play(tracks: MutableList<Track>, index: Int) {
 		Playlist.setTracks(tracks)
-		play(Playlist.select(index))
+		play(tracks[index])
 	}
 	
 	fun playNext() = Playlist.next()?.let { play(it.title, it.artistsTitle) }

@@ -2,52 +2,46 @@ package xerus.monstercat.api
 
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import xerus.ktutil.javafx.properties.dependentObservable
 import xerus.monstercat.api.response.Track
+import java.util.*
 
 object Playlist {
-	var tracks: ObservableList<Track> = FXCollections.observableArrayList()
+	val tracks: ObservableList<Track> = FXCollections.observableArrayList()
+	val history = ArrayDeque<Track>()
+	val currentTrack = Player.activeTrack.dependentObservable {
+		tracks.indexOf(it).takeUnless { i -> i == -1 }
+	}
 	
-	var currentTrack = 0
 	var repeat = false
 	var random = false
 	
-	fun select(index: Int): Track {
-		if (index >= 0 && index < tracks.size) currentTrack = index
-		return tracks[currentTrack]
-	}
+	operator fun get(index: Int): Track = tracks[index]
 	
-	fun prev(): Track {
-		if (currentTrack > 0) currentTrack--
-		return tracks[currentTrack]
-	}
+	fun getPrev(): Track? = history.poll()
 	
 	fun next() = if (random) nextSongRandom() else nextSong()
 	
-	fun addNext(track: Track) = tracks.add(currentTrack + 1, track)
+	fun addNext(track: Track) = tracks.add(currentTrack.value?.let { it + 1 } ?: 0, track)
 	
 	fun removeTrack(index: Int?) {
 		if (index != null) tracks.removeAt(index)
 		else tracks.removeAt(tracks.size - 1)
-		if (tracks.size < currentTrack + 1) currentTrack = tracks.size - 1
 	}
 	
 	fun setTracks(playlist: Collection<Track>) {
+		history.clear()
 		tracks.setAll(playlist)
-		currentTrack = 0
 	}
 	
-	fun clearTracks() {
-		tracks.clear()
-		currentTrack = 0
-	}
-	
-	fun nextSongRandom() = select((Math.random() * (tracks.size)).toInt())
+	fun nextSongRandom(): Track = tracks[(Math.random() * tracks.size).toInt()]
 	fun nextSong(): Track? {
-		when {
-			currentTrack + 1 < tracks.size -> currentTrack++
-			repeat -> currentTrack = 0
+		val cur = currentTrack.value
+		return when {
+			cur == null -> tracks.firstOrNull()
+			cur + 1 < tracks.size -> tracks[cur + 1]
+			repeat -> tracks.firstOrNull()
 			else -> return null
 		}
-		return tracks[currentTrack]
 	}
 }
