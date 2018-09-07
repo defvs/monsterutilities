@@ -64,7 +64,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	init {
 		box.alignment = Pos.CENTER
 		maxHeight = Double.MAX_VALUE
-		resetNotification()
+		reset()
 	}
 	
 	private val label = Label()
@@ -77,19 +77,19 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Shows [text] in the [label] and adds a back Button that calls [resetNotification] when clicked */
+	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
 	private fun showBack(text: String) {
 		checkFx {
 			showText(text)
-			addButton { resetNotification() }.id("back")
+			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
 			add(closeButton)
 		}
 	}
 	
-	/** hides the Player and appears again with the latest Release */
-	fun resetNotification() {
+	/** hides the Player and appears again displaying the latest Release */
+	fun reset() {
 		fadeOut()
 		launch {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
@@ -141,22 +141,18 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
-	fun stopPlaying() {
-		activeTrack.value = null
-		resetNotification()
-	}
-	
+	/** Disposes the [activePlayer] and hides the [seekBar] */
 	private fun disposePlayer() {
 		player?.dispose()
 		activePlayer.value = null
+		activeTrack.value = null
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { reset() }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> updateVolume() }
@@ -190,7 +186,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				return@launch
 			}
 			playTrack(track)
-			player?.setOnEndOfMedia { stopPlaying() }
+			player?.setOnEndOfMedia { reset() }
 		}
 	}
 	
@@ -216,7 +212,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			if (index < tracks.lastIndex)
 				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
 		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else stopPlaying() }
+		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
 	}
 	
 }
