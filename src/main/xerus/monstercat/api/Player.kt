@@ -85,7 +85,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			addButton { resetNotification() }.id("back")
 			if (!Playlist.playlist.isEmpty()) {
 				fun skip() {
-					val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+					val s = Playlist.next()
 					if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
 				}
 				addButton { skip() }.id("skip")
@@ -151,7 +151,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		player?.setOnEndOfMedia {
 			if (Playlist.playlist.isEmpty()) stopPlaying()
 			else {
-				val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+				val s = Playlist.next()
 				if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
 			}
 		}
@@ -176,7 +176,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
 	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artistsTitle) }
 	private val nextButton = buttonWithId("skip") {
-		val s: Track? = if (!Playlist.random) Playlist.next() else Playlist.nextRandom()
+		val s: Track? = Playlist.next()
 		play(s!!.title, s.artistsTitle)
 	}
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }

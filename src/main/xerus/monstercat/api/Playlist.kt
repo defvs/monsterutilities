@@ -8,16 +8,11 @@ object Playlist {
 	var playlist: ObservableList<Track> = FXCollections.observableArrayList()
 	var currentTrack = 0
 	var repeat = false
-	var random: Boolean = false
+	var random = false
 	
 	
 	fun next(): Track? {
-		when {
-			currentTrack + 1 < playlist.size -> currentTrack++
-			repeat -> currentTrack = 0
-			else -> return null
-		}
-		return playlist[currentTrack]
+		return if (random) nextSongRandom() else nextSong()
 	}
 	
 	fun prev(): Track? {
@@ -50,5 +45,13 @@ object Playlist {
 		currentTrack = 0
 	}
 	
-	fun nextRandom(): Track? = select((Math.random() * (playlist.size)).toInt())
+	fun nextSongRandom(): Track? = select((Math.random() * (playlist.size)).toInt())
+	fun nextSong(): Track?{
+		when {
+			currentTrack + 1 < playlist.size -> currentTrack++
+			repeat -> currentTrack = 0
+			else -> return null
+		}
+		return playlist[currentTrack]
+	}
 }
