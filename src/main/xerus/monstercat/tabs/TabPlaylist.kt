@@ -7,10 +7,7 @@ import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
-import xerus.monstercat.api.Player
-import xerus.monstercat.api.Playlist
-import xerus.monstercat.api.response.Track
-
+import xerus.monstercat.api.*
 
 class TabPlaylist : VTab() {
 	var table = TableView<Track>().apply {
@@ -48,7 +45,7 @@ class TabPlaylist : VTab() {
 			useSelectedTrack { Playlist.addNext(it) }
 		}
 		val item3 = MenuItem("Remove") {
-			Playlist.removeTrack(table.selectionModel.selectedIndex)
+			Playlist.removeAt(table.selectionModel.selectedIndex)
 		}
 		rightClickMenu.items.addAll(item1, item2, item3)
 		table.contextMenu = rightClickMenu
@@ -56,8 +53,8 @@ class TabPlaylist : VTab() {
 		fill(table)
 	}
 	
-	inline fun useSelectedTrack(action: (Track) -> Unit) {
-		Playlist[table.selectionModel.selectedIndex]?.let { action(it) }
+	inline fun useSelectedTrack(action: (PlaylistTrack) -> Unit) {
+		action(table.selectionModel.selectedItem)
 	}
 	
 }

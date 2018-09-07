@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import javafx.collections.ListChangeListener
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -29,11 +30,11 @@ import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
 	
-	val activeTrack = SimpleObservable<Track?>(null)
 	val activePlayer = SimpleObservable<MediaPlayer?>(null)
 	val player get() = activePlayer.value
 	
-	var idle = true
+	val playlistTrack = SimpleObservable<PlaylistTrack?>(null)
+	val activeTrack = SimpleObservable<Track?>(null)
 	
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
@@ -75,11 +76,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 		maxHeight = Double.MAX_VALUE
 		reset()
-		activeTrack.listen { if(it != null) Playlist.history.add(it) }
-		Playlist.tracks.listen {
-			if(it.size > 0 && idle)
+		activeTrack.listen { if(it != null && playlistTrack.value != Playlist.lastPolled) Playlist.history.add(PlaylistTrack(it.title, it.artistsTitle)) }
+		Playlist.tracks.addListener(ListChangeListener {
+			it.next()
+			if(it.addedSize == it.list.size && playlistTrack.value == null) {
+				logger.finer("Automatically starting Playlist")
 				playNext()
-		}
+			}
+		})
 	}
 	
 	/** clears the [children] and shows the [label] with [text] */
@@ -100,11 +104,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				addButton { playNextOrStop() }.id("skip")
 				launch {
 					delay(2, TimeUnit.SECONDS)
-					if (label.text == text)
-						playNextOrStop()
+					if (label.text == text && box.opacity == 1.0 && playNext() != null)
+						logger.finer("Automatically skipping broken song")
 				}
-			} else {
-				idle = true
 			}
 			fill(pos = 0)
 			fill()
@@ -114,11 +116,13 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
-		idle = true
 		fadeOut()
 		launch {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
-			while (fading) delay(50)
+			while (fading) {
+				println(opacity)
+				delay(50)
+			}
 			showText("Latest Release: $latest")
 			onFx {
 				add(buttonWithId("play") { play(latest) })
@@ -131,7 +135,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun play(track: Track) {
-		idle = false
+		playlistTrack.value = PlaylistTrack(track.title, track.artistsTitle)
 		activeTrack.value = null
 		val hash = track.streamHash ?: run {
 			showBack("$track is currently not available for streaming!")
@@ -151,7 +155,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				checkFx { activeTrack.value = track }
 			}
 			setOnError {
-				logger.log(Level.WARNING, "Error loading $track: $error", error)
+				logger.warning("Error loading $track: $error")
 				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
 			setOnEndOfMedia {
@@ -162,9 +166,11 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Disposes the [activePlayer] and hides the [seekBar] */
 	private fun disposePlayer() {
+		logger.finer("Disposing Player")
 		player?.dispose()
 		activePlayer.value = null
 		activeTrack.value = null
+		playlistTrack.value = null
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
@@ -172,7 +178,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { reset() }
-	private val prevButton = buttonWithId("skipback") { Playlist.getPrev()?.let { play(it) } }
+	private val prevButton = buttonWithId("skipback") { Playlist.getPrev()?.let { play(it.title, it.artistsTitle) } }
 	private val nextButton = buttonWithId("skip") { playNext() }
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
 	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
@@ -204,20 +210,20 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
+		disposePlayer()
+		playlistTrack.value = PlaylistTrack(title, artists)
+		showText("Searching for \"$title\"...")
 		launch {
-			showText("Searching for \"$title\"...")
-			disposePlayer()
-			val track = API.find(title, artists)
-			if (track == null) {
+			play(API.find(title, artists) ?: run {
 				onFx { showBack("Could not find $artists - $title") }
 				return@launch
-			}
-			play(track)
+			})
 		}
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
+		playlistTrack.value = PlaylistTrack()
 		checkFx { showText("Searching for $release") }
 		launch {
 			val results = APIConnection("catalog", "release", release.id, "tracks").getTracks()?.takeUnless { it.isEmpty() }
@@ -231,11 +237,28 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
 	fun play(tracks: MutableList<Track>, index: Int) {
-		Playlist.setTracks(tracks)
+		Playlist.setTracks(tracks.map { it.toPlaylistTrack() })
 		play(tracks[index])
 	}
 	
-	fun playNext() = Playlist.next()?.let { play(it.title, it.artistsTitle) }
+	fun playNext() = Playlist.getNext()?.let { play(it.title, it.artistsTitle) }
 	fun playNextOrStop() = playNext() ?: reset()
+	
+}
+
+fun Track.toPlaylistTrack() = PlaylistTrack(title, artistsTitle)
+
+class PlaylistTrack(val title: String = "", val artistsTitle: String = "") {
+	override fun equals(other: Any?): Boolean =
+			other is PlaylistTrack && title == other.title && (artistsTitle in other.artistsTitle || other.artistsTitle in artistsTitle)
+	
+	override fun toString(): String =
+			"PlaylistTrack(title='$title', artistsTitle='$artistsTitle')"
+	
+	override fun hashCode(): Int {
+		var result = title.hashCode()
+		result = 31 * result + artistsTitle.hashCode()
+		return result
+	}
 	
 }

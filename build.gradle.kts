@@ -73,7 +73,7 @@ tasks {
 	
 	"run"(JavaExec::class) {
 		group = MAIN
-		// Usage: gradle run -Dargs="FINE save"
+		// Usage: gradle run -Dargs="--loglevel finer save"
 		args = System.getProperty("args", "").split(" ")
 	}
 	
