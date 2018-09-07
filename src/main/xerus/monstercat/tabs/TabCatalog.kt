@@ -56,20 +56,14 @@ class TabCatalog : TableTab() {
 					playRow(table.selectionModel.selectedItem ?: return@MenuItem)
 				},
 				MenuItem("Play All") {
-					val filtered = table.filteredData
-					Playlist.setTracks(filtered.mapNotNull { trackFromRow(it) })
-					
-					val selected = table.selectionModel.selectedItem
-					playRow(selected)
+					table.selectionModel.selectedItem?.let { playRow(it) }
+					Playlist.setTracks(table.filteredData.map { trackFromRow(it) })
 				},
 				MenuItem("Play Next") {
 					Playlist.addNext(trackFromRow(table.selectionModel.selectedItem ?: return@MenuItem))
 				},
 				MenuItem("Add to Playlist") {
-					val selected = table.selectionModel.selectedItem ?: return@MenuItem
-					Playlist.tracks.add(trackFromRow(selected))
-					if (Playlist.tracks.size == 1)
-						playRow(selected)
+					Playlist.tracks.add(trackFromRow(table.selectionModel.selectedItem ?: return@MenuItem))
 				}
 		)
 		

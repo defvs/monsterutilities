@@ -33,6 +33,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	val activePlayer = SimpleObservable<MediaPlayer?>(null)
 	val player get() = activePlayer.value
 	
+	var idle = true
+	
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
 		setSize(height = 0.0)
@@ -72,8 +74,12 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		box.alignment = Pos.CENTER
 		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
 		maxHeight = Double.MAX_VALUE
-		resetNotification()
+		reset()
 		activeTrack.listen { if(it != null) Playlist.history.add(it) }
+		Playlist.tracks.listen {
+			if(it.size > 0 && idle)
+				playNext()
+		}
 	}
 	
 	/** clears the [children] and shows the [label] with [text] */
@@ -85,11 +91,11 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Shows [text] in the [label] and adds a back Button that calls [resetNotification] when clicked */
+	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
 	private fun showBack(text: String) {
 		checkFx {
 			showText(text)
-			addButton { resetNotification() }.id("back")
+			addButton { reset() }.id("back")
 			if (!Playlist.tracks.isEmpty()) {
 				addButton { playNextOrStop() }.id("skip")
 				launch {
@@ -97,6 +103,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 					if (label.text == text)
 						playNextOrStop()
 				}
+			} else {
+				idle = true
 			}
 			fill(pos = 0)
 			fill()
@@ -104,8 +112,9 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** hides the Player and appears again with the latest Release */
-	fun resetNotification() {
+	/** hides the Player and appears again displaying the latest Release */
+	fun reset() {
+		idle = true
 		fadeOut()
 		launch {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
@@ -122,6 +131,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun play(track: Track) {
+		idle = false
 		activeTrack.value = null
 		val hash = track.streamHash ?: run {
 			showBack("$track is currently not available for streaming!")
@@ -138,9 +148,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-				onFx {
-					activeTrack.value = track
-				}
+				checkFx { activeTrack.value = track }
 			}
 			setOnError {
 				logger.log(Level.WARNING, "Error loading $track: $error", error)
@@ -152,22 +160,18 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
-	fun stopPlaying() {
-		activeTrack.value = null
-		resetNotification()
-	}
-	
+	/** Disposes the [activePlayer] and hides the [seekBar] */
 	private fun disposePlayer() {
 		player?.dispose()
 		activePlayer.value = null
+		activeTrack.value = null
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { reset() }
 	private val prevButton = buttonWithId("skipback") { Playlist.getPrev()?.let { play(it) } }
 	private val nextButton = buttonWithId("skip") { playNext() }
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
@@ -232,6 +236,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playNext() = Playlist.next()?.let { play(it.title, it.artistsTitle) }
-	fun playNextOrStop() = playNext() ?: stopPlaying()
+	fun playNextOrStop() = playNext() ?: reset()
 	
 }
