@@ -84,12 +84,12 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showText(text)
 			addButton { resetNotification() }.id("back")
 			if (!Playlist.tracks.isEmpty()) {
-				fun skip() {
-					val s = Playlist.next()
-					if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
+				addButton { playNextOrStop() }.id("skip")
+				launch {
+					delay(2, TimeUnit.SECONDS)
+					if (label.text == text)
+						playNextOrStop()
 				}
-				addButton { skip() }.id("skip")
-				launch { delay(3, TimeUnit.SECONDS); skip() }
 			}
 			fill(pos = 0)
 			fill()
@@ -147,12 +147,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				logger.log(Level.WARNING, "Error loading $track: $error", error)
 				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
-		}
-		player?.setOnEndOfMedia {
-			if (Playlist.tracks.isEmpty()) stopPlaying()
-			else {
-				val s = Playlist.next()
-				if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
+			setOnEndOfMedia {
+				playNextOrStop()
 			}
 		}
 	}
@@ -173,11 +169,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { stopPlaying() }
-	private val prevButton = buttonWithId("skipback") { val s = Playlist.prev(); play(s!!.title, s.artistsTitle) }
-	private val nextButton = buttonWithId("skip") {
-		val s: Track? = Playlist.next()
-		play(s!!.title, s.artistsTitle)
-	}
+	private val prevButton = buttonWithId("skipback") { play(Playlist.prev()) }
+	private val nextButton = buttonWithId("skip") { playNext() }
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
 	private val repeatButton = ToggleButton().id("repeat").onClick { Playlist.repeat = isSelected }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
@@ -213,7 +206,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			disposePlayer()
 			val track = API.find(title, artists)
 			if (track == null) {
-				onFx { showBack("Track not found") }
+				onFx { showBack("Could not find $artists - $title") }
 				return@launch
 			}
 			play(track)
@@ -238,5 +231,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		Playlist.setTracks(tracks)
 		play(Playlist.select(index))
 	}
+	
+	fun playNext() = Playlist.next()?.let { play(it.title, it.artistsTitle) }
+	fun playNextOrStop() = playNext() ?: stopPlaying()
 	
 }
