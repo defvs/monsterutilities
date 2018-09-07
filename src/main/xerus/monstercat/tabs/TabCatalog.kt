@@ -1,7 +1,6 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
-import javafx.event.EventHandler
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
@@ -22,7 +21,6 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
 import java.time.LocalTime
 import kotlin.math.absoluteValue
-import javafx.scene.input.ContextMenuEvent
 
 
 val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
@@ -55,21 +53,21 @@ class TabCatalog : TableTab() {
 		val rightClickMenu = ContextMenu()
 		val item1 = MenuItem("Play") {
 			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist.clearTracks()
-			Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+			Playlist.tracks.setAll(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
 			Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 		}
 		val item2 = MenuItem("Play All") {
-			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist.clearTracks()
 			val filtered = table.filteredData
-			val filteredList = mutableListOf<Track>()
-			for (v: List<String> in filtered) {
-				filteredList.add(Track("", v[cols.findUnsafe("Track")].trim(), v[cols.findUnsafe("Artist")]))
+			Playlist.setTracks(filtered.map { Track("", it[cols.findUnsafe("Track")].trim(), it[cols.findUnsafe("Artist")]) })
+			
+			var item = filtered.first()
+			table.selectionModel.selectedItem?.let { selected ->
+				Playlist.currentTrack = filtered.indexOf(selected)
+				item = selected
+			} ?: run {
+				Playlist.currentTrack = 0
 			}
-			Playlist.setTracks(filteredList)
-			Playlist.currentTrack = filtered.indexOf(selected)
-			Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+			Player.play(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 		}
 		val item3 = MenuItem("Play Next") {
 			val selected = table.selectionModel.selectedItem ?: return@MenuItem
@@ -77,8 +75,8 @@ class TabCatalog : TableTab() {
 		}
 		val item4 = MenuItem("Add to Playlist") {
 			val selected = table.selectionModel.selectedItem ?: return@MenuItem
-			Playlist(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
-			if (Playlist.playlist.size == 1){
+			Playlist.tracks.add(Track("", selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")]))
+			if (Playlist.tracks.size == 1) {
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}
 		}

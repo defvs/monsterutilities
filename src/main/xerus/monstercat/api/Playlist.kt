@@ -5,53 +5,49 @@ import javafx.collections.ObservableList
 import xerus.monstercat.api.response.Track
 
 object Playlist {
-	var playlist: ObservableList<Track> = FXCollections.observableArrayList()
+	var tracks: ObservableList<Track> = FXCollections.observableArrayList()
+	
 	var currentTrack = 0
 	var repeat = false
 	var random = false
 	
-	
-	fun next(): Track? {
-		return if (random) nextSongRandom() else nextSong()
+	fun select(index: Int): Track {
+		if (index >= 0 && index < tracks.size) currentTrack = index
+		return tracks[currentTrack]
 	}
 	
-	fun prev(): Track? {
+	fun prev(): Track {
 		if (currentTrack > 0) currentTrack--
-		return playlist[currentTrack]
+		return tracks[currentTrack]
 	}
 	
-	fun select(index: Int): Track? {
-		if (index >= 0 && index < playlist.size) currentTrack = index
-		return playlist[currentTrack]
-	}
+	fun next() = if (random) nextSongRandom() else nextSong()
 	
-	fun getTracks() = playlist
-	fun setTracks(playlist: MutableList<Track>) = this.playlist.addAll(playlist)
-	
-	fun addTrack(track: Track) = playlist.add(track)
-	operator fun invoke(track: Track) = addTrack(track)
-	operator fun invoke(vararg tracks: Track) = playlist.addAll(tracks)
-	
-	fun addNext(track: Track) = playlist.add(currentTrack + 1, track)
+	fun addNext(track: Track) = tracks.add(currentTrack + 1, track)
 	
 	fun removeTrack(index: Int?) {
-		if (index != null) playlist.removeAt(index)
-		else playlist.removeAt(playlist.size - 1)
-		if (playlist.size < currentTrack + 1) currentTrack = playlist.size - 1
+		if (index != null) tracks.removeAt(index)
+		else tracks.removeAt(tracks.size - 1)
+		if (tracks.size < currentTrack + 1) currentTrack = tracks.size - 1
 	}
 	
-	fun clearTracks() {
-		playlist.clear()
+	fun setTracks(playlist: Collection<Track>) {
+		tracks.setAll(playlist)
 		currentTrack = 0
 	}
 	
-	fun nextSongRandom(): Track? = select((Math.random() * (playlist.size)).toInt())
-	fun nextSong(): Track?{
+	fun clearTracks() {
+		tracks.clear()
+		currentTrack = 0
+	}
+	
+	fun nextSongRandom() = select((Math.random() * (tracks.size)).toInt())
+	fun nextSong(): Track? {
 		when {
-			currentTrack + 1 < playlist.size -> currentTrack++
+			currentTrack + 1 < tracks.size -> currentTrack++
 			repeat -> currentTrack = 0
 			else -> return null
 		}
-		return playlist[currentTrack]
+		return tracks[currentTrack]
 	}
 }

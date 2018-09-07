@@ -16,7 +16,7 @@ class TabPlaylist : VTab() {
 	var table = TableView<Track>()
 
 	init {
-		table.items = Playlist.playlist
+		table.items = Playlist.tracks
 
 		val artistsCol = TableColumn<Track, String>("Artists")
 		artistsCol.cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
@@ -56,7 +56,7 @@ class TabPlaylist : VTab() {
 		}
 		val item2 = MenuItem("Play Next") {
 			val selected = table.selectionModel.selectedIndex
-			val t = Playlist.playlist[selected]
+			val t = Playlist.tracks[selected]
 			if (t != null) {
 				Playlist.addNext(t)
 			}

@@ -23,7 +23,7 @@ abstract class SongView<T : MusicItem>(root: T) : FilterableCheckTreeView<T>(roo
 					if (value is Release)
 						Player.play(value)
 					else if (value is Track)
-						Player.playTrack(value)
+						Player.play(value)
 				}
 			}
 		}

@@ -83,7 +83,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		checkFx {
 			showText(text)
 			addButton { resetNotification() }.id("back")
-			if (!Playlist.playlist.isEmpty()) {
+			if (!Playlist.tracks.isEmpty()) {
 				fun skip() {
 					val s = Playlist.next()
 					if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
@@ -122,7 +122,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
-	fun playTrack(track: Track) {
+	fun play(track: Track) {
 		activeTrack.value = null
 		val hash = track.streamHash ?: run {
 			showBack("$track is currently not available for streaming!")
@@ -149,7 +149,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			}
 		}
 		player?.setOnEndOfMedia {
-			if (Playlist.playlist.isEmpty()) stopPlaying()
+			if (Playlist.tracks.isEmpty()) stopPlaying()
 			else {
 				val s = Playlist.next()
 				if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
@@ -160,7 +160,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
 	fun stopPlaying() {
 		activeTrack.value = null
-		Playlist.clearTracks()
 		resetNotification()
 	}
 	
@@ -217,7 +216,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				onFx { showBack("Track not found") }
 				return@launch
 			}
-			playTrack(track)
+			play(track)
 		}
 	}
 	
@@ -230,15 +229,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 						showBack("No tracks found for Release $release")
 						return@launch
 					}
-			playTracks(results, 0)
+			play(results, 0)
 		}
 	}
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
-	fun playTracks(tracks: MutableList<Track>, index: Int) {
+	fun play(tracks: MutableList<Track>, index: Int) {
 		Playlist.setTracks(tracks)
-		val s = Playlist.select(index)
-		playTrack(s!!)
+		play(Playlist.select(index))
 	}
 	
 }
