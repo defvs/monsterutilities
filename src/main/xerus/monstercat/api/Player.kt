@@ -23,6 +23,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.logger
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import kotlin.math.pow
 
@@ -82,6 +83,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		checkFx {
 			showText(text)
 			addButton { resetNotification() }.id("back")
+			if (!Playlist.playlist.isEmpty()) {
+				fun skip() {
+					val s = if (Playlist.random) Playlist.nextRandom() else Playlist.next()
+					if (s != null) play(s.title, s.artistsTitle) else stopPlaying()
+				}
+				addButton { skip() }.id("skip")
+				launch { delay(3, TimeUnit.SECONDS); skip() }
+			}
 			fill(pos = 0)
 			fill()
 			add(closeButton)
