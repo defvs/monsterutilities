@@ -65,7 +65,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	init {
 		box.alignment = Pos.CENTER
 		maxHeight = Double.MAX_VALUE
-		resetNotification()
+		reset()
 	}
 	
 	private val label = Label()
@@ -78,11 +78,11 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Shows [text] in the [label] and adds a back Button that calls [resetNotification] when clicked */
+	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
 	private fun showBack(text: String) {
 		checkFx {
 			showText(text)
-			addButton { resetNotification() }.id("back")
+			addButton { reset() }.id("back")
 			if (!Playlist.tracks.isEmpty()) {
 				addButton { playNextOrStop() }.id("skip")
 				launch {
@@ -97,8 +97,8 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** hides the Player and appears again with the latest Release */
-	fun resetNotification() {
+	/** hides the Player and appears again displaying the latest Release */
+	fun reset() {
 		fadeOut()
 		launch {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
@@ -153,22 +153,18 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
-	fun stopPlaying() {
-		activeTrack.value = null
-		resetNotification()
-	}
-	
+	/** Disposes the [activePlayer] and hides the [seekBar] */
 	private fun disposePlayer() {
 		player?.dispose()
 		activePlayer.value = null
+		activeTrack.value = null
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { reset() }
 	private val prevButton = buttonWithId("skipback") { play(Playlist.prev()) }
 	private val nextButton = buttonWithId("skip") { playNext() }
 	private val randomButton = ToggleButton().id("shuffle").onClick { Playlist.random = isSelected }
@@ -233,6 +229,6 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playNext() = Playlist.next()?.let { play(it.title, it.artistsTitle) }
-	fun playNextOrStop() = playNext() ?: stopPlaying()
+	fun playNextOrStop() = playNext() ?: reset()
 	
 }
