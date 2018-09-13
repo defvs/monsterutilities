@@ -44,7 +44,7 @@ class DownloaderSwing : BasePanel() {
 	}
 	
 	init {
-		launch {
+		GlobalScope.launch {
 			logger.fine("DownloadWorker started")
 			
 			var limit = LIMIT.int

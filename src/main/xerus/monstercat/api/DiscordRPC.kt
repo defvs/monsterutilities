@@ -2,6 +2,7 @@ package xerus.monstercat.api
 
 import be.bluexin.drpc4k.jna.DiscordRichPresence
 import be.bluexin.drpc4k.jna.RPCHandler
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.getResource
@@ -23,7 +24,7 @@ object DiscordRPC {
 	}
 	
 	fun connect(delay: Int = 0) {
-		launch {
+		GlobalScope.launch {
 			delay(delay)
 			if (!RPCHandler.connected.get()) {
 				RPCHandler.onReady = {

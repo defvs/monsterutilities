@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.javafx.*
@@ -91,7 +92,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
-		launch {
+		GlobalScope.launch {
 			val latest = Releases.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
@@ -177,7 +178,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
-		launch {
+		GlobalScope.launch {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
 			val track = API.find(title, artists)
@@ -193,7 +194,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
-		launch {
+		GlobalScope.launch {
 			val results = APIConnection("catalog", "release", release.id, "tracks").getTracks()?.takeUnless { it.isEmpty() }
 					?: run {
 						showBack("No tracks found for Release $release")

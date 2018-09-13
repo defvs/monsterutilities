@@ -47,14 +47,12 @@ repositories {
 }
 
 dependencies {
-	compile("com.github.Xerus2000", "util", "master-SNAPSHOT")
-	compile(kotlin("stdlib-jdk8"))
 	compile(kotlin("reflect"))
 	
+	compile("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
 	compile("org.controlsfx", "controlsfx", "8.40.14")
 	
-	compile("be.bluexin", "drpc4k", "0.6-SNAPSHOT")
-	
+	compile("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
 	compile("org.apache.httpcomponents", "httpmime", "4.5.5")
 	compile("com.google.apis", "google-api-services-sheets", "v4-rev527-1.23.0")
 	
@@ -112,7 +110,7 @@ tasks {
 		setDelete(file(".").listFiles { f -> f.name.run { startsWith("MonsterUtilities-") && endsWith("jar") && this != file } })
 	}
 	
-	"test"(Test::class) {
+	withType<Test> {
 		useJUnitPlatform()
 	}
 	

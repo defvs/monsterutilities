@@ -4,9 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.scene.Scene
 import javafx.scene.image.Image
-import kotlinx.coroutines.experimental.asCoroutineDispatcher
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.*
 import xerus.ktutil.*
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.ui.App
@@ -44,7 +42,7 @@ fun main(args: Array<String>) {
 	try {
 		XerusLogger.logToFile(logfile)
 		logger.config("Logging to $logfile")
-		launch {
+		GlobalScope.launch {
 			val logs = logDir.listFiles()
 			if (logs.size > 10) {
 				logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
@@ -82,7 +80,7 @@ fun main(args: Array<String>) {
 }
 
 fun showErrorSafe(error: Throwable, title: String = "Error") {
-	launch {
+	GlobalScope.launch {
 		var i = 0
 		while (i < 100 && !::monsterUtilities.isInitialized) {
 			delay(200)

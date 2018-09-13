@@ -6,6 +6,7 @@ import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.launch
 import org.controlsfx.dialog.ExceptionDialog
 import xerus.ktutil.*
@@ -42,7 +43,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		
 		fun addTab(tabClass: KClass<out BaseTab>) {
 			try {
-				val baseTab = tabClass.java.newInstance()
+				val baseTab = tabClass.java.getDeclaredConstructor().newInstance()
 				logger.finer("New Tab: $baseTab")
 				tabs.add(baseTab)
 				val tab = Tab(baseTab.tabName, baseTab.asNode())
@@ -65,7 +66,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				showIntro()
 				Settings.LASTVERSION.put(VERSION)
 			} else {
-				launch {
+				GlobalScope.launch {
 					logger.fine("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if (f.exists()) {
@@ -97,7 +98,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
-		launch {
+		GlobalScope.launch {
 			try {
 				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.fine("Latest version: $latestVersion")

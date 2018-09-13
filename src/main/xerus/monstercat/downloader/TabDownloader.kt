@@ -205,7 +205,7 @@ class TabDownloader : VTab() {
 				.also {
 					it.selectedProperty().listen {
 						if (it) {
-							launch {
+							GlobalScope.launch {
 								awaitReady()
 								releaseView.roots.forEach {
 									it.value.internalChildren.removeIf {
@@ -218,7 +218,7 @@ class TabDownloader : VTab() {
 							releaseView.root.internalChildren.clear()
 							releaseView.roots.clear()
 							trackView.root.internalChildren.clear()
-							launch {
+							GlobalScope.launch {
 								releaseView.load()
 								trackView.load()
 							}
@@ -236,7 +236,7 @@ class TabDownloader : VTab() {
 				val dont = arrayOf("Album", "EP", "Single")
 				val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.internalChildren }.filterNot { it.value.isMulti })
 						.map {
-							async(context) {
+							GlobalScope.async(context) {
 								if (!isActive) return@async null
 								APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
 							}
@@ -284,7 +284,7 @@ class TabDownloader : VTab() {
 	
 	private fun refreshDownloadButton(button: Button) {
 		button.text = "Checking..."
-		launch {
+		GlobalScope.launch {
 			var valid = false
 			val text = when (APIConnection.checkCookie()) {
 				CookieValidity.NOCONNECTION -> "No connection"
@@ -359,7 +359,7 @@ class TabDownloader : VTab() {
 				if (done == total)
 					progressLabel.text = "$done / $total Errors: $e"
 				else
-					counter = launch {
+					counter = GlobalScope.launch {
 						val estimate = ((estimatedLength / lengths.sum() + total / done - 2) * timer.time() / 1000).roundToLong()
 						time = if (time > 0) (time * 9 + estimate) / 10 else estimate
 						logger.finest("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
@@ -398,7 +398,7 @@ class TabDownloader : VTab() {
 		private val success = SimpleIntegerProperty()
 		private val errors = SimpleIntegerProperty()
 		private fun startDownload() {
-			downloader = launch {
+			downloader = GlobalScope.launch {
 				log("Download started")
 				for (item in items) {
 					val download = item.downloadTask()
