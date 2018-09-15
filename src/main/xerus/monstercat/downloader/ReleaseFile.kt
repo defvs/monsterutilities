@@ -1,7 +1,7 @@
 package xerus.monstercat.downloader
 
-import xerus.ktutil.helpers.Masker
 import xerus.ktutil.helpers.ParserException
+import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.api.response.Artist
 import xerus.monstercat.api.response.Track
@@ -9,7 +9,7 @@ import java.util.regex.Pattern
 
 val delimiters = arrayOf(" & ", ", ", " and ", " x ")
 val exceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns")
-val artistMasker = Masker("artist", *exceptions)
+val artistMasker = StringMasker("artist", *exceptions)
 
 /** artists - tracknumber title */
 val namePattern: Pattern = Pattern.compile("([^-]+) - (.+ - )?(\\d+) (.+)")

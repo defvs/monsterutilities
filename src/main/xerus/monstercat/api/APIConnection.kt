@@ -9,12 +9,12 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
-import xerus.ktutil.XerusLogger
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
+import xerus.monstercat.logger
 import java.io.IOException
 import java.io.InputStream
 import java.net.URI
@@ -59,7 +59,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		XerusLogger.finest("$this connecting")
+		logger.finest("$this connecting")
 		val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
 		response = HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
 	}

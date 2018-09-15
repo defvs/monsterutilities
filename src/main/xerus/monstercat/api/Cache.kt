@@ -1,6 +1,5 @@
 package xerus.monstercat.api
 
-import xerus.ktutil.XerusLogger
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.Settings

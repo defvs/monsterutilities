@@ -12,10 +12,10 @@ version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD")
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.61"
+	kotlin("jvm") version "1.2.70"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.4"
-	id("com.github.ben-manes.versions") version "0.19.0"
+	id("com.github.ben-manes.versions") version "0.20.0"
 }
 
 // source directories
@@ -47,17 +47,18 @@ repositories {
 }
 
 dependencies {
-	compile(kotlin("reflect"))
+	implementation(kotlin("reflect"))
 	
-	compile("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
-	compile("org.controlsfx", "controlsfx", "8.40.14")
+	implementation("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
+	implementation("org.controlsfx", "controlsfx", "8.40.14")
 	
-	compile("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
-	compile("org.apache.httpcomponents", "httpmime", "4.5.5")
-	compile("com.google.apis", "google-api-services-sheets", "v4-rev527-1.23.0")
+	implementation("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
+	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev542-1.25.0")
 	
-	testCompile("org.junit.jupiter", "junit-jupiter-api", "5.2.0")
-	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", "5.2.0")
+	val junitVersion = "5.3.1"
+	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
+	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
 }
 
 val file

@@ -10,8 +10,8 @@ import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
-import xerus.ktutil.readObject
-import xerus.ktutil.writeObject
+import xerus.ktutil.readToObject
+import xerus.ktutil.writeToFile
 import xerus.monstercat.*
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Releases
@@ -96,7 +96,7 @@ abstract class FetchTab : VTab() {
 			return
 		logger.fine("Writing cache file $cacheFile")
 		try {
-			writeObject(cacheFile, sheet)
+			sheet.writeToFile(cacheFile)
 		} catch (e: IOException) {
 			monsterUtilities.showError(e, "Couldn't write $tabName cache!")
 		}
@@ -106,7 +106,7 @@ abstract class FetchTab : VTab() {
 		if (!Settings.ENABLECACHE())
 			return
 		try {
-			readSheet(readObject(cacheFile))
+			readSheet(cacheFile.readToObject())
 			logger.fine("Restored cache file $cacheFile")
 			showNotification(snackbarTextCache)
 		} catch (ignored: FileNotFoundException) {

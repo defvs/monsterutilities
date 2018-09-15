@@ -6,6 +6,7 @@ import javafx.scene.Scene
 import javafx.scene.image.Image
 import kotlinx.coroutines.experimental.*
 import xerus.ktutil.*
+import xerus.ktutil.helpers.XerusLogger
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.ui.SimpleFrame
@@ -58,11 +59,11 @@ fun main(args: Array<String>) {
 	} catch (t: Throwable) {
 		showErrorSafe(t, "Can't log to $logfile!")
 	}
-	if (!javaVersion().startsWith("1.8")) {
-		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${javaVersion()}").apply { isEditable = false }) }
+	if (!SystemUtils.javaVersion.startsWith("1.8")) {
+		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }
 		return
 	}
-	logger.info("Version: $VERSION, Java version: ${javaVersion()}")
+	logger.info("Version: $VERSION, Java version: ${SystemUtils.javaVersion}")
 	logger.config("Initializing Google Sheets API Service")
 	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	App.launch("MonsterUtilities $VERSION", { stage ->
