@@ -8,6 +8,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.launch
+import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
 import xerus.ktutil.*
 import xerus.ktutil.javafx.*
@@ -26,7 +27,9 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-class MonsterUtilities : VBox(), JFXMessageDisplay {
+class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
+	
+	private val logger = KotlinLogging.logger {  }
 	
 	val tabs: MutableList<BaseTab>
 	val tabPane: TabPane
@@ -39,12 +42,12 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		tabPane = TabPane()
 		tabs = ArrayList()
 		val startupTab = Settings.STARTUPTAB.get().takeUnless { it == "Previous" } ?: Settings.LASTTAB()
-		logger.fine("Startup tab: $startupTab")
+		logger.debug("Startup tab: $startupTab")
 		
 		fun addTab(tabClass: KClass<out BaseTab>) {
 			try {
 				val baseTab = tabClass.java.getDeclaredConstructor().newInstance()
-				logger.finer("New Tab: $baseTab")
+				logger.debug("New Tab: $baseTab")
 				tabs.add(baseTab)
 				val tab = Tab(baseTab.tabName, baseTab.asNode())
 				tab.isClosable = false
@@ -67,10 +70,10 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				GlobalScope.launch {
-					logger.fine("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
+					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if (f.exists()) {
-						logger.config("Deleting older version $f...")
+						logger.info("Deleting older version $f...")
 						val time = currentSeconds()
 						var res: Boolean
 						do {
@@ -78,9 +81,9 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 						} while (!res && time + 10 > currentSeconds())
 						if (res) {
 							Settings.DELETE.clear()
-							logger.config("Deleted $f!")
+							logger.info("Deleted $f!")
 						} else
-							logger.warning("Couldn't delete older version residing in $f")
+							logger.warn("Couldn't delete older version residing in $f")
 					}
 					Settings.LASTVERSION.put(VERSION)
 				}
@@ -90,7 +93,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		
 		children.add(Player.box)
 		fill(tabPane)
-		if (checkUpdate)
+		if (checkForUpdate)
 			checkForUpdate()
 		DiscordRPC.connect()
 	}
@@ -101,7 +104,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 		GlobalScope.launch {
 			try {
 				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
-				logger.fine("Latest version: $latestVersion")
+				logger.info("Latest version: $latestVersion")
 				if (latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION())) {
 					if (userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
@@ -131,7 +134,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	
 	private fun update(version: String, unstable: Boolean = false) {
 		val newFile = File(Settings.FILENAMEPATTERN().replace("%version%", version, true)).absoluteFile
-		logger.fine("Update initiated to $newFile")
+		logger.info("Update initiated to $newFile")
 		val worker = object : Task<Unit>() {
 			init {
 				updateTitle("Downloading Update")
@@ -141,22 +144,22 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 			override fun call() {
 				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
-				logger.fine("Update to $version started, size ${contentLength.byteCountString()}")
+				logger.debug("Update to $version started, size ${contentLength.byteCountString()}")
 				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
 					updateProgress(it, contentLength)
 					isCancelled
 				}
 				if (isCancelled)
-					logger.config("Update cancelled, deleting $newFile: ${newFile.delete().to("Success", "FAILED")}")
+					logger.info("Update cancelled, deleting $newFile: ${newFile.delete().to("Success", "FAILED")}")
 			}
 			
 			override fun succeeded() {
-				if (isUnstable == unstable && location.toString().endsWith(".jar")) {
-					val jar = File(location.toURI())
+				if (isUnstable == unstable && jarLocation.toString().endsWith(".jar")) {
+					val jar = File(jarLocation.toURI())
 					logger.info("Scheduling '$jar' for delete")
 					Settings.DELETE.set(jar)
 				}
-				logger.warning("Exiting for update to $version!")
+				logger.warn("Exiting for update to $version!")
 				Settings.flush()
 				
 				newFile.setExecutable(true)
@@ -167,7 +170,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 				
 				if (!exited) {
 					Platform.exit()
-					logger.warning("Exiting $VERSION!")
+					logger.warn("Exiting $VERSION!")
 				} else {
 					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
 				}
@@ -251,7 +254,7 @@ class MonsterUtilities : VBox(), JFXMessageDisplay {
 	}
 	
 	override fun showError(error: Throwable, title: String) {
-		logger.severe("$title: $error")
+		logger.error("$title: $error")
 		onFx {
 			val dialog = ExceptionDialog(error)
 			dialog.initOwner(App.stage)

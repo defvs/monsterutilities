@@ -4,6 +4,7 @@ import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
+import mu.KotlinLogging
 import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
@@ -12,11 +13,8 @@ import xerus.monstercat.tabs.availableColumns
 import xerus.monstercat.tabs.defaultColumns
 import java.io.File
 
-val cacheDir: File
-	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))
-			.resolve("monsterutilities").apply { mkdirs() }
-
 object Settings : SettingsNode("xerus/monsterutilities") {
+	private val logger = KotlinLogging.logger {  }
 	
 	val PLAYERVOLUME = create("playerVolume", 0.4)
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
@@ -45,7 +43,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	
 	init {
 		Settings.ENABLECACHE.listen { selected ->
-			logger.fine("Cache " + (if (selected) "en" else "dis") + "abled")
+			logger.debug("Cache " + (if (selected) "en" else "dis") + "abled")
 			if (selected)
 				FetchTab.writeCache()
 		}

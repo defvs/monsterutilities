@@ -12,6 +12,7 @@ import javafx.util.Duration
 import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import mu.KotlinLogging
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
@@ -23,11 +24,11 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.logger
 import java.util.logging.Level
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
+	private val logger = KotlinLogging.logger { }
 	
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
@@ -120,7 +121,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showBack("$track is currently not available for streaming!")
 			return
 		}
-		logger.finer("Loading $track from $hash")
+		logger.debug("Loading $track from $hash")
 		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		updateVolume()
 		playing("Loading $track")
@@ -136,7 +137,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				}
 			}
 			setOnError {
-				logger.log(Level.WARNING, "Error loading $track: $error", error)
+				logger.warn("Error loading $track: $error", error)
 				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
 		}

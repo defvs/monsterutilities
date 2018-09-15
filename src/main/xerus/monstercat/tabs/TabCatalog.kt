@@ -14,7 +14,6 @@ import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
-import xerus.monstercat.logger
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
@@ -72,7 +71,7 @@ class TabCatalog : TableTab() {
 				val colValue = { list: List<String> ->
 					cols.find(colName)?.let { list[it] }.also {
 						if (it == null && notFound.add(colName)) {
-							logger.warning("Column $colName not found!")
+							logger.warn("Column $colName not found!")
 						}
 					}
 				}
@@ -98,7 +97,7 @@ class TabCatalog : TableTab() {
 				newColumns.add(col)
 				col.isVisible = visibleColumns.contains(colName, true)
 			} catch (e: Exception) {
-				logger.throwing("TabCatalog", "column initialization", e)
+				logger.warn("TabCatalog column initialization failed with $e", e)
 			}
 		}
 		table.columns.setAll(newColumns)
@@ -121,7 +120,7 @@ class TabCatalog : TableTab() {
 				col.prefWidth = avg
 				col.minWidth = (avg - deviation).coerceAtLeast(Label(col.text).textWidth().plus(5).coerceAtLeast(30.0))
 				col.maxWidth = widths.max()!!
-				logger.finest("Catalog column %-11s avg %3.0f +-%2.0f  max %3.0f  min %2.0f".format(col.text, avg, deviation, col.maxWidth, col.minWidth))
+				logger.trace("Catalog column %-11s avg %3.0f +-%2.0f  max %3.0f  min %2.0f".format(col.text, avg, deviation, col.maxWidth, col.minWidth))
 			}
 		}
 	}

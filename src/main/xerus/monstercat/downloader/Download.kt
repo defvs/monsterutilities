@@ -2,12 +2,12 @@ package xerus.monstercat.downloader
 
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
+import mu.KotlinLogging
 import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.logger
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path
@@ -36,6 +36,8 @@ private inline val basePath
 	get() = DOWNLOADDIR()
 
 private fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
+
+private val logger = KotlinLogging.logger { }
 
 abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>() {
 	
@@ -76,7 +78,7 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 	private val buffer = ByteArray(1024)
 	protected fun downloadFile(path: Path) {
 		val file = path.toFile()
-		logger.finest("Downloading $file")
+		logger.trace("Downloading $file")
 		updateMessage(file.name)
 		val partFile = file.resolveSibling(file.name + ".part")
 		val output = FileOutputStream(partFile)
@@ -97,7 +99,7 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 				partFile.renameTo(file)
 			}
 		} catch (e: Exception) {
-			logger.throwing("Download", "downloadFile", e)
+			logger.error("Error while downloading to $path", e)
 		} finally {
 			output.close()
 		}

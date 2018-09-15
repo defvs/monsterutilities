@@ -37,13 +37,11 @@ class TabSound : VTab() {
 			
 			// Sync view with equalizer model
 			eq.enabledProperty().bind(Settings.ENABLEEQUALIZER)
-			var i = 0
-			for (band in eq.bands) {
+			for ((i, band) in eq.bands.withIndex()) {
 				while (eqModel.size <= i)
 					eqModel.add(band.gain)
 				val index: Int = i
-				eqBox.children.add(createEQBandView(band, eqModel[index], { eqModel[index] = it }))
-				i++
+				eqBox.children.add(createEQBandView(band, eqModel[index]) { eqModel[index] = it })
 			}
 		} ?: Settings.ENABLEEQUALIZER.unbind()
 	}

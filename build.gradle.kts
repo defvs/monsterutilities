@@ -52,6 +52,7 @@ dependencies {
 	implementation("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
 	implementation("org.controlsfx", "controlsfx", "8.40.14")
 	
+	implementation("ch.qos.logback", "logback-classic", "1.2.3")
 	implementation("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev542-1.25.0")
@@ -72,7 +73,7 @@ tasks {
 	
 	"run"(JavaExec::class) {
 		group = MAIN
-		// Usage: gradle run -Dargs="FINE save"
+		// Usage: gradle run -Dargs="--loglevel trace"
 		args = System.getProperty("args", "").split(" ")
 	}
 	

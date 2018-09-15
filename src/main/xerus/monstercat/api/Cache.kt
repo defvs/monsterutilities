@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.Settings
@@ -7,10 +8,10 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
-import xerus.monstercat.logger
 import java.io.File
 
 object Releases : Refresher() {
+	private val logger = KotlinLogging.logger { }
 	
 	private const val SEPARATOR = ";;"
 	
@@ -29,7 +30,7 @@ object Releases : Refresher() {
 	}
 	
 	override suspend fun doRefresh() {
-		logger.finer("Release refresh requested")
+		logger.debug("Release refresh requested")
 		val releaseConnection = APIConnection("catalog", "release")
 				.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
@@ -41,7 +42,7 @@ object Releases : Refresher() {
 			return
 		}
 		if (releases.containsAll(rel)) {
-			logger.finer("Releases are already up to date!")
+			logger.debug("Releases are already up to date!")
 			if (!releaseCache.exists() && Settings.ENABLECACHE())
 				writeReleases()
 			return
@@ -49,20 +50,20 @@ object Releases : Refresher() {
 		val ind = releases.lastIndexOf(rel.last())
 		
 		if (ind == -1) {
-			logger.fine("Full Release refresh initiated")
+			logger.info("Full Release refresh initiated")
 			releaseConnection.removeQuery("limit").getReleases()?.let {
 				releases.clear()
 				releases.addAll(it.asReversed())
 			} ?: run {
-				logger.warning("Release refresh failed!")
+				logger.warn("Release refresh failed!")
 				return
 			}
-			logger.fine("Found ${releases.size} Releases")
+			logger.info("Found ${releases.size} Releases")
 		} else {
 			val s = releases.size
 			releases.removeAll(releases.subList(ind, releases.size))
 			releases.addAll(rel.asReversed())
-			logger.fine("${releases.size - s} new Releases added, now at ${releases.size}")
+			logger.info("${releases.size - s} new Releases added, now at ${releases.size}")
 		}
 		if (Settings.ENABLECACHE())
 			writeReleases()
@@ -73,7 +74,7 @@ object Releases : Refresher() {
 			for (r in releases)
 				it.appendln(r.serialize().joinToString(SEPARATOR))
 		}
-		logger.fine("Wrote ${releases.size} Releases to Cache")
+		logger.debug("Wrote ${releases.size} Releases to Cache")
 	}
 	
 	private fun readReleases(): Boolean {
@@ -83,7 +84,7 @@ object Releases : Refresher() {
 			}
 			true
 		} catch (e: Throwable) {
-			logger.finer("Cache corrupted - clearing: $e")
+			logger.debug("Cache corrupted - clearing: $e", e)
 			releaseCache.delete()
 			releases.clear()
 			false
