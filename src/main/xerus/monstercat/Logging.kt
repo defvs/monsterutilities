@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.filter.LevelFilter
+import ch.qos.logback.classic.filter.ThresholdFilter
 import ch.qos.logback.classic.spi.Configurator
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.ConsoleAppender
@@ -26,12 +27,16 @@ private var logLevel: Level = Level.WARN
 
 internal fun initLogging(args: Array<String>) {
 	args.indexOf("--loglevel").takeIf { it > -1 }?.let {
-		logLevel = args.getOrNull(it)?.let { Level.toLevel(it) } ?: throw IllegalArgumentException("No loglevel specified!")
+		logLevel = args.getOrNull(it + 1)?.let { Level.toLevel(it, null) } ?: run {
+			println("WARNING: Loglevel argument given without a valid value! Use one of {OFF, ERROR, WARN, INFO, DEBUG, TRACE, ALL}")
+			return@let
+		}
 	}
 	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
 		LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).warn("Uncaught exception in $thread: ${ex.getStackTraceString()}")
 	}
 	val logger = KotlinLogging.logger { }
+	logger.info("Console loglevel: $logLevel")
 	logger.info("Logging to $logFile")
 	GlobalScope.launch {
 		val logs = logDir.listFiles()
@@ -62,15 +67,13 @@ internal class LogbackConfigurator : ContextAwareBase(), Configurator {
 			name = "console"
 			context = lc
 			this.encoder = encoder
-			addFilter(LevelFilter().apply {
-				setLevel(logLevel)
+			addFilter(ThresholdFilter().apply {
+				setLevel(logLevel.toString())
+				start()
 			})
 			start()
 		}
 		
-		RollingFileAppender<ILoggingEvent>().apply {
-			this.rollingPolicy
-		}
 		val fileAppender = FileAppender<ILoggingEvent>().apply {
 			name = "file"
 			file = logFile.toString()
@@ -80,6 +83,8 @@ internal class LogbackConfigurator : ContextAwareBase(), Configurator {
 		}
 		
 		val rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME)
+		if(logLevel.levelInt < Level.DEBUG_INT)
+			rootLogger.level = logLevel
 		rootLogger.addAppender(consoleAppender)
 		rootLogger.addAppender(fileAppender)
 	}
