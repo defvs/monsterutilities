@@ -3,8 +3,8 @@ package xerus.monstercat.tabs
 import javafx.scene.control.Control
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
+import mu.KotlinLogging
 import org.controlsfx.validation.decoration.GraphicValidationDecoration
-import xerus.ktutil.XerusLogger
 
 val minimalValidationDecorator = object : GraphicValidationDecoration() {
 	override fun applyRequiredDecoration(target: Control?) {}
@@ -20,6 +20,8 @@ interface BaseTab {
 }
 
 abstract class VTab : VBox(), BaseTab {
+	protected val logger = KotlinLogging.logger(javaClass.name)
+	
 	init {
 		styleClass.add("vtab")
 	}

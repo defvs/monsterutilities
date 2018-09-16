@@ -5,13 +5,15 @@ import javafx.collections.ObservableList
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import mu.KotlinLogging
+import org.slf4j.Logger
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
-import xerus.ktutil.readObject
-import xerus.ktutil.writeObject
+import xerus.ktutil.readToObject
+import xerus.ktutil.writeToFile
 import xerus.monstercat.*
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Cache
@@ -31,7 +33,7 @@ abstract class FetchTab : VTab() {
 	val sheetFetcher = SimpleRefresher {
 		if (this::class != TabGenres::class) {
 			onFx { setPlaceholder(Label("Fetching...")) }
-			logger.fine("Fetching MCatalog $tabName")
+			logger.debug("Fetching $tabName")
 			val sheet = fetchMCatalogTab(tabName, request)
 			if (sheet != null) {
 				readSheet(sheet)
@@ -40,7 +42,7 @@ abstract class FetchTab : VTab() {
 				restoreCache()
 			onFx {
 				if (data.isEmpty()) {
-					logger.finer("Showing retry button for $tabName because data is empty")
+					logger.debug("Showing retry button for $tabName because data is empty")
 					setPlaceholder(retryButton)
 				} else
 					setPlaceholder(Label("No matches found!"))
@@ -48,7 +50,7 @@ abstract class FetchTab : VTab() {
 		} else {
 			// todo use Genre sheet
 			onFx { setPlaceholder(Label("No matches found!")) }
-			logger.fine("Loading $tabName")
+			logger.debug("Loading $tabName")
 			@Suppress("UNCHECKED_CAST")
 			readSheet(ObjectInputStream(TabGenres::class.java.getResourceAsStream("/Genres")).readObject() as MutableList<List<String>>)
 		}
@@ -93,9 +95,9 @@ abstract class FetchTab : VTab() {
 	private fun writeCache(sheet: Any) {
 		if (!Settings.ENABLECACHE())
 			return
-		logger.fine("Writing cache file $cacheFile")
+		logger.debug("Writing cache file $cacheFile")
 		try {
-			writeObject(cacheFile, sheet)
+			sheet.writeToFile(cacheFile)
 		} catch (e: IOException) {
 			monsterUtilities.showError(e, "Couldn't write $tabName cache!")
 		}
@@ -105,12 +107,12 @@ abstract class FetchTab : VTab() {
 		if (!Settings.ENABLECACHE())
 			return
 		try {
-			readSheet(readObject(cacheFile))
-			logger.fine("Restored cache file $cacheFile")
+			readSheet(cacheFile.readToObject())
+			logger.debug("Restored cache file $cacheFile")
 			showNotification(snackbarTextCache)
 		} catch (ignored: FileNotFoundException) {
 		} catch (e: Throwable) {
-			logger.throwing(javaClass.simpleName, "restoreCache", e)
+			logger.error("$this failed to restore Cache", e)
 			cacheFile.delete()
 		}
 	}

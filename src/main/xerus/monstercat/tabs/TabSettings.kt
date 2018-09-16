@@ -10,6 +10,7 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import mu.KotlinLogging
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
@@ -94,9 +95,9 @@ class TabSettings : VTab() {
 		)
 	}
 	
-	lateinit var dialog: Dialog<Pair<String, String>>
+	lateinit var dialog: Dialog<Feedback>
 	fun feedback() {
-		dialog = Dialog<Pair<String, String>>().apply {
+		dialog = Dialog<Feedback>().apply {
 			(dialogPane.scene.window as Stage).initWindowOwner(App.stage)
 			val send = ButtonType("Send", ButtonBar.ButtonData.YES)
 			dialogPane.buttonTypes.addAll(send, ButtonType.CANCEL)
@@ -128,24 +129,24 @@ class TabSettings : VTab() {
 				return@setResultConverter if (it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
 					null
 				else {
-					subjectField.text to messageArea.text
+					Feedback(subjectField.text, messageArea.text)
 				}
 			}
 		}
 		dialog.show()
 		dialog.resultProperty().listen { result ->
-			logger.finest("Submitting: $result")
+			logger.trace("Submitting: $result")
 			result?.run {
-				sendFeedback(first, second)
+				sendFeedback(subject, message)
 			}
 		}
 	}
 	
 	/** @return false if it should be retried */
 	private fun sendFeedback(subject: String, message: String) {
-		val zipFile = cacheDir.resolve("logs.zip")
+		val zipFile = cacheDir.resolve("report.zip")
 		System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
-		val files = cacheDir.listFiles() + logDir.listFiles()
+		val files = cacheDir.walk()
 		ZipOutputStream(zipFile.outputStream()).use { zip ->
 			files.filter { it.isFile && it != zipFile }.forEach {
 				zip.putNextEntry(ZipEntry(it.toString().removePrefix(cacheDir.toString())))
@@ -154,7 +155,7 @@ class TabSettings : VTab() {
 				}
 			}
 		}
-		logger.config("Sending request with subject '$subject' and ${files.size} logs with a packed size of ${zipFile.length().byteCountString()}")
+		logger.info("Sending feedback '$subject' with a packed size of ${zipFile.length().byteCountString()}")
 		val entity = MultipartEntityBuilder.create()
 				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 				.addTextBody("subject", subject)
@@ -165,7 +166,7 @@ class TabSettings : VTab() {
 		postRequest.entity = entity
 		val response = HttpClientBuilder.create().build().execute(postRequest)
 		val status = response.statusLine
-		logger.finer("Response: $status")
+		logger.debug("Feedback Response: $status")
 		if (status.statusCode == 200) {
 			monsterUtilities.showMessage("Your feedback was submitted successfully!")
 		} else {
@@ -183,5 +184,7 @@ class TabSettings : VTab() {
 			}
 		}
 	}
+	
+	data class Feedback(val subject: String, val message: String)
 	
 }

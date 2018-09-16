@@ -1,14 +1,15 @@
 package xerus.monstercat.api
 
+import mu.KotlinLogging
 import xerus.ktutil.to
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.api.response.declaredKeys
-import xerus.monstercat.logger
 import java.net.URLEncoder
 import java.util.regex.Pattern
 
 object API {
+	private val logger = KotlinLogging.logger {  }
 	
 	/** Finds the best match for the given [title] and [artists] */
 	fun find(title: String, artists: String): Track? {
@@ -18,7 +19,7 @@ object API {
 				.filter { it.isNotBlank() }
 				.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
 		val results = connection.getTracks()
-		logger.finest("Found $results for $connection")
+		logger.debug("Found $results for $connection")
 		return results?.maxBy { track ->
 			track.init()
 			track.artists.map { artists.contains(it.name).to(3, 0) }.average() +

@@ -9,8 +9,10 @@ import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import mu.KotlinLogging
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
@@ -22,11 +24,10 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.logger
-import java.util.logging.Level
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {
+	private val logger = KotlinLogging.logger { }
 	
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
@@ -64,7 +65,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	init {
 		box.alignment = Pos.CENTER
 		maxHeight = Double.MAX_VALUE
-		resetNotification()
+		reset()
 	}
 	
 	private val label = Label()
@@ -77,21 +78,21 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	/** Shows [text] in the [label] and adds a back Button that calls [resetNotification] when clicked */
+	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
 	private fun showBack(text: String) {
 		checkFx {
 			showText(text)
-			addButton { resetNotification() }.id("back")
+			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
 			add(closeButton)
 		}
 	}
 	
-	/** hides the Player and appears again with the latest Release */
-	fun resetNotification() {
+	/** hides the Player and appears again displaying the latest Release */
+	fun reset() {
 		fadeOut()
-		launch {
+		GlobalScope.launch {
 			val latest = Cache.getReleases().lastOrNull() ?: return@launch
 			while (fading) delay(50)
 			showText("Latest Release: $latest")
@@ -119,7 +120,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showBack("$track is currently not available for streaming!")
 			return
 		}
-		logger.finer("Loading $track from $hash")
+		logger.debug("Loading $track from $hash")
 		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		updateVolume()
 		playing("Loading $track")
@@ -135,28 +136,24 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				}
 			}
 			setOnError {
-				logger.log(Level.WARNING, "Error loading $track: $error", error)
+				logger.warn("Error loading $track: $error", error)
 				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
 		}
 	}
 	
-	/** Stops playing, disposes the active MediaPlayer and calls [resetNotification] */
-	fun stopPlaying() {
-		activeTrack.value = null
-		resetNotification()
-	}
-	
+	/** Disposes the [activePlayer] and hides the [seekBar] */
 	private fun disposePlayer() {
 		player?.dispose()
 		activePlayer.value = null
+		activeTrack.value = null
 		checkFx {
 			seekBar.transitionToHeight(0.0)
 		}
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { stopPlaying() }
+	private val stopButton = buttonWithId("stop") { reset() }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().addListener { _ -> updateVolume() }
@@ -181,7 +178,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
-		launch {
+		GlobalScope.launch {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
 			val track = API.find(title, artists)
@@ -190,14 +187,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 				return@launch
 			}
 			playTrack(track)
-			player?.setOnEndOfMedia { stopPlaying() }
+			player?.setOnEndOfMedia { reset() }
 		}
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
-		launch {
+		GlobalScope.launch {
 			val results = APIConnection("catalog", "release", release.id, "tracks").getTracks()?.takeUnless { it.isEmpty() }
 					?: run {
 						showBack("No tracks found for Release $release")
@@ -216,7 +213,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			if (index < tracks.lastIndex)
 				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
 		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else stopPlaying() }
+		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
 	}
 	
 }

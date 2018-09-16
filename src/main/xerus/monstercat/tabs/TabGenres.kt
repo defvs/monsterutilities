@@ -11,8 +11,6 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.Settings.GENRECOLORINTENSITY
-import xerus.monstercat.Sheets
-import xerus.monstercat.logger
 
 val genreColors = RoughMap<String>()
 val genreColor = { item: String? ->
@@ -32,7 +30,7 @@ class TabGenres : FetchTab() {
 		val searchField = TextField()
 		VBox.setMargin(searchField, Insets(0.0, 0.0, 6.0, 0.0)) // apparently can't set this in css
 		val root = FilterableTreeItem(Row())
-		root.bindPredicate(searchField.textProperty(), { row, text -> row.subList(0, 3).any { it.contains(text, true) } })
+		root.bindPredicate(searchField.textProperty()) { row, text -> row.subList(0, 3).any { it.contains(text, true) } }
 		view.isShowRoot = false
 		data.addListener(InvalidationListener {
 			view.root = root
@@ -41,7 +39,7 @@ class TabGenres : FetchTab() {
 			var curLevel = 0
 			
 			val hex = cols.find("Hex")
-			if (hex == null) logger.warning("No hex Column found!")
+			if (hex == null) logger.warn("No hex Column found!")
 			
 			var style = ""
 			for (list in data) {
@@ -50,7 +48,7 @@ class TabGenres : FetchTab() {
 				val row = Row(10, *list.toTypedArray())
 				val nextLevel = row.indexOfFirst { it.isNotEmpty() }
 				if (nextLevel < curLevel)
-					repeat(curLevel - nextLevel) { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warning("$cur should have a parent!") } }
+					repeat(curLevel - nextLevel) { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warn("$cur should have a parent!") } }
 				
 				if (hex != null) {
 					if (nextLevel == 0) {

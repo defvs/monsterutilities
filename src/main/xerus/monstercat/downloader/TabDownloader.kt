@@ -13,9 +13,7 @@ import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.*
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
@@ -34,7 +32,6 @@ import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
 import xerus.monstercat.api.response.*
 import xerus.monstercat.globalThreadPool
-import xerus.monstercat.logger
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
@@ -206,7 +203,7 @@ class TabDownloader : VTab() {
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 				.also {
 					it.selectedProperty().listen { selected ->
-						launch {
+						GlobalScope.launch {
 							awaitReady()
 							if (selected) {
 								songView.roots.forEach {
@@ -226,7 +223,7 @@ class TabDownloader : VTab() {
 				})
 		
 		addRow(createButton("Smart select") {
-			launch {
+			GlobalScope.launch {
 				awaitReady()
 				val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
 				albums.forEach { it.isSelected = true }
@@ -234,7 +231,7 @@ class TabDownloader : VTab() {
 				val selectedItems = albums.flatMap { it.children } as List<FilterableTreeItem<MusicItem>>
 				val selectedReleases = selectedItems.mapTo(ArrayList()) { it.value as Release }
 				val selectedTracks = selectedItems.flatMapTo(ArrayList()) { it.children.map { it.value as Track } }
-				logger.finest("Filtered out " + selectedItems.filter {
+				logger.trace("Filtered out " + selectedItems.filter {
 					val tracks = it.children.mapTo(ArrayList()) { it.value as Track }
 					if (tracks.all { selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it) }) {
 						it.isSelected = false
@@ -262,7 +259,7 @@ class TabDownloader : VTab() {
 	
 	private fun refreshDownloadButton(button: Button) {
 		button.text = "Checking..."
-		launch {
+		GlobalScope.launch {
 			var valid = false
 			val text = when (APIConnection.checkCookie()) {
 				CookieValidity.NOCONNECTION -> "No connection"
@@ -298,8 +295,8 @@ class TabDownloader : VTab() {
 		
 		init {
 			songView.clearPredicate()
-			items = songView.checkedItems.filter { it.value is Release }.associate { (it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.map { it.value as Track } }
-			logger.fine("Starting Downloader for ${items.size} Releases")
+			items = songView.checkedItems.asSequence().filter { it.value is Release }.associate { (it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.map { it.value as Track } }
+			logger.info("Starting Downloader for ${items.size} Releases")
 			total = items.size
 			onFx {
 				buildUI()
@@ -334,10 +331,10 @@ class TabDownloader : VTab() {
 				if (done == total)
 					progressLabel.text = "$done / $total Errors: $e"
 				else
-					counter = launch {
+					counter = GlobalScope.launch {
 						val estimate = ((estimatedLength / lengths.sum() + total / done - 2) * timer.time() / 1000).roundToLong()
 						time = if (time > 0) (time * 9 + estimate) / 10 else estimate
-						logger.finest("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
+						logger.trace("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
 						while (time > 0) {
 							onFx {
 								progressLabel.text = "$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
@@ -373,7 +370,7 @@ class TabDownloader : VTab() {
 		private val success = SimpleIntegerProperty()
 		private val errors = SimpleIntegerProperty()
 		private fun startDownload() {
-			downloader = launch {
+			downloader = GlobalScope.launch {
 				log("Download started")
 				for (item in items) {
 					val download = ReleaseDownload(item.key)
@@ -389,16 +386,16 @@ class TabDownloader : VTab() {
 					download.setOnFailed {
 						errors.value++
 						val exception = download.exception
-						logger.throwing("Downloader", "download", exception)
+						logger.error("$download failed with $exception", exception)
 						log("Error downloading ${download.item}: " + if (exception is ParserException) exception.message else exception.str())
 					}
 					var added = false
 					try {
 						globalThreadPool.execute(download)
 						onFx { tasks.add(download); added = true }
-					} catch (e: Throwable) {
-						logger.throwing("TabDownloader", "downloader", e)
-						log("Could not start download for $item: $e")
+					} catch (exception: Throwable) {
+						logger.error("$download could not be started in TabDownloader because of $exception", exception)
+						log("Could not start download for $item: $exception")
 					}
 					while (!added || tasks.size >= DOWNLOADTHREADS())
 						delay(200)

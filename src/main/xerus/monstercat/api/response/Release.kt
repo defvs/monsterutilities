@@ -1,9 +1,11 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
+import mu.KotlinLogging
 import xerus.ktutil.to
 import xerus.monstercat.api.APIConnection
-import xerus.monstercat.logger
+
+val logger = KotlinLogging.logger {}
 
 data class Release(
 		@Key("_id") override var
@@ -29,7 +31,7 @@ data class Release(
 		}
 	
 	private fun fetchTracks() {
-		logger.finest("Fetching tracks for $this")
+		logger.trace("Fetching tracks for $this")
 		tracks = APIConnection("catalog", "release", id, "tracks").getTracks()
 	}
 	

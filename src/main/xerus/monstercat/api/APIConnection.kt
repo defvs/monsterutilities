@@ -2,6 +2,7 @@
 
 package xerus.monstercat.api
 
+import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
@@ -9,7 +10,6 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
-import xerus.ktutil.XerusLogger
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
@@ -19,6 +19,8 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 import kotlin.reflect.KClass
+
+private val logger = KotlinLogging.logger {  }
 
 /** eases query creation to the Monstercat API */
 class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
@@ -59,7 +61,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		XerusLogger.finest("$this connecting")
+		logger.trace("$this connecting")
 		val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
 		response = HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
 	}

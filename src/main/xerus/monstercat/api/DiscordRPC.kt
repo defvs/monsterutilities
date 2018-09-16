@@ -2,14 +2,16 @@ package xerus.monstercat.api
 
 import be.bluexin.drpc4k.jna.DiscordRichPresence
 import be.bluexin.drpc4k.jna.RPCHandler
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import mu.KotlinLogging
 import xerus.ktutil.getResource
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
-import xerus.monstercat.logger
 
 object DiscordRPC {
+	private val logger = KotlinLogging.logger { }
 	
 	private val apiKey
 		get() = getResource("discordapi")!!.readText()
@@ -23,16 +25,16 @@ object DiscordRPC {
 	}
 	
 	fun connect(delay: Int = 0) {
-		launch {
+		GlobalScope.launch {
 			delay(delay)
 			if (!RPCHandler.connected.get()) {
 				RPCHandler.onReady = {
-					logger.fine("Discord Rich Presence ready!")
+					logger.info("Ready")
 					RPCHandler.updatePresence(idlePresence)
 				}
-				RPCHandler.onErrored = { errorCode, message -> logger.warning("Discord RPC Error #$errorCode, $message") }
+				RPCHandler.onErrored = { errorCode, message -> logger.warn("Discord RPC Error #$errorCode, $message") }
 				RPCHandler.connect(apiKey)
-				logger.config("Connecting Discord RPC")
+				logger.info("Connecting")
 				App.stage.setOnHiding { disconnect() }
 			}
 		}
@@ -40,10 +42,10 @@ object DiscordRPC {
 	
 	fun disconnect() {
 		if (RPCHandler.connected.get()) {
-			logger.config("Disconnecting Discord RPC")
+			logger.info("Disconnecting")
 			RPCHandler.disconnect()
 			RPCHandler.finishPending()
-			logger.finer("Disconnected Discord RPC")
+			logger.debug("Disconnected")
 		}
 	}
 	
@@ -51,7 +53,7 @@ object DiscordRPC {
 		RPCHandler.ifConnectedOrLater {
 			RPCHandler.updatePresence(presence)
 			if (presence != idlePresence)
-				logger.finer("Changed Discord RPC to '${presence.details} - ${presence.state}'")
+				logger.debug("Changed Rich Presence to '${presence.details} - ${presence.state}'")
 		}
 	}
 	
