@@ -40,6 +40,7 @@ val jarLocation: URL = MonsterUtilities::class.java.protectionDomain.codeSource.
 fun main(args: Array<String>) {
 	initLogging(args)
 	val logger = KotlinLogging.logger {}
+	logger.debug("Commandline arguments: ${args.joinToString(", ", "[", "]")}")
 	
 	if (!SystemUtils.javaVersion.startsWith("1.8")) {
 		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }

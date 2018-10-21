@@ -24,7 +24,6 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
-import java.util.logging.Level
 import kotlin.math.pow
 
 object Player : FadingHBox(true, targetHeight = 25) {

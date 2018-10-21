@@ -26,7 +26,7 @@ object DiscordRPC {
 	
 	fun connect(delay: Int = 0) {
 		GlobalScope.launch {
-			delay(delay)
+			delay(delay.toLong())
 			if (!RPCHandler.connected.get()) {
 				RPCHandler.onReady = {
 					logger.info("Ready")

@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
-	
 	private val logger = KotlinLogging.logger {  }
 	
 	val tabs: MutableList<BaseTab>

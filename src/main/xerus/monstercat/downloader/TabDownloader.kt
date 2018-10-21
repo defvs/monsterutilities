@@ -366,7 +366,7 @@ class TabDownloader : VTab() {
 							onFx {
 								progressLabel.text = "$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
 							}
-							delay(1, TimeUnit.SECONDS)
+							delay(TimeUnit.SECONDS.toMillis(1))
 							time--
 						}
 					}

@@ -1,4 +1,5 @@
-import org.gradle.internal.os.OperatingSystem;
+import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
+import org.gradle.internal.os.OperatingSystem
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
@@ -53,7 +54,7 @@ dependencies {
 	implementation("org.controlsfx", "controlsfx", "8.40.14")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.3")
-	implementation("com.github.Xerus2000", "drpc4k", "-SNAPSHOT")
+	implementation("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev542-1.25.0")
 	
@@ -63,25 +64,34 @@ dependencies {
 }
 
 val file
-	get() = "MonsterUtilities-$version.jar"
+	get() = "$name-$version.jar"
 
 val MAIN = "_Main"
 tasks {
 	
-	getByName("runShadow").group = MAIN
-	getByName("startShadowScripts").group = "distribution"
-	
 	"run"(JavaExec::class) {
 		group = MAIN
-		// Usage: gradle run -Dargs="--loglevel trace"
 		args = System.getProperty("args", "--loglevel debug").split(" ")
 	}
 	
+	"runShadow"(JavaJarExec::class) {
+		group = MAIN
+		args = System.getProperty("args", "--no-update --loglevel debug").split(" ")
+	}
+	
 	"shadowJar"(ShadowJar::class) {
-		baseName = "MonsterUtilities"
+		group = MAIN
 		classifier = ""
 		destinationDir = file(".")
-		doLast { file(file).setExecutable(true) }
+		doFirst {
+			destinationDir.listFiles().forEach {
+				if (it.name.endsWith("jar"))
+					it.delete()
+			}
+		}
+		doLast {
+			outputs.files.singleFile.setExecutable(true)
+		}
 	}
 	
 	create<Exec>("release") {
@@ -104,12 +114,6 @@ tasks {
 	
 	withType<KotlinCompile> {
 		kotlinOptions.jvmTarget = "1.8"
-	}
-	
-	replace("jar", Delete::class).run {
-		group = MAIN
-		dependsOn("shadowJar")
-		setDelete(file(".").listFiles { f -> f.name.run { startsWith("MonsterUtilities-") && endsWith("jar") && this != file } })
 	}
 	
 	withType<Test> {
