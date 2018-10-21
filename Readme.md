@@ -63,11 +63,46 @@ You have a Monstercat Gold membership? Great, because now you can download whate
 ![Downloader](assets/screenshots/downloader.png)
 ![Downloader](assets/screenshots/downloading.png)
 
-### Configurable
+### Customization
 
 The application has multiple available skins and other options if the defaults don't suit your needs.
 ![Settings](assets/screenshots/settings.png)
 
 ## Development 
 
-Gradle is used for building the project.
+[Gradle](https://gradle.org/) is used for building the project.
+
+### Setup
+
+If you want Gradle to use a JDK other than your system default, 
+create a `gradle.properties` file at the root of the project
+with the following line: 
+```
+org.gradle.java.home=/path/to/jdk
+```
+
+To fetch the Catalog and Genres, you need to create the file `src/resources/sheets-api-key` 
+and put an api key for Google Sheets into it.
+
+
+### Important Tasks
+ Name        | Action
+ ---         | ---
+ `run`       | runs the project right from source
+ `shadowJar` | Creates an executable jar with all libraries bundled in the root directory of the project
+ `runShadow` | Creates a shadowJar and runs it
+
+Both run tasks can be run with the argument `-Dargs="--loglevel trace"`
+to change the log level or pass other arguments to the application.
+
+### Logging
+
+Logging is done via slf4j wrapped by kotlin-logging and carried out by logback-classic.  
+A Logger can be created anywhere via `val logger = KotlinLogging.logger { }`
+and will automatically pick up the context where it was instantiated.
+
+The application runs with the WARN log level by default, however both run tasks
+automatically pass arguments to run it at DEBUG.
+
+The application also logs to a file in `TMP/monsterutilities/logs`, 
+the log level of which defaults to the lower of the console log level and DEBUG.
