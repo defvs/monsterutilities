@@ -13,7 +13,7 @@ import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
@@ -39,6 +39,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -231,7 +232,7 @@ class TabDownloader : VTab() {
 				awaitReady()
 				val albums = arrayOf(releaseView.roots["Album"], releaseView.roots["EP"]).filterNotNull()
 				albums.forEach { it.isSelected = true }
-				val context = newFixedThreadPoolContext(30, "Fetching Tracks for Releases")
+				val context = Executors.newFixedThreadPool(30).asCoroutineDispatcher()
 				val dont = arrayOf("Album", "EP", "Single")
 				val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.internalChildren }.filterNot { it.value.isMulti })
 						.map {

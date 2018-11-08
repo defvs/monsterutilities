@@ -1,7 +1,7 @@
 package xerus.monstercat.downloader
 
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.ui.FilterableTreeItem

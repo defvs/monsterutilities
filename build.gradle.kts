@@ -13,7 +13,7 @@ version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD")
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.70"
+	kotlin("jvm") version "1.3.0"
 	application
 	id("com.github.johnrengelman.shadow") version "2.0.4"
 	id("com.github.ben-manes.versions") version "0.20.0"
@@ -28,14 +28,6 @@ sourceSets {
 	getByName("test").java.srcDir("src/test")
 }
 
-
-// configure kotlin
-kotlin.experimental.coroutines = Coroutines.ENABLE
-val kotlinVersion: String by extra {
-	buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
-			.find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }!!.moduleVersion
-}
-
 application {
 	applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
 	mainClassName = "xerus.monstercat.MainKt"
@@ -44,19 +36,19 @@ application {
 repositories {
 	jcenter()
 	maven("https://jitpack.io")
-	maven("http://maven.bluexin.be/repository/snapshots/")
+	maven("https://oss.jfrog.org/simple/libs-snapshot")
 }
 
 dependencies {
 	implementation(kotlin("reflect"))
 	
 	implementation("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
-	implementation("org.controlsfx", "controlsfx", "8.40.14")
+	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
-	implementation("ch.qos.logback", "logback-classic", "1.2.3")
-	implementation("com.github.Bluexin", "drpc4k", "-SNAPSHOT")
+	implementation("ch.qos.logback", "logback-classic", "1.2.+")
+	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev542-1.25.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev551-1.25.0")
 	
 	val junitVersion = "5.3.1"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)

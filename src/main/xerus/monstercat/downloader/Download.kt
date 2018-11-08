@@ -97,6 +97,8 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 			if (!isCancelled) {
 				file.delete()
 				partFile.renameTo(file)
+			} else {
+				partFile.delete()
 			}
 		} catch (e: Exception) {
 			logger.error("Error while downloading to $path", e)

@@ -3,16 +3,14 @@ package xerus.monstercat
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
-import ch.qos.logback.classic.filter.LevelFilter
 import ch.qos.logback.classic.filter.ThresholdFilter
 import ch.qos.logback.classic.spi.Configurator
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.ConsoleAppender
 import ch.qos.logback.core.FileAppender
-import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.spi.ContextAwareBase
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,7 +40,8 @@ internal fun initLogging(args: Array<String>) {
 		val logs = logDir.listFiles()
 		if (logs.size > 10) {
 			logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
-				val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull() ?: return@filter true
+				val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull()
+						?: return@filter true
 				timestamp + 200_000 < currentSeconds()
 			}.also {
 				val count = it.count()
@@ -83,7 +82,7 @@ internal class LogbackConfigurator : ContextAwareBase(), Configurator {
 		}
 		
 		val rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME)
-		if(logLevel.levelInt < Level.DEBUG_INT)
+		if (logLevel.levelInt < Level.DEBUG_INT)
 			rootLogger.level = logLevel
 		rootLogger.addAppender(consoleAppender)
 		rootLogger.addAppender(fileAppender)
