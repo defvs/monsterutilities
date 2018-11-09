@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
 import org.gradle.internal.os.OperatingSystem
+import com.github.breadmoirai.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
@@ -8,15 +9,17 @@ import java.nio.file.*
 import java.util.Scanner
 
 val isUnstable = properties["release"] == null
-version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
+val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
+version = "dev" + commitNumber +
 		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
 file("src/resources/version").writeText(version as String)
 
 plugins {
 	kotlin("jvm") version "1.3.0"
 	application
-	id("com.github.johnrengelman.shadow") version "2.0.4"
+	id("com.github.johnrengelman.shadow") version "4.0.2"
 	id("com.github.ben-manes.versions") version "0.20.0"
+	id("com.github.breadmoirai.github-release") version "2.0.1"
 }
 
 // source directories
@@ -48,14 +51,14 @@ dependencies {
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev551-1.25.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.26.0")
 	
 	val junitVersion = "5.3.1"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
 }
 
-val file
+val jarFile
 	get() = "$name-$version.jar"
 
 val MAIN = "_Main"
@@ -81,20 +84,35 @@ tasks {
 		}
 	}
 	
-	create<Exec>("release") {
+	val githubRelease by getting(GithubReleaseTask::class) {
 		dependsOn(shadowJar)
+		
+		setTagName(version.toString())
+		setBody(properties["m"]?.toString())
+		setReleaseName("Dev $commitNumber" + properties["n"]?.let { " - $it" }.orEmpty())
+		
+		setPrerelease(isUnstable)
+		setReleaseAssets(jarFile)
+		setToken(properties["github.token"]?.toString())
+		setOwner("Xerus2000")
+	}
+	
+	create<Exec>("release") {
+		dependsOn(shadowJar, githubRelease)
 		group = MAIN
+		
 		val path = file("../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {
 			path.writeText(version.toString())
 			pathLatest.writeText(version.toString())
-			exec { commandLine("git", "tag", version) }
+			println("Uploading release to server...")
 		}
+		
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
 			open -u ${properties["credentials.ftp"]} -e $s"
-			cd /www/downloads/files; put $file;
+			cd /www/downloads/files; put $jarFile;
 			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
