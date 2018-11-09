@@ -61,17 +61,12 @@ val file
 val MAIN = "_Main"
 tasks {
 	
-	"run"(JavaExec::class) {
-		group = MAIN
-		args = System.getProperty("args", "--loglevel debug").split(" ")
+	arrayOf(getByName<JavaExec>("run"), getByName<JavaExec>("runShadow")).forEach {
+		it.group = MAIN
+		it.args = System.getProperty("args", "--loglevel debug").split(" ")
 	}
 	
-	"runShadow"(JavaJarExec::class) {
-		group = MAIN
-		args = System.getProperty("args", "--no-update --loglevel debug").split(" ")
-	}
-	
-	"shadowJar"(ShadowJar::class) {
+	val shadowJar by getting(ShadowJar::class) {
 		group = MAIN
 		classifier = ""
 		destinationDir = file(".")
@@ -87,7 +82,7 @@ tasks {
 	}
 	
 	create<Exec>("release") {
-		dependsOn("jar")
+		dependsOn(shadowJar)
 		group = MAIN
 		val path = file("../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
@@ -99,8 +94,8 @@ tasks {
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
 			open -u ${properties["credentials.ftp"]} -e $s"
+			cd /www/downloads/files; put $file;
 			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
-			cd ./files; put $file;
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	
