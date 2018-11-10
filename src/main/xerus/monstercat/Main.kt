@@ -31,7 +31,7 @@ lateinit var monsterUtilities: MonsterUtilities
 val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object : ThreadFactory {
 	private val poolNumber = AtomicInteger(1)
 	override fun newThread(r: Runnable) =
-			Thread(Thread.currentThread().threadGroup, r, "global-" + poolNumber.getAndIncrement())
+		Thread(Thread.currentThread().threadGroup, r, "global-" + poolNumber.getAndIncrement())
 })
 val globalDispatcher = globalThreadPool.asCoroutineDispatcher()
 

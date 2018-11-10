@@ -14,7 +14,7 @@ import xerus.monstercat.tabs.defaultColumns
 import java.io.File
 
 object Settings : SettingsNode("xerus/monsterutilities") {
-	private val logger = KotlinLogging.logger {  }
+	private val logger = KotlinLogging.logger { }
 	
 	val PLAYERVOLUME = create("playerVolume", 0.4)
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)

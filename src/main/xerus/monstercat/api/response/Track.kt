@@ -33,7 +33,7 @@ open class Track(
 	var titleRaw: String = ""
 	
 	open fun toFileName() =
-			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
+		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
 		if (titleRaw.isNotEmpty())
@@ -58,7 +58,7 @@ open class Track(
 	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 	override fun equals(other: Any?): Boolean =
-			this === other || (other is Track && id == other.id)
+		this === other || (other is Track && id == other.id)
 	
 	override fun hashCode() = id.hashCode()
 	

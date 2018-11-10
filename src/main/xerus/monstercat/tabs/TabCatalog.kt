@@ -7,9 +7,15 @@ import javafx.scene.control.TableRow
 import javafx.scene.text.Font
 import xerus.ktutil.containsAny
 import xerus.ktutil.helpers.ArraySet
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.TableColumn
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.controls.*
+import xerus.ktutil.javafx.textWidth
+import xerus.ktutil.javafx.ui.controls.MultiSearchable
+import xerus.ktutil.javafx.ui.controls.SearchView
+import xerus.ktutil.javafx.ui.controls.SearchableColumn
+import xerus.ktutil.javafx.ui.controls.Type
 import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings

@@ -28,7 +28,7 @@ fun MusicItem.folder(): Path = basePath.resolve(when {
 })
 
 fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
-																					  ?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+		?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 fun Track.path(): Path = folder().createDirs().resolve(toFileName().addFormatSuffix())
 
@@ -86,10 +86,10 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 			isCancelled
 		}
 		if (isCancelled) {
-			partFile.delete()
+			logger.trace("Download of $partFile cancelled, deleting: " + partFile.delete())
 		} else {
 			file.delete()
-			partFile.renameTo(file)
+			logger.trace("Renamed $partFile to $file: " + partFile.renameTo(file))
 		}
 	}
 	
@@ -105,10 +105,10 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 		val folder = release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
 		val downloadFolder =
-				if (!folder.exists())
-					partFolder.createDirs()
-				else
-					folder
+			if (folder.exists())
+				folder
+			else
+				partFolder.createDirs()
 		val zis = createConnection(release.id, { ZipInputStream(it) })
 		// TODO EPS_TO_SINGLES
 		zip@ do {
@@ -137,7 +137,7 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 	}
 	
 	private fun resolve(name: String, path: Path = basePath): Path =
-			path.resolve(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName().addFormatSuffix())
+		path.resolve(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName().addFormatSuffix())
 	
 }
 

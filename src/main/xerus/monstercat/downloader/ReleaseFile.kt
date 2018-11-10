@@ -43,7 +43,7 @@ class ReleaseFile(filename: String, @JvmField val album: String? = null) : Track
 	}
 	
 	override fun toFileName() =
-			toString(if (album == null) TRACKNAMEPATTERN() else ALBUMTRACKNAMEPATTERN()).replaceIllegalFileChars()
+		toString(if (album == null) TRACKNAMEPATTERN() else ALBUMTRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	/*
 	private fun parse(filename: String) {

@@ -5,7 +5,6 @@ import be.bluexin.drpc4k.jna.RPCHandler
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import xerus.ktutil.getResource
 import xerus.ktutil.javafx.properties.listen
@@ -59,15 +58,15 @@ object DiscordRPC {
 	}
 	
 	fun createPresence(artists: String, title: String) =
-			invoke(artists, title, "icon", "playing_music", "Playing Music")
+		invoke(artists, title, "icon", "playing_music", "Playing Music")
 	
 	operator fun invoke(details: String? = "", state: String? = null, largeKey: String? = "icon", smallKey: String? = null, smallText: String? = null) =
-			DiscordRichPresence {
-				if (details != null) this.details = details
-				if (state != null) this.state = state
-				if (largeKey != null) largeImageKey = largeKey
-				if (smallKey != null) smallImageKey = smallKey
-				if (smallText != null) smallImageText = smallText
-			}
+		DiscordRichPresence {
+			if (details != null) this.details = details
+			if (state != null) this.state = state
+			if (largeKey != null) largeImageKey = largeKey
+			if (smallKey != null) smallImageKey = smallKey
+			if (smallText != null) smallImageText = smallText
+		}
 	
 }
