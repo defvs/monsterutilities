@@ -1,14 +1,17 @@
 package xerus.monstercat.api
 
-import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import kotlinx.coroutines.experimental.launch
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
-import xerus.monstercat.*
+import xerus.monstercat.Settings
+import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
+import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
+import xerus.monstercat.globalDispatcher
 import java.io.File
 
 object Cache : Refresher() {

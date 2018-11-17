@@ -101,7 +101,8 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 			else
 				partFolder.createDirs()
 		if (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti) {
-			URL(release.coverUrl).openConnection().getInputStream().copyTo(path.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
+			URL(release.coverUrl).openStream()
+					.copyTo(downloadFolder.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
 		}
 		tr@ for (track in release.tracks!!) {
 			createConnection(release.id, { it }, "track=" + track.id)
