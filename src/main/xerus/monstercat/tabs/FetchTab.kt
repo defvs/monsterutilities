@@ -5,19 +5,25 @@ import javafx.collections.ObservableList
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
-import mu.KotlinLogging
-import org.slf4j.Logger
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.add
+import xerus.ktutil.javafx.createButton
+import xerus.ktutil.javafx.onFx
+import xerus.ktutil.javafx.styleClass
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readToObject
 import xerus.ktutil.writeToFile
-import xerus.monstercat.*
+import xerus.monstercat.Settings
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Cache
-import java.io.*
+import xerus.monstercat.cacheDir
+import xerus.monstercat.monsterUtilities
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.ObjectInputStream
 
 abstract class FetchTab : VTab() {
 	
@@ -122,7 +128,7 @@ abstract class FetchTab : VTab() {
 	protected val notification = Snackbar()
 	
 	fun showNotification(text: String, reopen: Boolean = true) =
-			notification.showText(text, reopen)
+		notification.showText(text, reopen)
 	
 	override fun toString(): String = "FetchTab for $tabName"
 	
@@ -147,7 +153,7 @@ abstract class FetchTab : VTab() {
 		}
 		
 		private inline fun forAllFetchTabs(runnable: FetchTab.() -> Unit) =
-				monsterUtilities.tabsByClass<FetchTab>().forEach { runnable(it) }
+			monsterUtilities.tabsByClass<FetchTab>().forEach { runnable(it) }
 		
 	}
 	

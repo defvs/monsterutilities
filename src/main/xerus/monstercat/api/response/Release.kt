@@ -58,7 +58,7 @@ data class Release(
 	}
 	
 	override fun toString(): String =
-			renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
+		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
 	
 	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
 	

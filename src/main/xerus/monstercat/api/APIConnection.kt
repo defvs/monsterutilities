@@ -12,7 +12,10 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.Session
+import xerus.monstercat.api.response.TrackResponse
+import xerus.monstercat.api.response.declaredKeys
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -20,7 +23,7 @@ import java.io.InputStream
 import java.net.URI
 import kotlin.reflect.KClass
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 /** eases query creation to the Monstercat API */
 class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {

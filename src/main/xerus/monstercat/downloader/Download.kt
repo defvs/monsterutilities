@@ -64,33 +64,21 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		connection?.abort()
 	}
 	
-	private val buffer = ByteArray(1024)
 	protected fun downloadFile(path: Path) {
 		val file = path.toFile()
 		logger.trace("Downloading $file")
 		updateMessage(file.name)
+		
 		val partFile = file.resolveSibling(file.name + ".part")
-		val output = FileOutputStream(partFile)
-		try {
-			var length = inputStream.read(buffer)
-			while (length > 0) {
-				output.write(buffer, 0, length)
-				updateProgress(inputStream.count)
-				if (isCancelled) {
-					output.close()
-					partFile.delete()
-					return
-				}
-				length = inputStream.read(buffer)
-			}
-			if (!isCancelled) {
-				file.delete()
-				partFile.renameTo(file)
-			}
-		} catch (e: Exception) {
-			logger.error("Error while downloading to $path", e)
-		} finally {
-			output.close()
+		inputStream.copyTo(FileOutputStream(partFile), closeOut = true) {
+			updateProgress(inputStream.count)
+			isCancelled
+		}
+		if (isCancelled) {
+			logger.trace("Download of $partFile cancelled, deleting: " + partFile.delete())
+		} else {
+			file.delete()
+			logger.trace("Renamed $partFile to $file: " + partFile.renameTo(file))
 		}
 	}
 	
@@ -106,25 +94,25 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 		if (release.tracks == null)
 			throw Exception("Couldn't fetch tracks for $release!")
 		val folder = release.folder()
-		val part = folder.resolveSibling(folder.fileName.toString() + ".part")
-		val path =
-				if (!folder.exists())
-					part.createDirs()
-				else
-					folder
+		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
+		val downloadFolder =
+			if (folder.exists())
+				folder
+			else
+				partFolder.createDirs()
 		if (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti) {
 			URL(release.coverUrl).openConnection().getInputStream().copyTo(path.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
 		}
 		tr@ for (track in release.tracks!!) {
 			createConnection(release.id, { it }, "track=" + track.id)
-			downloadFile(path.resolve(track.toFileName().addFormatSuffix()))
+			downloadFile(downloadFolder.resolve(track.toFileName().addFormatSuffix()))
 			abort()
 			if (isCancelled)
 				break@tr
 		}
-		if (!isCancelled && part.exists()) {
+		if (!isCancelled && partFolder.exists()) {
 			folder.toFile().deleteRecursively()
-			part.renameTo(folder)
+			partFolder.renameTo(folder)
 		}
 	}
 	

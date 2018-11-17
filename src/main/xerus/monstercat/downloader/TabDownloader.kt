@@ -9,11 +9,17 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.*
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.StackPane
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
@@ -30,18 +36,22 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.Artist
+import xerus.monstercat.api.response.MusicItem
+import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
+val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
 
 val String.normalised
@@ -137,20 +147,20 @@ class TabDownloader : VTab() {
 		
 		// Patterns
 		fun patternLabel(pattern: Property<String>, track: Track) =
-				Label().apply {
-					textProperty().dependOn(pattern) {
-						try {
-							track.toString(pattern.value).also { patternValid.value = true }
-						} catch (e: ParserException) {
-							patternValid.value = false
-							"No such field: " + e.cause?.cause?.message
-						} catch (e: Exception) {
-							patternValid.value = false
-							monsterUtilities.showError(e, "Error while parsing filename pattern")
-							e.toString()
-						}
+			Label().apply {
+				textProperty().dependOn(pattern) {
+					try {
+						track.toString(pattern.value).also { patternValid.value = true }
+					} catch (e: ParserException) {
+						patternValid.value = false
+						"No such field: " + e.cause?.cause?.message
+					} catch (e: Exception) {
+						patternValid.value = false
+						monsterUtilities.showError(e, "Error while parsing filename pattern")
+						e.toString()
 					}
 				}
+			}
 		
 		val patternPane = gridPane()
 		patternPane.add(Label("Singles pattern"),
@@ -339,7 +349,7 @@ class TabDownloader : VTab() {
 							onFx {
 								progressLabel.text = "$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
 							}
-							delay(1, TimeUnit.SECONDS)
+							delay(TimeUnit.SECONDS.toMillis(1))
 							time--
 						}
 					}

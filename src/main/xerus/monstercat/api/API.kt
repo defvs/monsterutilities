@@ -9,7 +9,7 @@ import java.net.URLEncoder
 import java.util.regex.Pattern
 
 object API {
-	private val logger = KotlinLogging.logger {  }
+	private val logger = KotlinLogging.logger { }
 	
 	/** Finds the best match for the given [title] and [artists] */
 	fun find(title: String, artists: String): Track? {

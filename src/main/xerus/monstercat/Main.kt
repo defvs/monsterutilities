@@ -4,7 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.scene.Scene
 import javafx.scene.image.Image
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import xerus.ktutil.SystemUtils
 import xerus.ktutil.getResource
@@ -31,7 +31,7 @@ lateinit var monsterUtilities: MonsterUtilities
 val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object : ThreadFactory {
 	private val poolNumber = AtomicInteger(1)
 	override fun newThread(r: Runnable) =
-			Thread(Thread.currentThread().threadGroup, r, "global-" + poolNumber.getAndIncrement())
+		Thread(Thread.currentThread().threadGroup, r, "global-" + poolNumber.getAndIncrement())
 })
 val globalDispatcher = globalThreadPool.asCoroutineDispatcher()
 
@@ -40,6 +40,7 @@ val jarLocation: URL = MonsterUtilities::class.java.protectionDomain.codeSource.
 fun main(args: Array<String>) {
 	initLogging(args)
 	val logger = KotlinLogging.logger {}
+	logger.debug("Commandline arguments: ${args.joinToString(", ", "[", "]")}")
 	
 	if (!SystemUtils.javaVersion.startsWith("1.8")) {
 		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }

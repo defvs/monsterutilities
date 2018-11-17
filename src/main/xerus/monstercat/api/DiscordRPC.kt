@@ -2,9 +2,9 @@ package xerus.monstercat.api
 
 import be.bluexin.drpc4k.jna.DiscordRichPresence
 import be.bluexin.drpc4k.jna.RPCHandler
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.getResource
 import xerus.ktutil.javafx.properties.listen
@@ -26,7 +26,7 @@ object DiscordRPC {
 	
 	fun connect(delay: Int = 0) {
 		GlobalScope.launch {
-			delay(delay)
+			delay(delay.toLong())
 			if (!RPCHandler.connected.get()) {
 				RPCHandler.onReady = {
 					logger.info("Ready")
@@ -58,15 +58,15 @@ object DiscordRPC {
 	}
 	
 	fun createPresence(artists: String, title: String) =
-			invoke(artists, title, "icon", "playing_music", "Playing Music")
+		invoke(artists, title, "icon", "playing_music", "Playing Music")
 	
 	operator fun invoke(details: String? = "", state: String? = null, largeKey: String? = "icon", smallKey: String? = null, smallText: String? = null) =
-			DiscordRichPresence {
-				if (details != null) this.details = details
-				if (state != null) this.state = state
-				if (largeKey != null) largeImageKey = largeKey
-				if (smallKey != null) smallImageKey = smallKey
-				if (smallText != null) smallImageText = smallText
-			}
+		DiscordRichPresence {
+			if (details != null) this.details = details
+			if (state != null) this.state = state
+			if (largeKey != null) largeImageKey = largeKey
+			if (smallKey != null) smallImageKey = smallKey
+			if (smallText != null) smallImageText = smallText
+		}
 	
 }

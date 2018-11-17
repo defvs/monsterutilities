@@ -20,7 +20,9 @@ open class Track(
 		@JvmField var
 		remix: String = "",
 		@JvmField var
-		feat: String = "") : MusicItem() {
+		feat: String = "",
+		@JvmField var
+		extra: String = "") : MusicItem() {
 	
 	var titleRaw: String = ""
 	
@@ -31,7 +33,7 @@ open class Track(
 		get() = albums.find { it.streamHash.isNotEmpty() }?.streamHash
 	
 	open fun toFileName() =
-			toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
+		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
 		if (titleRaw.isNotEmpty())
@@ -43,7 +45,8 @@ open class Track(
 			split.subList(1, split.lastIndex).forEach {
 				when {
 					it.startsWith("feat", true) -> feat = it.split(' ', limit = 2)[1]
-					it.endsWith("mix", true) -> remix = it
+					it.endsWith("mix", true) || it == "Classical" -> remix = it
+					it.isNotBlank() -> extra = it
 				}
 			}
 	}
@@ -56,7 +59,7 @@ open class Track(
 	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 	override fun equals(other: Any?): Boolean =
-			this === other || (other is Track && id == other.id)
+		this === other || (other is Track && id == other.id)
 	
 	override fun hashCode() = id.hashCode()
 	

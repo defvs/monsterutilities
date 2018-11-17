@@ -1,4 +1,6 @@
-import org.gradle.internal.os.OperatingSystem;
+import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
+import org.gradle.internal.os.OperatingSystem
+import com.github.breadmoirai.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
@@ -7,15 +9,17 @@ import java.nio.file.*
 import java.util.Scanner
 
 val isUnstable = properties["release"] == null
-version = "dev" + Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next() +
+val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
+version = "dev" + commitNumber +
 		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.2.70"
+	kotlin("jvm") version "1.3.0"
 	application
-	id("com.github.johnrengelman.shadow") version "2.0.4"
+	id("com.github.johnrengelman.shadow") version "4.0.2"
 	id("com.github.ben-manes.versions") version "0.20.0"
+	id("com.github.breadmoirai.github-release") version "2.0.1"
 }
 
 // source directories
@@ -27,14 +31,6 @@ sourceSets {
 	getByName("test").java.srcDir("src/test")
 }
 
-
-// configure kotlin
-kotlin.experimental.coroutines = Coroutines.ENABLE
-val kotlinVersion: String by extra {
-	buildscript.configurations["classpath"].resolvedConfiguration.firstLevelModuleDependencies
-			.find { it.moduleName == "org.jetbrains.kotlin.jvm.gradle.plugin" }!!.moduleVersion
-}
-
 application {
 	applicationDefaultJvmArgs = listOf("-XX:+UseG1GC")
 	mainClassName = "xerus.monstercat.MainKt"
@@ -43,73 +39,86 @@ application {
 repositories {
 	jcenter()
 	maven("https://jitpack.io")
-	maven("http://maven.bluexin.be/repository/snapshots/")
+	maven("https://oss.jfrog.org/simple/libs-snapshot")
 }
 
 dependencies {
 	implementation(kotlin("reflect"))
 	
 	implementation("com.github.Xerus2000.util", "javafx", "-SNAPSHOT")
-	implementation("org.controlsfx", "controlsfx", "8.40.14")
+	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
-	implementation("ch.qos.logback", "logback-classic", "1.2.3")
-	implementation("com.github.Xerus2000", "drpc4k", "-SNAPSHOT")
+	implementation("ch.qos.logback", "logback-classic", "1.2.+")
+	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev542-1.25.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.26.0")
 	
 	val junitVersion = "5.3.1"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
 }
 
-val file
-	get() = "MonsterUtilities-$version.jar"
+val jarFile
+	get() = "$name-$version.jar"
 
 val MAIN = "_Main"
 tasks {
 	
-	getByName("runShadow").group = MAIN
-	getByName("startShadowScripts").group = "distribution"
-	
-	"run"(JavaExec::class) {
-		group = MAIN
-		// Usage: gradle run -Dargs="--loglevel trace"
-		args = System.getProperty("args", "--loglevel debug").split(" ")
+	arrayOf(getByName<JavaExec>("run"), getByName<JavaExec>("runShadow")).forEach {
+		it.group = MAIN
+		it.args = System.getProperty("args", "--loglevel debug").split(" ")
 	}
 	
-	"shadowJar"(ShadowJar::class) {
-		baseName = "MonsterUtilities"
+	val shadowJar by getting(ShadowJar::class) {
+		group = MAIN
 		classifier = ""
 		destinationDir = file(".")
-		doLast { file(file).setExecutable(true) }
+		doFirst {
+			destinationDir.listFiles().forEach {
+				if (it.name.endsWith("jar"))
+					it.delete()
+			}
+		}
+		doLast {
+			outputs.files.singleFile.setExecutable(true)
+		}
+	}
+	
+	val githubRelease by getting(GithubReleaseTask::class) {
+		dependsOn(shadowJar)
+		
+		setTagName(version.toString())
+		setBody(properties["m"]?.toString())
+		setReleaseName("Dev $commitNumber" + properties["n"]?.let { " - $it" }.orEmpty())
+		
+		setPrerelease(isUnstable)
+		setReleaseAssets(jarFile)
+		setToken(properties["github.token"]?.toString())
+		setOwner("Xerus2000")
 	}
 	
 	create<Exec>("release") {
-		dependsOn("jar")
+		dependsOn(shadowJar, githubRelease)
 		group = MAIN
+		
 		val path = file("../monsterutilities-extras/website/downloads/" + if (isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {
 			path.writeText(version.toString())
 			pathLatest.writeText(version.toString())
-			exec { commandLine("git", "tag", version) }
+			println("Uploading release to server...")
 		}
+		
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
 			open -u ${properties["credentials.ftp"]} -e $s"
+			cd /www/downloads/files; put $jarFile;
 			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
-			cd ./files; put $file;
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	
 	withType<KotlinCompile> {
 		kotlinOptions.jvmTarget = "1.8"
-	}
-	
-	replace("jar", Delete::class).run {
-		group = MAIN
-		dependsOn("shadowJar")
-		setDelete(file(".").listFiles { f -> f.name.run { startsWith("MonsterUtilities-") && endsWith("jar") && this != file } })
 	}
 	
 	withType<Test> {

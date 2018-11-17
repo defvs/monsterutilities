@@ -6,16 +6,22 @@ import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
-import xerus.ktutil.*
+import xerus.ktutil.byteCountString
+import xerus.ktutil.copyTo
+import xerus.ktutil.currentSeconds
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.*
+import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.Changelog
+import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.stage
+import xerus.ktutil.to
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -28,8 +34,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
-	
-	private val logger = KotlinLogging.logger {  }
+	private val logger = KotlinLogging.logger { }
 	
 	val tabs: MutableList<BaseTab>
 	val tabPane: TabPane
