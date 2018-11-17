@@ -32,17 +32,17 @@ open class Track(
 		get() = albums.find { it.streamHash.isNotEmpty() }?.streamHash
 	
 	@JvmField
-	var titleRaw: String = ""
+	var titleClean: String = ""
 	
 	open fun toFileName() =
 		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
-		if (titleRaw.isNotEmpty())
+		if (titleClean.isNotEmpty())
 			return
 		artistsTitle = formatArtists(artistsTitle)
 		val split = title.split('(', ')', '[', ']').map { it.trim() }
-		titleRaw = split[0]
+		titleClean = split[0]
 		if (split.size > 1)
 			split.subList(1, split.lastIndex).forEach {
 				when {

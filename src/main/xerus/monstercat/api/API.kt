@@ -23,7 +23,7 @@ object API {
 		return results?.maxBy { track ->
 			track.init()
 			track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
-					(track.titleRaw == title).toInt() + (track.artistsTitle == artists).to(10, 0)
+					(track.titleClean == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 		}
 	}
 	
