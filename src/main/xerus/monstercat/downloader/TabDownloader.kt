@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
+val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
 
 val String.normalised
@@ -73,8 +73,7 @@ class TabDownloader : VTab() {
 		FilterableTreeItem.autoLeaf = false
 		
 		// Check if no items in the views are selected
-		val itemListener = InvalidationListener { noItemsSelected.value = songView.checkedItems.size == 0 }
-		songView.checkedItems.addListener(itemListener)
+		songView.checkedItems.listen { noItemsSelected.value = it.size == 0 }
 		
 		releaseSearch.conditionBox.select(releaseSearch.conditionBox.items[1])
 		(releaseSearch.searchField as DatePicker).run {
@@ -89,8 +88,15 @@ class TabDownloader : VTab() {
 		
 		// Apply filters
 		songView.predicate.bind({
-			if (releaseSearch.predicate == alwaysTruePredicate && searchField.text.isEmpty()) null
-			else { parent, value -> parent != songView.root && value.toString().contains(searchField.text, true) && (value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false }
+			val searchText = searchField.text
+			if (releaseSearch.predicate == alwaysTruePredicate && searchText.isEmpty()) null
+			else { parent, value ->
+				parent != songView.root &&
+						// Match titles
+						(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks?.any { it.toString().contains(searchText, true) } } ?: false) &&
+						// Match Releasedate
+						(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
+			}
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
 		searchField.textProperty().addListener { _ ->
 			songView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
@@ -109,6 +115,9 @@ class TabDownloader : VTab() {
 				else -> defaultMenu
 			}
 		}, songView.selectionModel.selectedItemProperty())*/
+		
+		// TODO find out why it doesn't toggle on Track click
+		songView.checkedItems.listen { logger.trace("checkedItems: " + it.joinToString(prefix = "[", postfix = "]") { it.value.toString() }) }
 		
 		initialize()
 	}

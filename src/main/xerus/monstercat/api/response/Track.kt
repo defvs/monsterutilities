@@ -24,7 +24,7 @@ open class Track(
 		@JvmField var
 		extra: String = "") : MusicItem() {
 	
-	var titleRaw: String = ""
+	var titleClean: String = ""
 	
 	val alb: Album
 		get() = albums.first()
@@ -36,11 +36,11 @@ open class Track(
 		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
 	
 	open fun init() {
-		if (titleRaw.isNotEmpty())
+		if (titleClean.isNotEmpty())
 			return
 		artistsTitle = formatArtists(artistsTitle)
 		val split = title.split('(', ')', '[', ']').map { it.trim() }
-		titleRaw = split[0]
+		titleClean = split[0]
 		if (split.size > 1)
 			split.subList(1, split.lastIndex).forEach {
 				when {
