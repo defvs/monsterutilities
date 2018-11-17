@@ -21,7 +21,9 @@ open class Track(
 		@JvmField var
 		remix: String = "",
 		@JvmField var
-		feat: String = "") : MusicItem() {
+		feat: String = "",
+		@JvmField var
+		extra: String = "") : MusicItem() {
 	
 	val alb: Album
 		get() = albums.first()
@@ -45,7 +47,8 @@ open class Track(
 			split.subList(1, split.lastIndex).forEach {
 				when {
 					it.startsWith("feat", true) -> feat = it.split(' ', limit = 2)[1]
-					it.endsWith("mix", true) -> remix = it
+					it.endsWith("mix", true) || it == "Classical" -> remix = it
+					it.isNotBlank() -> extra = it
 				}
 			}
 	}

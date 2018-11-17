@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ [%remix%]}")
+val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleRaw%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
 
 val TreeItem<out MusicItem>.normalisedValue
