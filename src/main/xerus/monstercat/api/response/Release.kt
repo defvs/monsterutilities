@@ -8,20 +8,20 @@ import xerus.monstercat.api.APIConnection
 val logger = KotlinLogging.logger {}
 
 data class Release(
-		@Key("_id") override var
-		id: String = "",
-		@Key var
-		releaseDate: String = "",
-		@Key var
-		type: String = "",
-		@Key @JvmField var
-		renderedArtists: String = "",
-		@Key override var
-		title: String = "",
-		@Key var
-		coverUrl: String = "",
-		@Key var
-		downloadable: Boolean = false) : MusicItem() {
+	@Key("_id") override var
+	id: String = "",
+	@Key var
+	releaseDate: String = "",
+	@Key var
+	type: String = "",
+	@Key @JvmField var
+	renderedArtists: String = "",
+	@Key override var
+	title: String = "",
+	@Key var
+	coverUrl: String = "",
+	@Key var
+	downloadable: Boolean = false) : MusicItem() {
 	
 	@Key
 	var tracks: List<Track>? = null

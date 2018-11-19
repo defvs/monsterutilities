@@ -41,7 +41,7 @@ internal fun initLogging(args: Array<String>) {
 		if (logs.size > 10) {
 			logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
 				val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull()
-						?: return@filter true
+					?: return@filter true
 				timestamp + 200_000 < currentSeconds()
 			}.also {
 				val count = it.count()

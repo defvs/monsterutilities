@@ -5,13 +5,10 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
-import xerus.monstercat.Settings
-import xerus.monstercat.Sheets
+import xerus.monstercat.*
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
-import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
-import xerus.monstercat.globalDispatcher
 import java.io.File
 
 object Cache : Refresher() {
@@ -38,7 +35,7 @@ object Cache : Refresher() {
 	private suspend fun refreshReleases() {
 		logger.debug("Release refresh requested")
 		val releaseConnection = APIConnection("catalog", "release")
-				.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
+			.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())

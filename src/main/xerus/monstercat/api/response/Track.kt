@@ -7,19 +7,19 @@ import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
 open class Track(
-		@Key("_id") override var
-		id: String = "",
-		@Key override var
-		title: String = "",
-		@Key var
-		artistsTitle: String = "",
-		@Key var
-		albums: List<Album> = emptyList(),
-		@Key("artistRelationships") var
-		artists: List<Artist> = emptyList(),
-		var	remix: String = "",
-		var	feat: String = "",
-		var extra: String = "") : MusicItem() {
+	@Key("_id") override var
+	id: String = "",
+	@Key override var
+	title: String = "",
+	@Key var
+	artistsTitle: String = "",
+	@Key var
+	albums: List<Album> = emptyList(),
+	@Key("artistRelationships") var
+	artists: List<Artist> = emptyList(),
+	var remix: String = "",
+	var feat: String = "",
+	var extra: String = "") : MusicItem() {
 	
 	@Key
 	var bpm = 0

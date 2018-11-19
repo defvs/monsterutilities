@@ -14,16 +14,10 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
-import org.controlsfx.validation.Severity
-import org.controlsfx.validation.ValidationResult
-import org.controlsfx.validation.ValidationSupport
-import org.controlsfx.validation.Validator
+import org.controlsfx.validation.*
 import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ImmutableObservable
-import xerus.ktutil.javafx.properties.ImmutableObservableList
-import xerus.ktutil.javafx.properties.dependOn
-import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
@@ -72,33 +66,33 @@ class TabSettings : VTab() {
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
 		addRow(
-				createButton("Quick restart") {
-					Settings.refresh()
-					DownloaderSettings.refresh()
-					App.restart()
-				}.apply { prefWidth = 120.0 },
-				createButton("Reset") {
-					App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
-						initStyle(StageStyle.UTILITY)
-						resultProperty().listen {
-							if (it.buttonData == ButtonBar.ButtonData.YES) {
-								try {
-									Settings.clear()
-									DownloaderSettings.clear()
-									cacheDir.deleteRecursively()
-									Cache.clear()
-								} catch (e: Exception) {
-									monsterUtilities.showError(e)
-								}
-								App.restart()
+			createButton("Quick restart") {
+				Settings.refresh()
+				DownloaderSettings.refresh()
+				App.restart()
+			}.apply { prefWidth = 120.0 },
+			createButton("Reset") {
+				App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
+					initStyle(StageStyle.UTILITY)
+					resultProperty().listen {
+						if (it.buttonData == ButtonBar.ButtonData.YES) {
+							try {
+								Settings.clear()
+								DownloaderSettings.clear()
+								cacheDir.deleteRecursively()
+								Cache.clear()
+							} catch (e: Exception) {
+								monsterUtilities.showError(e)
 							}
+							App.restart()
 						}
-						show()
 					}
-				}.apply {
-					prefWidth = 120.0
-					textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
+					show()
 				}
+			}.apply {
+				prefWidth = 120.0
+				textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
+			}
 		)
 	}
 	
@@ -117,9 +111,9 @@ class TabSettings : VTab() {
 				validationDecorator = minimalValidationDecorator
 				registerValidator(subjectField, Validator<String> { control, value ->
 					ValidationResult()
-							.addMessageIf(control, "Only standard letters and \"?!.,-_\" allowed", Severity.ERROR,
-									!Regex("[\\w \\-!.,?]*").matches(value))
-							.addMessageIf(control, "Please keep the subject short", Severity.ERROR, value.length > 40)
+						.addMessageIf(control, "Only standard letters and \"?!.,-_\" allowed", Severity.ERROR,
+							!Regex("[\\w \\-!.,?]*").matches(value))
+						.addMessageIf(control, "Please keep the subject short", Severity.ERROR, value.length > 40)
 				})
 				registerValidator(messageArea, Validator<String> { control, value ->
 					ValidationResult().addMessageIf(control, "The message is too long!", Severity.ERROR, value.length > 100_000)
@@ -164,11 +158,11 @@ class TabSettings : VTab() {
 		}
 		logger.info("Sending feedback '$subject' with a packed size of ${zipFile.length().byteCountString()}")
 		val entity = MultipartEntityBuilder.create()
-				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
-				.addTextBody("subject", subject)
-				.addTextBody("message", message)
-				.addBinaryBody("log", zipFile)
-				.build()
+			.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+			.addTextBody("subject", subject)
+			.addTextBody("message", message)
+			.addBinaryBody("log", zipFile)
+			.build()
 		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
 		postRequest.entity = entity
 		val response = HttpClientBuilder.create().build().execute(postRequest)
@@ -180,7 +174,7 @@ class TabSettings : VTab() {
 			val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
 			val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
 			App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
-					buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
+				buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
 				resultProperty().listen {
 					when (it) {
 						retry -> onFx { dialog.show() }

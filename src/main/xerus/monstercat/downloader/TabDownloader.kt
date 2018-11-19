@@ -1,6 +1,5 @@
 package xerus.monstercat.downloader
 
-import javafx.beans.InvalidationListener
 import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.beans.property.SimpleIntegerProperty
@@ -9,17 +8,11 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
@@ -36,10 +29,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
-import xerus.monstercat.api.response.Artist
-import xerus.monstercat.api.response.MusicItem
-import xerus.monstercat.api.response.Release
-import xerus.monstercat.api.response.Track
+import xerus.monstercat.api.response.*
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
@@ -83,7 +73,7 @@ class TabDownloader : VTab() {
 			}
 			if (LASTDOWNLOADTIME() > 0)
 				(releaseSearch.searchField as DatePicker).value =
-						LocalDateTime.ofEpochSecond(LASTDOWNLOADTIME().toLong(), 0, OffsetDateTime.now().offset).toLocalDate()
+					LocalDateTime.ofEpochSecond(LASTDOWNLOADTIME().toLong(), 0, OffsetDateTime.now().offset).toLocalDate()
 		}
 		
 		// Apply filters
@@ -92,10 +82,10 @@ class TabDownloader : VTab() {
 			if (releaseSearch.predicate == alwaysTruePredicate && searchText.isEmpty()) null
 			else { parent, value ->
 				parent != songView.root &&
-						// Match titles
-						(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks?.any { it.toString().contains(searchText, true) } } ?: false) &&
-						// Match Releasedate
-						(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
+					// Match titles
+					(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks?.any { it.toString().contains(searchText, true) } } ?: false) &&
+					// Match Releasedate
+					(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
 			}
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
 		searchField.textProperty().addListener { _ ->
@@ -104,7 +94,7 @@ class TabDownloader : VTab() {
 		
 		val defaultItems = {
 			arrayOf(MenuItem("Expand all") { songView.expandAll() },
-					MenuItem("Collapse all") { songView.expandAll(false) })
+				MenuItem("Collapse all") { songView.expandAll(false) })
 		}
 		val defaultMenu = ContextMenu(*defaultItems())
 		songView.contextMenu = defaultMenu
@@ -173,19 +163,19 @@ class TabDownloader : VTab() {
 		
 		val patternPane = gridPane()
 		patternPane.add(Label("Singles pattern"),
-				0, 0, 1, 2)
+			0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
-				1, 0)
+			1, 0)
 		patternPane.add(patternLabel(TRACKNAMEPATTERN,
-				Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
-				1, 1)
+			Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
+			1, 1)
 		patternPane.add(Label("Album Tracks pattern"),
-				0, 2, 1, 2)
+			0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
-				1, 2)
+			1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-				ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
-				1, 3)
+			ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
+			1, 3)
 		add(patternPane)
 		
 		// TODO EPS_TO_SINGLES
@@ -220,26 +210,26 @@ class TabDownloader : VTab() {
 		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles")) */
 		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
-				.also {
-					it.selectedProperty().listen { selected ->
-						GlobalScope.launch {
-							awaitReady()
-							if (selected) {
-								songView.roots.forEach {
-									it.value.internalChildren.removeIf {
-										(it.value as Release).path().exists()
-									}
+			.also {
+				it.selectedProperty().listen { selected ->
+					GlobalScope.launch {
+						awaitReady()
+						if (selected) {
+							songView.roots.forEach {
+								it.value.internalChildren.removeIf {
+									(it.value as Release).path().exists()
 								}
-							} else {
-								songView.root.internalChildren.clear()
-								songView.roots.clear()
-								launch {
-									songView.load()
-								}
+							}
+						} else {
+							songView.root.internalChildren.clear()
+							songView.roots.clear()
+							launch {
+								songView.load()
 							}
 						}
 					}
-				})
+				}
+			})
 		
 		addRow(createButton("Smart select") {
 			GlobalScope.launch {

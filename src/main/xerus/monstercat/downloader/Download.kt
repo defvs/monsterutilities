@@ -20,7 +20,7 @@ fun Release.folder(): Path = basePath.resolve(when {
 })
 
 fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
-		?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+	?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 private inline val basePath
 	get() = DOWNLOADDIR()
@@ -108,7 +108,7 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 				partFolder.createDirs()
 		if (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti) {
 			URL(release.coverUrl).openStream()
-					.copyTo(downloadFolder.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
+				.copyTo(downloadFolder.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
 		}
 		tr@ for (track in release.tracks!!) {
 			createConnection(release.id, { it }, "track=" + track.id)

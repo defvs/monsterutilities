@@ -49,13 +49,13 @@ class TabSound : VTab() {
 	private fun createEQBandView(band: EqualizerBand, value: Double, listener: (Double) -> Unit): VBox {
 		return VBox().apply {
 			children.addAll(
-					Slider(EqualizerBand.MIN_GAIN, EqualizerBand.MAX_GAIN, 1.0).apply {
-						orientation = Orientation.VERTICAL
-						band.gainProperty().bind(valueProperty())
-						valueProperty().set(value)
-						valueProperty().listen { listener(it as Double) }
-					}.scrollable(),
-					Label(band.centerFrequency.toString())
+				Slider(EqualizerBand.MIN_GAIN, EqualizerBand.MAX_GAIN, 1.0).apply {
+					orientation = Orientation.VERTICAL
+					band.gainProperty().bind(valueProperty())
+					valueProperty().set(value)
+					valueProperty().listen { listener(it as Double) }
+				}.scrollable(),
+				Label(band.centerFrequency.toString())
 			)
 		}
 	}

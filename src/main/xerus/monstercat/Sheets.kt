@@ -23,9 +23,9 @@ object Sheets {
 	/** Build an authorized Sheets API client service.  */
 	internal fun initService(name: String, credential: Credential) {
 		sheets = Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-				.setApplicationName(name)
-				.build()
-				.spreadsheets()
+			.setApplicationName(name)
+			.build()
+			.spreadsheets()
 	}
 	
 	val mcatalog = "116LycNEkWChmHmDK2HM2WV85fO3p3YTYDATpAthL8_g"
