@@ -10,18 +10,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
-import xerus.ktutil.byteCountString
-import xerus.ktutil.copyTo
-import xerus.ktutil.currentSeconds
+import xerus.ktutil.*
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.App
-import xerus.ktutil.javafx.ui.Changelog
-import xerus.ktutil.javafx.ui.JFXMessageDisplay
-import xerus.ktutil.javafx.ui.stage
-import xerus.ktutil.to
+import xerus.ktutil.javafx.ui.*
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -212,47 +206,47 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	fun showChangelog() {
 		val c = Changelog().apply {
 			version("dev", "pre-Release",
-					"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
-					"Send feedback directly from the application!", "Every Slider is now scrollable with the mouse wheel")
-					.change("New Downloader!",
-							"Can download any combinations of Releases and Tracks", "Easy filtering",
-							"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
-							"Greatly improved pattern syntax with higher flexibility",
-							"Creates part-files while downloading so your files are safe from crashes")
-					.change("Settings reworked",
-							"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
-					.change("Catalog and Genre Tab show Genre colors")
-					.change("Catalog improved",
-							"More filtering options", "Smart column size")
-					.change("Player now has a slick Seekbar inspired by the website",
-							"It can also be controlled via scrolling (suggested by AddiVF)")
+				"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
+				"Send feedback directly from the application!", "Every Slider is now scrollable with the mouse wheel")
+				.change("New Downloader!",
+					"Can download any combinations of Releases and Tracks", "Easy filtering",
+					"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
+					"Greatly improved pattern syntax with higher flexibility",
+					"Creates part-files while downloading so your files are safe from crashes")
+				.change("Settings reworked",
+					"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
+				.change("Catalog and Genre Tab show Genre colors")
+				.change("Catalog improved",
+					"More filtering options", "Smart column size")
+				.change("Player now has a slick Seekbar inspired by the website",
+					"It can also be controlled via scrolling (suggested by AddiVF)")
 			
 			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
-					"Music playing is better integrated", "Fixed some mistakes in the Downloader")
-					.change("Catalog rework", "New, extremely flexible SearchVíew added", "Visible catalog columns can now be changed on-the-fly")
-					.patch("Music player can now also play EPs", "Added more functionality to the Music player",
-							"Improved the SearchView used in the Catalog", "Added a silver skin")
-					.patch("Fixed a small bug in the Downloader", "Added the possibility to log to a file",
-							"Prevented silent crashes")
-					.patch("Fixed an issue that prevented the Player from playing older Remixes with featured Artists",
-							"Fixed an issue with the cache preventing immediate downloading")
+				"Music playing is better integrated", "Fixed some mistakes in the Downloader")
+				.change("Catalog rework", "New, extremely flexible SearchVíew added", "Visible catalog columns can now be changed on-the-fly")
+				.patch("Music player can now also play EPs", "Added more functionality to the Music player",
+					"Improved the SearchView used in the Catalog", "Added a silver skin")
+				.patch("Fixed a small bug in the Downloader", "Added the possibility to log to a file",
+					"Prevented silent crashes")
+				.patch("Fixed an issue that prevented the Player from playing older Remixes with featured Artists",
+					"Fixed an issue with the cache preventing immediate downloading")
 			
 			version(0, 2, "Interactive Catalog",
-					"Added direct song streaming by double-clicking a Song in the Catalog")
+				"Added direct song streaming by double-clicking a Song in the Catalog")
 			
 			version(0, 1, "Downloader overhaul", "Added more downloading options & prettified them", "Tweaked many Settings",
-					"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
-					.patch("Added Downloader continuator", "Improved the readability of the current Downloader-status and added an \"Estimated time left\"",
-							"Cleared up some categorising Errors, but some will stay due to mislabelings on Monstercats side", "Endless bugfixes")
-					.patch("Multiple Settings changed again, so another soft reset happened", "Fixed some formatting issues",
-							"Added capability to split off Album Mixes when downloading", "Fixed various bugs and added some logging")
-					.patch("Added Release caching for faster Release fetching",
-							"Improved Downloader view & cancellation (now with 90% less spasticity!)", "Fixed various bugs")
+				"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
+				.patch("Added Downloader continuator", "Improved the readability of the current Downloader-status and added an \"Estimated time left\"",
+					"Cleared up some categorising Errors, but some will stay due to mislabelings on Monstercats side", "Endless bugfixes")
+				.patch("Multiple Settings changed again, so another soft reset happened", "Fixed some formatting issues",
+					"Added capability to split off Album Mixes when downloading", "Fixed various bugs and added some logging")
+				.patch("Added Release caching for faster Release fetching",
+					"Improved Downloader view & cancellation (now with 90% less spasticity!)", "Fixed various bugs")
 			
 			version(0, 0, "Offline caching", "Added Changelog", "Fixed offline Catalog caching",
-					"Fixed Genre Tab", "Fixed some small downloading Errors", "Improved Error handling")
-					.patch("Added more downloading options & prettified them", "Tweaked many Settings",
-							"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
+				"Fixed Genre Tab", "Fixed some small downloading Errors", "Improved Error handling")
+				.patch("Added more downloading options & prettified them", "Tweaked many Settings",
+					"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
 			
 		}
 		onFx { c.show(App.stage) }

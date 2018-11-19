@@ -15,15 +15,15 @@ object API {
 	fun find(title: String, artists: String): Track? {
 		val connection = APIConnection("catalog", "track").addQuery("fields", *Track::class.declaredKeys.toTypedArray())
 		URLEncoder.encode(title, "UTF-8")
-				.split(Pattern.compile("%.."))
-				.filter { it.isNotBlank() }
-				.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
+			.split(Pattern.compile("%.."))
+			.filter { it.isNotBlank() }
+			.forEach { connection.addQuery("fuzzy", "title," + it.trim()) }
 		val results = connection.getTracks()
 		logger.debug("Found $results for $connection")
 		return results?.maxBy { track ->
 			track.init()
 			track.artists.map { artists.contains(it.name).to(3, 0) }.average() +
-					(track.titleClean == title).toInt() + (track.artistsTitle == artists).to(10, 0)
+				(track.titleClean == title).toInt() + (track.artistsTitle == artists).to(10, 0)
 		}
 	}
 	

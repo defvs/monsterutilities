@@ -4,20 +4,20 @@ import com.google.api.client.util.Key
 import xerus.ktutil.to
 
 data class Release(
-		@Key("_id") override var
-		id: String = "",
-		@Key var
-		releaseDate: String = "",
-		@Key var
-		type: String = "",
-		@Key @JvmField var
-		renderedArtists: String = "",
-		@Key override var
-		title: String = "",
-		@Key var
-		coverUrl: String = "",
-		@Key var
-		downloadable: Boolean = false) : MusicItem() {
+	@Key("_id") override var
+	id: String = "",
+	@Key var
+	releaseDate: String = "",
+	@Key var
+	type: String = "",
+	@Key @JvmField var
+	renderedArtists: String = "",
+	@Key override var
+	title: String = "",
+	@Key var
+	coverUrl: String = "",
+	@Key var
+	downloadable: Boolean = false) : MusicItem() {
 	
 	constructor(line: Array<String>) : this(line[0], line[1], line[2], line[3], line[4], line[5], line[6] == "1")
 	

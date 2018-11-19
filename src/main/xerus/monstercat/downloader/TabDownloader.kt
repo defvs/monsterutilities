@@ -9,10 +9,7 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
@@ -34,10 +31,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
-import xerus.monstercat.api.response.Artist
-import xerus.monstercat.api.response.MusicItem
-import xerus.monstercat.api.response.Release
-import xerus.monstercat.api.response.Track
+import xerus.monstercat.api.response.*
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
@@ -87,7 +81,7 @@ class TabDownloader : VTab() {
 			}
 			if (LASTDOWNLOADTIME() > 0)
 				(releaseSearch.searchField as DatePicker).value =
-						LocalDateTime.ofEpochSecond(LASTDOWNLOADTIME().toLong(), 0, OffsetDateTime.now().offset).toLocalDate()
+					LocalDateTime.ofEpochSecond(LASTDOWNLOADTIME().toLong(), 0, OffsetDateTime.now().offset).toLocalDate()
 		}
 		
 		// Apply filters
@@ -156,19 +150,19 @@ class TabDownloader : VTab() {
 		
 		val patternPane = gridPane()
 		patternPane.add(Label("Singles pattern"),
-				0, 0, 1, 2)
+			0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
-				1, 0)
+			1, 0)
 		patternPane.add(patternLabel(TRACKNAMEPATTERN,
-				Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
-				1, 1)
+			Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
+			1, 1)
 		patternPane.add(Label("Album Tracks pattern"),
-				0, 2, 1, 2)
+			0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
-				1, 2)
+			1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-				ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
-				1, 3)
+			ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
+			1, 3)
 		add(patternPane)
 		
 		// TODO EPS_TO_SINGLES
@@ -208,29 +202,29 @@ class TabDownloader : VTab() {
 		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles")) */
 		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
-				.also {
-					it.selectedProperty().listen {
-						if (it) {
-							GlobalScope.launch {
-								awaitReady()
-								releaseView.roots.forEach {
-									it.value.internalChildren.removeIf {
-										it.value.path().exists()
-									}
+			.also {
+				it.selectedProperty().listen {
+					if (it) {
+						GlobalScope.launch {
+							awaitReady()
+							releaseView.roots.forEach {
+								it.value.internalChildren.removeIf {
+									it.value.path().exists()
 								}
-								trackView.root.internalChildren.removeIf { it.value.path().exists() }
 							}
-						} else {
-							releaseView.root.internalChildren.clear()
-							releaseView.roots.clear()
-							trackView.root.internalChildren.clear()
-							GlobalScope.launch {
-								releaseView.load()
-								trackView.load()
-							}
+							trackView.root.internalChildren.removeIf { it.value.path().exists() }
+						}
+					} else {
+						releaseView.root.internalChildren.clear()
+						releaseView.roots.clear()
+						trackView.root.internalChildren.clear()
+						GlobalScope.launch {
+							releaseView.load()
+							trackView.load()
 						}
 					}
-				})
+				}
+			})
 		
 		addRow(createButton("Smart select") {
 			trackView.checkModel.clearChecks()
@@ -241,12 +235,12 @@ class TabDownloader : VTab() {
 				val context = Executors.newFixedThreadPool(30).asCoroutineDispatcher()
 				val dont = arrayOf("Album", "EP", "Single")
 				val deferred = (albums.flatMap { it.children } + releaseView.roots.filterNot { it.value.value.title in dont }.flatMap { it.value.internalChildren }.filterNot { it.value.isMulti })
-						.map {
-							GlobalScope.async(context) {
-								if (!isActive) return@async null
-								APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
-							}
+					.map {
+						GlobalScope.async(context) {
+							if (!isActive) return@async null
+							APIConnection("catalog", "release", it.value.id, "tracks").getTracks()?.map { it.toString().normalised }
 						}
+					}
 				logger.debug("Fetching Tracks for ${deferred.size} Releases")
 				val max = deferred.size
 				val tracksToExclude = HashSet<String>(max)

@@ -8,22 +8,22 @@ import java.util.Collections.emptyList
 
 /** JvmFields are used for Reflection, which is needed for the formatted [toString] method */
 open class Track(
-		@Key("_id") override var
-		id: String = "",
-		@Key override var
-		title: String = "",
-		@Key @JvmField var
-		artistsTitle: String = "",
-		@Key var
-		albums: List<Album> = emptyList(),
-		@Key("artistRelationships") @JvmField var
-		artists: List<Artist> = emptyList(),
-		@JvmField var
-		remix: String = "",
-		@JvmField var
-		feat: String = "",
-		@JvmField var
-		extra: String = "") : MusicItem() {
+	@Key("_id") override var
+	id: String = "",
+	@Key override var
+	title: String = "",
+	@Key @JvmField var
+	artistsTitle: String = "",
+	@Key var
+	albums: List<Album> = emptyList(),
+	@Key("artistRelationships") @JvmField var
+	artists: List<Artist> = emptyList(),
+	@JvmField var
+	remix: String = "",
+	@JvmField var
+	feat: String = "",
+	@JvmField var
+	extra: String = "") : MusicItem() {
 	
 	val alb: Album
 		get() = albums.first()

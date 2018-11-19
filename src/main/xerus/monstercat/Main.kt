@@ -24,14 +24,14 @@ val isUnstable = VERSION.contains('-')
 
 val cacheDir: File
 	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))
-			.resolve("monsterutilities").apply { mkdirs() }
+		.resolve("monsterutilities").apply { mkdirs() }
 
 lateinit var monsterUtilities: MonsterUtilities
 
 val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object : ThreadFactory {
 	private val poolNumber = AtomicInteger(1)
 	override fun newThread(r: Runnable) =
-		Thread(Thread.currentThread().threadGroup, r, "global-" + poolNumber.getAndIncrement())
+		Thread(Thread.currentThread().threadGroup, r, "mu-worker-" + poolNumber.getAndIncrement())
 })
 val globalDispatcher = globalThreadPool.asCoroutineDispatcher()
 
@@ -55,7 +55,7 @@ fun main(args: Array<String>) {
 	App.launch("MonsterUtilities $VERSION", { stage ->
 		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
-					?: null.apply { logger.warn("Resource $it not found!") }
+				?: null.apply { logger.warn("Resource $it not found!") }
 		})
 	}, {
 		val scene = Scene(MonsterUtilities(checkUpdate), 800.0, 700.0)

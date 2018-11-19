@@ -78,9 +78,9 @@ class TabGenres : FetchTab() {
 		}
 		
 		val columns = arrayOf<TreeTableColumn<Row, String?>>(
-				TreeTableColumn("Genre") { it.value.value.firstOrNull { it.isNotEmpty() } },
-				TreeTableColumn("Typical BPM") { it.value.value[cols.findUnsafe("BPM")] },
-				TreeTableColumn("Typical Beat") { it.value.value[cols.findUnsafe("Beat")] })
+			TreeTableColumn("Genre") { it.value.value.firstOrNull { it.isNotEmpty() } },
+			TreeTableColumn("Typical BPM") { it.value.value[cols.findUnsafe("BPM")] },
+			TreeTableColumn("Typical Beat") { it.value.value[cols.findUnsafe("Beat")] })
 		
 		view.columns.addAll(*columns)
 		columns.forEach {

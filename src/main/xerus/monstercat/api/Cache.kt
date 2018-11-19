@@ -32,7 +32,7 @@ object Releases : Refresher() {
 	override suspend fun doRefresh() {
 		logger.debug("Release refresh requested")
 		val releaseConnection = APIConnection("catalog", "release")
-				.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
+			.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())

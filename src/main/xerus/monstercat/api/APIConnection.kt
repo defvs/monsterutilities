@@ -12,10 +12,7 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.ReleaseResponse
-import xerus.monstercat.api.response.Session
-import xerus.monstercat.api.response.TrackResponse
-import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException

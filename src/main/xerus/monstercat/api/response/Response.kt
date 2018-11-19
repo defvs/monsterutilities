@@ -9,7 +9,7 @@ import kotlin.reflect.jvm.javaField
 val KClass<*>.declaredKeys
 	get() = memberProperties.mapNotNull {
 		(it.javaField?.getDeclaredAnnotation(Key::class.java)
-				?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
+			?: return@mapNotNull null).value.takeUnless { it == "##default" } ?: it.name
 	}
 
 abstract class MusicItem : Parsable {

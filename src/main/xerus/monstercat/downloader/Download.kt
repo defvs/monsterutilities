@@ -28,7 +28,7 @@ fun MusicItem.folder(): Path = basePath.resolve(when {
 })
 
 fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
-		?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+	?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 fun Track.path(): Path = folder().createDirs().resolve(toFileName().addFormatSuffix())
 

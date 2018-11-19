@@ -8,10 +8,7 @@ import javafx.scene.control.Label
 import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
-import xerus.ktutil.javafx.add
-import xerus.ktutil.javafx.createButton
-import xerus.ktutil.javafx.onFx
-import xerus.ktutil.javafx.styleClass
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readToObject
 import xerus.ktutil.writeToFile
@@ -20,10 +17,7 @@ import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Releases
 import xerus.monstercat.cacheDir
 import xerus.monstercat.monsterUtilities
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.ObjectInputStream
+import java.io.*
 
 abstract class FetchTab : VTab() {
 	
