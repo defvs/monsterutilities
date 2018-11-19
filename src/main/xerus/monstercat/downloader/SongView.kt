@@ -12,12 +12,12 @@ import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 
-class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Releases")) {
+class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading...")) {
 	var ready = false
 	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
 	
 	init {
-		isShowRoot = false
+		isShowRoot = true
 		setOnMouseClicked {
 			if (it.clickCount == 2) {
 				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
@@ -35,7 +35,8 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Releases")) {
 		GlobalScope.launch {
 			fetchItems()
 			onFx {
-				root.internalChildren.addAll(roots.values)
+				isShowRoot = false
+				//root.internalChildren.addAll(roots.values)
 				ready = true
 			}
 		}
@@ -45,7 +46,7 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Releases")) {
 		Cache.getReleases().forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			roots.getOrPut(release.type) {
-				FilterableTreeItem(RootMusicItem(release.type))
+				(FilterableTreeItem(RootMusicItem(release.type)) as FilterableTreeItem<MusicItem>).also { root.internalChildren.add(it) }
 			}.internalChildren.add(treeItem)
 			release.tracks?.takeIf { it.size > 1 }?.forEach { track ->
 				treeItem.internalChildren.add(TreeItem(track))

@@ -36,9 +36,15 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		updateTitle(item.toString())
 	}
 	
-	override fun call() = download()
+	override fun call() {
+		startTime = System.currentTimeMillis()
+		download()
+	}
 	
 	abstract fun download()
+	
+	var startTime: Long = 0
+		private set
 	
 	var length: Long = 0
 		private set

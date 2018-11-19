@@ -329,14 +329,13 @@ class TabDownloader : VTab() {
 			val cancelButton = Button("Finish").onClick {
 				isDisable = true
 				downloader.cancel()
-			}.allowExpand(vertical = false)
-			add(cancelButton)
+			}
+			add(cancelButton.allowExpand(vertical = false))
 			
-			val threadSpinner = intSpinner(0, 5) syncTo DOWNLOADTHREADS
-			addLabeled("Download Threads", threadSpinner)
-			val progressLabel = Label("0 / ${items.size} Errors: 0")
-			val progressBar = ProgressBar().allowExpand(vertical = false)
-			add(StackPane(progressBar, progressLabel))
+			addLabeled("Download Threads", intSpinner(0, 5) syncTo DOWNLOADTHREADS)
+			val progressLabel = Label("0 / $total Errors: 0")
+			val progressBar = ProgressBar()
+			add(StackPane(progressBar.allowExpand(vertical = false), progressLabel))
 			add(log)
 			var counter: Job? = null
 			var time = 0L
@@ -391,14 +390,15 @@ class TabDownloader : VTab() {
 		private fun startDownload() {
 			downloader = GlobalScope.launch {
 				log("Download started")
+				var queued = 0
 				for (item in items) {
 					val download = ReleaseDownload(item.key)
 					download.setOnCancelled {
-						log("Cancelled $item")
 						total--
+						log("Cancelled $item")
 					}
 					download.setOnSucceeded {
-						lengths.add(download.length.div(10000).toDouble())
+						lengths.add(download.length.toDouble() / 10000)
 						success.value++
 						log("Downloaded $item")
 					}
@@ -408,15 +408,15 @@ class TabDownloader : VTab() {
 						logger.error("$download failed with $exception", exception)
 						log("Error downloading ${download.item}: " + if (exception is ParserException) exception.message else exception.str())
 					}
-					var added = false
 					try {
 						globalThreadPool.execute(download)
-						onFx { tasks.add(download); added = true }
+						queued++
+						onFx { tasks.add(download); queued-- }
 					} catch (exception: Throwable) {
 						logger.error("$download could not be started in TabDownloader because of $exception", exception)
 						log("Could not start download for $item: $exception")
 					}
-					while (!added || tasks.size >= DOWNLOADTHREADS())
+					while (tasks.size + queued >= DOWNLOADTHREADS())
 						delay(200)
 				}
 				LASTDOWNLOADTIME.set(currentSeconds())

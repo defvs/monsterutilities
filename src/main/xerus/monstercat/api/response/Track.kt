@@ -11,18 +11,20 @@ open class Track(
 		id: String = "",
 		@Key override var
 		title: String = "",
-		@Key @JvmField var
+		@Key var
 		artistsTitle: String = "",
 		@Key var
 		albums: List<Album> = emptyList(),
-		@Key("artistRelationships") @JvmField var
+		@Key("artistRelationships") var
 		artists: List<Artist> = emptyList(),
-		@JvmField var
-		remix: String = "",
-		@JvmField var
-		feat: String = "",
-		@JvmField var
-		extra: String = "") : MusicItem() {
+		var	remix: String = "",
+		var	feat: String = "",
+		var extra: String = "") : MusicItem() {
+	
+	@Key
+	var bpm = 0
+	@Key
+	var duration = 0.0
 	
 	var titleClean: String = ""
 	
