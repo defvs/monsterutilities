@@ -77,8 +77,8 @@ object Cache : Refresher() {
 					return@launch
 				val releaseTracks = release.getTracksOrFetch()
 				if (releaseTracks == null) {
-					logger.warn("Couldn't fetch tracks for $release")
 					cancelled = true
+					logger.warn("Couldn't fetch tracks for $release")
 				}
 			}
 		}.forEach { it.join() }

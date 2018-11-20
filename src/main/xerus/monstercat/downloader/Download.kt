@@ -29,7 +29,7 @@ private fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 private val logger = KotlinLogging.logger { }
 
-abstract class Download(val item: MusicItem, val coverUrl: String?) : Task<Unit>() {
+abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>() {
 	
 	init {
 		@Suppress("LEAKINGTHIS")

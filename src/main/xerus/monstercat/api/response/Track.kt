@@ -6,22 +6,22 @@ import xerus.ktutil.to
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
-open class Track(
-	@Key("_id") override var
-	id: String = "",
-	@Key override var
-	title: String = "",
-	@Key var
-	artistsTitle: String = "",
-	@Key var
-	albums: List<Album> = emptyList(),
-	@Key("artistRelationships")
-	var artists: List<Artist> = emptyList()) : MusicItem() {
+open class Track : MusicItem() {
 	
+	@Key("_id")
+	override var id: String = ""
 	@Key
-	var bpm = 0
+	var artistsTitle: String = ""
 	@Key
-	var duration = 0.0
+	override var title: String = ""
+	@Key
+	var albums: List<Album> = emptyList()
+	@Key("artistRelationships")
+	var artists: List<Artist> = emptyList()
+	@Key
+	var bpm: Double? = null
+	@Key
+	var duration: Double? = null
 	
 	var titleClean: String = ""
 	var remix: String = ""
