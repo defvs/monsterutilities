@@ -2,7 +2,6 @@ package xerus.monstercat.downloader
 
 import javafx.beans.Observable
 import javafx.beans.property.Property
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
@@ -98,11 +97,6 @@ class TabDownloader : VTab() {
 		initialize()
 	}
 	
-	private suspend fun awaitReady() {
-		while (!songView.ready)
-			delay(100)
-	}
-	
 	private fun initialize() {
 		children.clear()
 		
@@ -153,12 +147,12 @@ class TabDownloader : VTab() {
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
 			1, 0)
 		patternPane.add(patternLabel(TRACKNAMEPATTERN,
-				Track().apply {
-					title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)"
-					artistsTitle = "Excision & Pegboard Nerds"
-					artists = listOf(Artist("Pegboard Nerds"), Artist("Excision"))
-				}),
-				1, 1)
+			Track().apply {
+				title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)"
+				artistsTitle = "Excision & Pegboard Nerds"
+				artists = listOf(Artist("Pegboard Nerds"), Artist("Excision"))
+			}),
+			1, 1)
 		patternPane.add(Label("Album Tracks pattern"),
 			0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
@@ -202,19 +196,20 @@ class TabDownloader : VTab() {
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 			.also {
 				it.selectedProperty().listen { selected ->
-					GlobalScope.launch {
-						awaitReady()
-						if (selected) {
-							songView.roots.forEach {
-								it.value.internalChildren.removeIf {
-									(it.value as Release).path().exists()
+					songView.onReady {
+						GlobalScope.launch {
+							if (selected) {
+								songView.roots.forEach {
+									it.value.internalChildren.removeIf {
+										(it.value as Release).path().exists()
+									}
 								}
-							}
-						} else {
-							songView.root.internalChildren.clear()
-							songView.roots.clear()
-							launch {
-								songView.load()
+							} else {
+								songView.root.internalChildren.clear()
+								songView.roots.clear()
+								launch {
+									songView.load()
+								}
 							}
 						}
 					}
@@ -222,24 +217,25 @@ class TabDownloader : VTab() {
 			})
 		
 		addRow(createButton("Smart select") {
-			GlobalScope.launch {
-				awaitReady()
-				val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
-				albums.forEach { it.isSelected = true }
-				@Suppress("UNCHECKED_CAST")
-				val selectedItems = albums.flatMap { it.children } as List<FilterableTreeItem<MusicItem>>
-				val selectedReleases = selectedItems.mapTo(ArrayList()) { it.value as Release }
-				val selectedTracks = selectedItems.flatMapTo(ArrayList()) { it.children.map { it.value as Track } }
-				logger.trace("Filtered out " + selectedItems.filter {
-					val tracks = it.children.mapTo(ArrayList()) { it.value as Track }
-					if (tracks.all { selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it) }) {
-						it.isSelected = false
-						selectedReleases.remove(it.value)
-						selectedTracks.removeIf { track -> (track in tracks).also { bool -> if (bool) tracks.remove(track) } }
-						return@filter true
-					}
-					false
-				})
+			songView.onReady {
+				GlobalScope.launch {
+					val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
+					albums.forEach { it.isSelected = true }
+					@Suppress("UNCHECKED_CAST")
+					val selectedItems = albums.flatMap { it.children } as List<FilterableTreeItem<MusicItem>>
+					val selectedReleases = selectedItems.mapTo(ArrayList()) { it.value as Release }
+					val selectedTracks = selectedItems.flatMapTo(ArrayList()) { it.children.map { it.value as Track } }
+					logger.trace("Filtered out " + selectedItems.filter {
+						val tracks = it.children.mapTo(ArrayList()) { it.value as Track }
+						if (tracks.all { selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it) }) {
+							it.isSelected = false
+							selectedReleases.remove(it.value)
+							selectedTracks.removeIf { track -> (track in tracks).also { bool -> if (bool) tracks.remove(track) } }
+							return@filter true
+						}
+						false
+					})
+				}
 			}
 		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
 		
@@ -346,11 +342,9 @@ class TabDownloader : VTab() {
 			val taskView = TaskProgressView<Download>()
 			val thumbnailCache = Cache<String, Image>()
 			taskView.setGraphicFactory {
-				ImageView(it.coverUrl?.let {
-					thumbnailCache.getOrPut(it) {
-						val url = "$it?image_width=64".replace(" ", "%20")
-						Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
-					}
+				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
+					val url = "$it?image_width=64".replace(" ", "%20")
+					Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
 				})
 			}
 			tasks = taskView.tasks
@@ -373,7 +367,7 @@ class TabDownloader : VTab() {
 				log("Download started")
 				var queued = 0
 				for (item in items) {
-					val download = ReleaseDownload(item.key)
+					val download = ReleaseDownload(item.key, item.value)
 					download.setOnCancelled {
 						total--
 						log("Cancelled $item")

@@ -7,6 +7,7 @@ import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Track
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
@@ -94,11 +95,9 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 	
 }
 
-class ReleaseDownload(private val release: Release) : Download(release, release.coverUrl) {
+class ReleaseDownload(private val release: Release, private val tracks: Collection<Track>) : Download(release, release.coverUrl) {
 	
 	override fun download() {
-		if (release.tracks == null)
-			throw Exception("Couldn't fetch tracks for $release!")
 		val folder = release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
 		val downloadFolder =
@@ -110,7 +109,7 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 			URL(release.coverUrl).openStream()
 				.copyTo(downloadFolder.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
 		}
-		tr@ for (track in release.tracks!!) {
+		tr@ for (track in tracks) {
 			createConnection(release.id, { it }, "track=" + track.id)
 			downloadFile(downloadFolder.resolve(track.toFileName().addFormatSuffix()))
 			abort()

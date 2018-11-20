@@ -19,7 +19,7 @@ import kotlin.math.max
 
 class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading...")) {
 	val logger = KotlinLogging.logger { }
-	var ready = false
+	private val ready = SimpleBooleanProperty(false)
 	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
 	
 	init {
@@ -61,8 +61,13 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 				root.internalChildren.addAll(roots.values)
 				ready = true
 				logger.debug("Fully loaded up with ${roots.keys} displaying ${root.children.sumBy { r -> r.children.sumBy { t -> max(1, t.children.size) } }} items")
+				ready.set(true)
 			}
 		}
+	}
+	
+	fun onReady(function: () -> Unit) {
+		ready.addOneTimeListener { function() }
 	}
 	
 	suspend fun fetchItems() {
@@ -72,7 +77,7 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 				FilterableTreeItem(RootMusicItem(release.type))
 			}.internalChildren.add(treeItem)
 			release.tracks?.takeIf { it.size > 1 }?.forEach { track ->
-				treeItem.internalChildren.add(TreeItem(track))
+				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 		}
 		roots.forEach {
