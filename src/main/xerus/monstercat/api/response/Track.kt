@@ -6,33 +6,28 @@ import xerus.ktutil.to
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
-/** JvmFields are used for Reflection, which is needed for the formatted [toString] method */
 open class Track(
 	@Key("_id") override var
 	id: String = "",
 	@Key override var
 	title: String = "",
-	@Key @JvmField var
+	@Key var
 	artistsTitle: String = "",
 	@Key var
 	albums: List<Album> = emptyList(),
-	@Key("artistRelationships") @JvmField var
-	artists: List<Artist> = emptyList(),
-	@JvmField var
-	remix: String = "",
-	@JvmField var
-	feat: String = "",
-	@JvmField var
-	extra: String = "") : MusicItem() {
+	@Key("artistRelationships")
+	var artists: List<Artist> = emptyList()) : MusicItem() {
+	
+	var titleClean: String = ""
+	var remix: String = ""
+	var feat: String = ""
+	var extra: String = ""
 	
 	val alb: Album
 		get() = albums.first()
 	
 	val streamHash: String?
 		get() = albums.find { it.streamHash.isNotEmpty() }?.streamHash
-	
-	@JvmField
-	var titleClean: String = ""
 	
 	open fun toFileName() =
 		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()

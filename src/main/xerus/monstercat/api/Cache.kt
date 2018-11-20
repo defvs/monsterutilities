@@ -70,6 +70,7 @@ object Releases : Refresher() {
 	}
 	
 	private fun writeReleases() {
+		logger.trace("Writing ${releases.size} Releases to $releaseCache")
 		releaseCache.bufferedWriter().use {
 			for (r in releases)
 				it.appendln(r.serialize().joinToString(SEPARATOR))
@@ -85,13 +86,16 @@ object Releases : Refresher() {
 			true
 		} catch (e: Throwable) {
 			logger.debug("Cache corrupted - clearing: $e", e)
-			releaseCache.delete()
 			releases.clear()
 			false
 		}
 	}
 	
-	fun clear() = releases.clear()
+	fun clear() {
+		logger.debug("Clearing Cache")
+		releaseCache.delete()
+		releases.clear()
+	}
 	
 }
 

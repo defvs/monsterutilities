@@ -16,6 +16,7 @@ import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.*
+import xerus.monstercat.api.Releases
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -69,6 +70,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				GlobalScope.launch {
+					Releases.clear()
 					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if (f.exists()) {
@@ -192,8 +194,8 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 					MonsterUtilities enables you to access the Monstercat library with ease! Here a quick feature overview:
 					- The Catalog Tab serves you information about every track, freshly fetched from the MCatalog
 					- The Genres Tab provides you an overview of genres, also from the MCatalog
-					- The Downloader enables you to batch-download songs from the Monstercat library providing you have Gold
-					Clicking on a song name anywhere plays it if available
+					- The Downloader enables you to batch-download songs from the Monstercat library providing you have a valid Gold subscription
+					Double-clicking on a song name anywhere plays it if possible
 					The Catalog, Genres and Releases are conveniently cached for offline use in $cacheDir
 					Look out for Tooltips when you are stuck!""".trimIndent())
 			text.isWrapText = true

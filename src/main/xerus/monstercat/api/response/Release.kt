@@ -10,7 +10,7 @@ data class Release(
 	releaseDate: String = "",
 	@Key var
 	type: String = "",
-	@Key @JvmField var
+	@Key var
 	renderedArtists: String = "",
 	@Key override var
 	title: String = "",

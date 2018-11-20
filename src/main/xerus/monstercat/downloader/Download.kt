@@ -39,7 +39,7 @@ private fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 private val logger = KotlinLogging.logger { }
 
-abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>() {
+abstract class Download(val item: MusicItem, val coverUrl: String?) : Task<Unit>() {
 	
 	init {
 		@Suppress("LEAKINGTHIS")
@@ -141,7 +141,7 @@ class ReleaseDownload(private val release: Release) : Download(release, release.
 	
 }
 
-class TrackDownload(private val track: Track) : Download(track, APIConnection("catalog", "release", track.alb.albumId).parseJSON(Release::class.java).coverUrl) {
+class TrackDownload(private val track: Track) : Download(track, APIConnection("catalog", "release", track.alb.albumId).parseJSON(Release::class.java)?.coverUrl) {
 	
 	override fun download() {
 		createConnection(track.alb.albumId, { it }, "track=" + track.id)
