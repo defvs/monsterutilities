@@ -346,9 +346,11 @@ class TabDownloader : VTab() {
 			val taskView = TaskProgressView<Download>()
 			val thumbnailCache = Cache<String, Image>()
 			taskView.setGraphicFactory {
-				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
-					val url = "$it?image_width=64".replace(" ", "%20")
-					Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
+				ImageView(it.coverUrl?.let {
+					thumbnailCache.getOrPut(it) {
+						val url = "$it?image_width=64".replace(" ", "%20")
+						Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
+					}
 				})
 			}
 			tasks = taskView.tasks

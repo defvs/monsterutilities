@@ -88,6 +88,7 @@ object Cache : Refresher() {
 	}
 	
 	private fun writeCache() {
+		logger.trace("Writing ${releases.size} Releases to $releaseCache")
 		releaseCache.writeText(Sheets.JSON_FACTORY.toPrettyString(releases))
 		logger.debug("Wrote ${releases.size} Releases to $releaseCache")
 	}
@@ -99,12 +100,15 @@ object Cache : Refresher() {
 			true
 		} catch (e: Throwable) {
 			logger.debug("Cache corrupted - clearing: $e", e)
-			releaseCache.delete()
 			releases.clear()
 			false
 		}
 	}
 	
-	fun clear() = releases.clear()
+	fun clear() {
+		logger.debug("Clearing Cache")
+		releaseCache.delete()
+		releases.clear()
+	}
 	
 }

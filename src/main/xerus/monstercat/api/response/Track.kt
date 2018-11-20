@@ -15,11 +15,8 @@ open class Track(
 	artistsTitle: String = "",
 	@Key var
 	albums: List<Album> = emptyList(),
-	@Key("artistRelationships") var
-	artists: List<Artist> = emptyList(),
-	var remix: String = "",
-	var feat: String = "",
-	var extra: String = "") : MusicItem() {
+	@Key("artistRelationships")
+	var artists: List<Artist> = emptyList()) : MusicItem() {
 	
 	@Key
 	var bpm = 0
@@ -27,6 +24,9 @@ open class Track(
 	var duration = 0.0
 	
 	var titleClean: String = ""
+	var remix: String = ""
+	var feat: String = ""
+	var extra: String = ""
 	
 	val alb: Album
 		get() = albums.first()

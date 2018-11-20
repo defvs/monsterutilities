@@ -34,22 +34,30 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	
 	// Requesting
 	
-	/** @throws IOException when the connection fails */
-	fun <T> parseJSON(destination: Class<T>): T = Sheets.JSON_FACTORY.fromInputStream(getContent(), destination)
-	
-	/** @return null when the connection fails, else the parsed result */
-	fun getReleases() = try {
-		parseJSON(ReleaseResponse::class.java).results.map { it.init() }
-	} catch (e: Exception) {
-		null
+	/** calls [getContent] and uses a [com.google.api.client.json.JsonFactory]
+	 * to parse the response onto a new instance of [T]
+	 * @return the response parsed onto [T] or null if there is an error */
+	fun <T> parseJSON(destination: Class<T>): T? {
+		val inputStream = try {
+			getContent()
+		} catch (e: IOException) {
+			return null
+		}
+		return try {
+			Sheets.JSON_FACTORY.fromInputStream(inputStream, destination)
+		} catch (e: Exception) {
+			logger.warn("Error parsing response of $uri: $e", e)
+			null
+		}
 	}
 	
 	/** @return null when the connection fails, else the parsed result */
-	fun getTracks() = try {
-		parseJSON(TrackResponse::class.java).results
-	} catch (e: Exception) {
-		null
-	}
+	fun getReleases() =
+		parseJSON(ReleaseResponse::class.java)?.results?.map { it.init() }
+	
+	/** @return null when the connection fails, else the parsed result */
+	fun getTracks() =
+		parseJSON(TrackResponse::class.java)?.results
 	
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
@@ -73,7 +81,8 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		return response!!
 	}
 	
-	/** @throws IOException when the connection fails */
+	/**@return the content of the response
+	 * @throws IOException when the connection fails */
 	fun getContent(): InputStream {
 		val resp = getResponse()
 		if (!resp.entity.isRepeatable)
@@ -87,12 +96,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		private var cache: Pair<String, CookieValidity>? = null
 		fun checkCookie(): CookieValidity {
 			return if (cache == null || cache?.first != CONNECTSID()) {
-				val session: Session
-				try {
-					session = APIConnection("self", "session").parseJSON(Session::class.java)
-				} catch (e: Throwable) {
-					return CookieValidity.NOCONNECTION
-				}
+				val session = APIConnection("self", "session").parseJSON(Session::class.java) ?: return CookieValidity.NOCONNECTION
 				when {
 					session.user == null -> CookieValidity.NOUSER
 					session.user!!.goldService -> {
