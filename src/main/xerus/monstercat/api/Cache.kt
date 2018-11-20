@@ -44,10 +44,8 @@ object Cache : Refresher() {
 			logger.info("Release refresh failed!")
 			return
 		}
-		if (releases.containsAll(results)) {
+		if (releases.containsAll(results) && fetchTracksForReleases()) {
 			logger.debug("Releases are already up to date!")
-			if (!releaseCache.exists() && Settings.ENABLECACHE())
-				writeCache()
 			return
 		}
 		val ind = releases.lastIndexOf(results.last())
@@ -68,12 +66,16 @@ object Cache : Refresher() {
 			releases.addAll(results.asReversed())
 			logger.info("${releases.size - s} new Releases added, now at ${releases.size}")
 		}
+		fetchTracksForReleases()
+	}
+	
+	private suspend fun fetchTracksForReleases(): Boolean {
 		var cancelled = false
 		releases.map { release ->
 			GlobalScope.launch(globalDispatcher) {
 				if (cancelled)
 					return@launch
-				val releaseTracks = release.tracks
+				val releaseTracks = release.getTracksOrFetch()
 				if (releaseTracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
 					cancelled = true
@@ -82,6 +84,7 @@ object Cache : Refresher() {
 		}.forEach { it.join() }
 		if (Settings.ENABLECACHE())
 			writeCache()
+		return !cancelled
 	}
 	
 	private fun writeCache() {

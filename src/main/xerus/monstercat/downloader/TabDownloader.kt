@@ -92,20 +92,6 @@ class TabDownloader : VTab() {
 			songView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
 		}
 		
-		val defaultItems = {
-			arrayOf(MenuItem("Expand all") { songView.expandAll() },
-				MenuItem("Collapse all") { songView.expandAll(false) })
-		}
-		val defaultMenu = ContextMenu(*defaultItems())
-		songView.contextMenu = defaultMenu
-		/*songView.contextMenuProperty().bind({
-			val selected = songView.selectionModel.selectedItem ?: return@bind defaultMenu
-			when {
-				selected.parent == songView.root -> rootMenu
-				else -> defaultMenu
-			}
-		}, songView.selectionModel.selectedItemProperty())*/
-		
 		// TODO find out why it doesn't toggle on Track click
 		songView.checkedItems.listen { logger.trace("checkedItems: " + it.joinToString(prefix = "[", postfix = "]") { it.value.toString() }) }
 		
@@ -167,8 +153,12 @@ class TabDownloader : VTab() {
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
 			1, 0)
 		patternPane.add(patternLabel(TRACKNAMEPATTERN,
-			Track(title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)", artistsTitle = "Excision & Pegboard Nerds", artists = listOf(Artist("Pegboard Nerds"), Artist("Excision")))),
-			1, 1)
+				Track().apply {
+					title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)"
+					artistsTitle = "Excision & Pegboard Nerds"
+					artists = listOf(Artist("Pegboard Nerds"), Artist("Excision"))
+				}),
+				1, 1)
 		patternPane.add(Label("Album Tracks pattern"),
 			0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
@@ -329,10 +319,10 @@ class TabDownloader : VTab() {
 			add(log)
 			var counter: Job? = null
 			var time = 0L
-			arrayOf(success, errors).addListener {
+			arrayOf(state).addListener {
 				counter?.cancel()
-				val s = success.value
-				val e = errors.value
+				val s = state.success
+				val e = state.errors
 				val done = s + e
 				val estimatedLength = total * lengths.mapIndexed { index, element -> element * Math.pow(1.6, index.toDouble()) }.sum() / lengths.size.downTo(1).sum()
 				progressBar.progress = done / total.toDouble()
@@ -375,8 +365,7 @@ class TabDownloader : VTab() {
 		}
 		
 		private val lengths = ArrayList<Double>(items.size)
-		private val success = SimpleIntegerProperty()
-		private val errors = SimpleIntegerProperty()
+		private val state = DownloaderState(total)
 		private fun startDownload() {
 			downloader = GlobalScope.launch {
 				log("Download started")
@@ -389,12 +378,12 @@ class TabDownloader : VTab() {
 					}
 					download.setOnSucceeded {
 						lengths.add(download.length.toDouble() / 10000)
-						success.value++
+						state.success()
 						log("Downloaded $item")
 					}
 					download.setOnFailed {
-						errors.value++
 						val exception = download.exception
+						state.error(exception)
 						logger.error("$download failed with $exception", exception)
 						log("Error downloading ${download.item}: " + if (exception is ParserException) exception.message else exception.str())
 					}

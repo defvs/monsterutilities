@@ -25,12 +25,15 @@ data class Release(
 	
 	@Key
 	var tracks: List<Track>? = null
-		get() {
-			if (field == null) fetchTracks()
-			return field
-		}
+		private set
 	
-	private fun fetchTracks() {
+	suspend fun getTracksOrFetch(): List<Track>? {
+		if (tracks == null)
+			fetchTracks()
+		return tracks
+	}
+	
+	suspend fun fetchTracks() {
 		logger.trace("Fetching tracks for $this")
 		tracks = APIConnection("catalog", "release", id, "tracks").getTracks()
 	}
