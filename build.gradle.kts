@@ -15,7 +15,7 @@ version = "dev" + commitNumber +
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.0"
+	kotlin("jvm") version "1.3.10"
 	application
 	id("com.github.johnrengelman.shadow") version "4.0.2"
 	id("com.github.ben-manes.versions") version "0.20.0"
@@ -51,7 +51,7 @@ dependencies {
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.26.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.27.0")
 	
 	val junitVersion = "5.3.1"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
