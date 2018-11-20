@@ -12,11 +12,12 @@ class DownloaderState(var total: Int, success: Int = 0, errors: Int = 0) : Abstr
 	
 	fun success() {
 		success++
-		listeners.notifyChange(this, this)
+		listeners.notifyChange(null, this)
 	}
 	
 	fun error(exception: Throwable) {
 		success++
-		listeners.notifyChange(this, this)
+		listeners.notifyChange(null, this)
 	}
+	
 }

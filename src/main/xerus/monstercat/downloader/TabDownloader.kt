@@ -91,9 +91,6 @@ class TabDownloader : VTab() {
 			songView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
 		}
 		
-		// TODO find out why it doesn't toggle on Track click
-		songView.checkedItems.listen { logger.trace("checkedItems: " + it.joinToString(prefix = "[", postfix = "]") { it.value.toString() }) }
-		
 		initialize()
 	}
 	
@@ -179,19 +176,18 @@ class TabDownloader : VTab() {
 		QUALITY.listen { buttons.forEach { button -> button.isSelected = button.userData == it } }
 		
 		// Misc options
-		addLabeled("Keep separate cover arts for ", ComboBox<String>(ImmutableObservableList("Nothing", "Albums", "Albums & Singles")).apply {
+		addLabeled("Keep separate cover arts for ", ComboBox<String>(ImmutableObservableList("Nothing", "Collections", "Collections & Singles")).apply {
 			selectionModel.select(DOWNLOADCOVERS())
 			selectionModel.selectedIndexProperty().listen { DOWNLOADCOVERS.set(it.toInt()) }
 		})
 		
-		/* TODO EPs to Singles
 		val epAsSingle = CheckBox("Treat EPs with less than")
 		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
 		val epAsSingleAmount = intSpinner(2, 20, EPS_TO_SINGLES().takeIf { it != 0 } ?: 4)
 		arrayOf(epAsSingle.selectedProperty(), epAsSingleAmount.valueProperty()).addListener {
 			EPS_TO_SINGLES.set(if (epAsSingle.isSelected) epAsSingleAmount.value else 0)
 		}
-		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles")) */
+		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles"))
 		
 		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
 			.also {
@@ -282,15 +278,21 @@ class TabDownloader : VTab() {
 		
 		private val timer = Timer()
 		private val log = LogTextArea()
-		private val items: Map<Release, Collection<Track>>
+		private val items: Map<Release, Collection<Track>?>
 		private var total: Int
 		
 		private lateinit var downloader: Job
 		private lateinit var tasks: ObservableList<Download>
 		
 		init {
-			songView.clearPredicate()
-			items = songView.checkedItems.asSequence().filter { it.value is Release }.associate { (it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.map { it.value as Track } }
+			@Suppress("UNCHECKED_CAST")
+			items = songView.roots.values.flatMap { it.internalChildren }.filter {
+				val item = it as FilterableTreeItem
+				item.isSelected || item.internalChildren.any { (it as CheckBoxTreeItem).isSelected }
+			}.associate {
+				(it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.takeUnless { it.isEmpty() }
+					?.filter { (it as CheckBoxTreeItem).isSelected }?.map { it.value as Track }
+			}
 			logger.info("Starting Downloader for ${items.size} Releases")
 			total = items.size
 			onFx {
@@ -315,7 +317,7 @@ class TabDownloader : VTab() {
 			add(log)
 			var counter: Job? = null
 			var time = 0L
-			arrayOf(state).addListener {
+			state.listen {
 				counter?.cancel()
 				val s = state.success
 				val e = state.errors
@@ -343,8 +345,7 @@ class TabDownloader : VTab() {
 			val thumbnailCache = Cache<String, Image>()
 			taskView.setGraphicFactory {
 				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
-					val url = "$it?image_width=64".replace(" ", "%20")
-					Image(HttpClientBuilder.create().build().execute(HttpGet(url)).entity.content)
+					Image(getCover(it, 64))
 				})
 			}
 			tasks = taskView.tasks
@@ -370,12 +371,12 @@ class TabDownloader : VTab() {
 					val download = ReleaseDownload(item.key, item.value)
 					download.setOnCancelled {
 						total--
-						log("Cancelled $item")
+						log("Cancelled ${item.key}")
 					}
 					download.setOnSucceeded {
 						lengths.add(download.length.toDouble() / 10000)
 						state.success()
-						log("Downloaded $item")
+						log("Downloaded ${item.key}")
 					}
 					download.setOnFailed {
 						val exception = download.exception

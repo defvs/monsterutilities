@@ -1,5 +1,7 @@
 package xerus.monstercat.downloader
 
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.scene.control.CheckBoxTreeItem
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.TreeItem
 import kotlinx.coroutines.GlobalScope
@@ -9,6 +11,7 @@ import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
 import xerus.ktutil.javafx.onFx
+import xerus.ktutil.javafx.properties.addOneTimeListener
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.api.Cache
 import xerus.monstercat.api.Player
@@ -59,7 +62,6 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 			onFx {
 				isShowRoot = false
 				root.internalChildren.addAll(roots.values)
-				ready = true
 				logger.debug("Fully loaded up with ${roots.keys} displaying ${root.children.sumBy { r -> r.children.sumBy { t -> max(1, t.children.size) } }} items")
 				ready.set(true)
 			}

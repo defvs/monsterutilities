@@ -7,24 +7,19 @@ import xerus.monstercat.api.APIConnection
 
 val logger = KotlinLogging.logger {}
 
-data class Release(
-	@Key("_id") override var
-	id: String = "",
-	@Key var
-	releaseDate: String = "",
-	@Key var
-	type: String = "",
-	@Key var
-	renderedArtists: String = "",
-	@Key override var
-	title: String = "",
-	@Key var
-	coverUrl: String = "",
-	@Key var
-	downloadable: Boolean = false) : MusicItem() {
+class Release : MusicItem() {
 	
-	@Key
-	var tracks: List<Track>? = null
+	@Key("_id") override var id: String = ""
+	@Key var releaseDate: String = ""
+	@Key var type: String = ""
+	@Key var renderedArtists: String = ""
+	@Key override var title: String = ""
+	@Key var coverUrl: String = ""
+	@Key var downloadable: Boolean = false
+	
+	@Key var isMulti: Boolean = false
+	
+	@Key var tracks: List<Track>? = null
 		private set
 	
 	suspend fun getTracksOrFetch(): List<Track>? {
@@ -38,12 +33,11 @@ data class Release(
 		tracks = APIConnection("catalog", "release", id, "tracks").getTracks()
 	}
 	
-	var isMulti: Boolean = false
-	
 	fun init(): Release {
 		renderedArtists = formatArtists(renderedArtists)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
+		coverUrl = coverUrl.replace(" ", "%20")
 		
 		if (!isType("Mixes", "Podcast")) {
 			isMulti = true
@@ -64,6 +58,8 @@ data class Release(
 		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
 	
 	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
+	
+	override fun equals(other: Any?) = id == (other as? Release)?.id
 	
 }
 

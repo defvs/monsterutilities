@@ -2,7 +2,10 @@ package xerus.monstercat.downloader
 
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClientBuilder
 import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
@@ -10,8 +13,11 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.net.URL
+import java.net.URI
 import java.nio.file.Path
+
+fun getCover(coverUrl: String, size: Int? = null) =
+	HttpClientBuilder.create().build().execute(HttpGet(coverUrl + size?.let { "?image_width=$it" }.orEmpty())).entity.content
 
 fun Release.folder(): Path = basePath.resolve(when {
 	isMulti -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
@@ -95,21 +101,27 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 	
 }
 
-class ReleaseDownload(private val release: Release, private val tracks: Collection<Track>) : Download(release, release.coverUrl) {
+class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>?) : Download(release, release.coverUrl) {
 	
 	override fun download() {
-		val folder = release.folder()
+		if (tracks == null) {
+			runBlocking { tracks = release.getTracksOrFetch() }
+			if (tracks == null)
+				throw Exception("Couldn't fetch tracks for $release!")
+		}
+		val toSingle = tracks!!.size < EPS_TO_SINGLES()
+		val folder = if (toSingle) basePath else release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
 		val downloadFolder =
 			if (folder.exists())
 				folder
 			else
 				partFolder.createDirs()
-		if (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti) {
-			URL(release.coverUrl).openStream()
-				.copyTo(downloadFolder.resolve(release.toString().replaceIllegalFileChars() + release.coverUrl.takeLast(4)).toFile().outputStream())
+		logger.debug("Downloading $release to $downloadFolder")
+		if (DOWNLOADCOVERS() == 2 || DOWNLOADCOVERS() == 1 && release.isMulti && !toSingle) {
+			getCover(release.coverUrl, 1024).copyTo(downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.split(".").last()).toFile().outputStream())
 		}
-		tr@ for (track in tracks) {
+		tr@ for (track in tracks!!) {
 			createConnection(release.id, { it }, "track=" + track.id)
 			downloadFile(downloadFolder.resolve(track.toFileName().addFormatSuffix()))
 			abort()

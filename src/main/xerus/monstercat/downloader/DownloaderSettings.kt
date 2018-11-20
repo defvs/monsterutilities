@@ -16,7 +16,8 @@ val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatter
 val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", albumTrackPatterns[0])
 
 val EPS_TO_SINGLES = DownloaderSettings.create("epsAsSingles", 0)
-val DOWNLOADCOVERS = DownloaderSettings.create("downloadCovers", 1)
+val DOWNLOADCOVERS = DownloaderSettings.create("coverDownload", 1)
+val COVERPATTERN = DownloaderSettings.create("coverPattern", "{%renderedArtists% - }%title%")
 
 val QUALITY = DownloaderSettings.create("quality")
 val CONNECTSID = DownloaderSettings.create("connect.sid")

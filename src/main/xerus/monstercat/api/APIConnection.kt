@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClientBuilder
@@ -69,9 +70,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		logger.trace("$this connecting")
-		val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
-		response = HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
+		response = connectWithCookie(httpGet!!)
 	}
 	
 	private var response: HttpResponse? = null
@@ -93,6 +92,12 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
+		fun connectWithCookie(httpGet: HttpGet): CloseableHttpResponse {
+			logger.trace("Connecting to ${httpGet.uri}")
+			val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
+			return HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
+		}
+		
 		private var cache: Pair<String, CookieValidity>? = null
 		fun checkCookie(): CookieValidity {
 			return if (cache == null || cache?.first != CONNECTSID()) {
