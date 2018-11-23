@@ -104,11 +104,8 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>?) : Download(release, release.coverUrl) {
 	
 	override fun download() {
-		if (tracks == null) {
-			runBlocking { tracks = release.getTracksOrFetch() }
-			if (tracks == null)
-				throw Exception("Couldn't fetch tracks for $release!")
-		}
+		if (tracks == null)
+			tracks = release.tracks
 		val toSingle = tracks!!.size < EPS_TO_SINGLES()
 		val folder = if (toSingle) basePath else release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")

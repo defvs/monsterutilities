@@ -3,7 +3,6 @@ package xerus.monstercat.downloader
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.control.CheckBoxTreeItem
 import javafx.scene.control.ContextMenu
-import javafx.scene.control.TreeItem
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -69,16 +68,23 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 	}
 	
 	fun onReady(function: () -> Unit) {
-		ready.addOneTimeListener { function() }
+		if (ready.get())
+			function()
+		else
+			ready.addOneTimeListener { function() }
 	}
 	
 	suspend fun fetchItems() {
 		Cache.getReleases().forEach { release ->
+			if (!release.downloadable) {
+				logger.trace { "Not displaying $release since it is not downloadable" }
+				return@forEach
+			}
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			roots.getOrPut(release.type) {
 				FilterableTreeItem(RootMusicItem(release.type))
 			}.internalChildren.add(treeItem)
-			release.tracks?.takeIf { it.size > 1 }?.forEach { track ->
+			release.tracks.takeIf { it.size > 1 }?.forEach { track ->
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 		}
@@ -92,6 +98,10 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 		}
 		//roots.flatMap { it.value.internalChildren }.forEach { item -> (item as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == item.value.id }?.trackNumber } }
 	}
+	
+	@Suppress("UNCHECKED_CAST")
+	fun getItemsInCategory(category: String) =
+		roots[category]!!.children as List<FilterableTreeItem<Release>>
 	
 }
 

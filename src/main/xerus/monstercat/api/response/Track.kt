@@ -3,6 +3,7 @@ package xerus.monstercat.api.response
 import com.google.api.client.util.Key
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.ktutil.to
+import xerus.monstercat.api.splitTitle
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
 import java.util.Collections.emptyList
 
@@ -41,7 +42,7 @@ open class Track : MusicItem() {
 		if (titleClean.isNotEmpty())
 			return
 		artistsTitle = formatArtists(artistsTitle)
-		val split = title.split('(', ')', '[', ']').map { it.trim() }
+		val split = title.splitTitle()
 		titleClean = split[0]
 		if (split.size > 1)
 			split.subList(1, split.lastIndex).forEach {

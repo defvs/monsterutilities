@@ -136,7 +136,7 @@ class TabSettings : VTab() {
 		}
 		dialog.show()
 		dialog.resultProperty().listen { result ->
-			logger.trace("Submitting: $result")
+			logger.trace { "Submitting: $result" }
 			result?.run {
 				sendFeedback(subject, message)
 			}

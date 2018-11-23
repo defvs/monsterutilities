@@ -181,7 +181,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		GlobalScope.launch {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
-			val track = API.find(title, artists)
+			val track = APIUtils.find(title, artists)
 			if (track == null) {
 				onFx { showBack("Track not found") }
 				return@launch
@@ -194,18 +194,11 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
-		GlobalScope.launch {
-			val results = APIConnection("catalog", "release", release.id, "tracks").getTracks()?.takeUnless { it.isEmpty() }
-				?: run {
-					showBack("No tracks found for Release $release")
-					return@launch
-				}
-			playTracks(results, 0)
-		}
+		playTracks(release.tracks, 0)
 	}
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
-	fun playTracks(tracks: MutableList<Track>, index: Int) {
+	fun playTracks(tracks: List<Track>, index: Int) {
 		playTrack(tracks[index])
 		onFx {
 			if (index > 0)

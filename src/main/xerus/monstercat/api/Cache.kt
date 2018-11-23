@@ -1,18 +1,22 @@
 package xerus.monstercat.api
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.*
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
 
 object Cache : Refresher() {
 	private val logger = KotlinLogging.logger { }
+	
+	private val releases = ArrayList<Release>()
+	private val tracks = ArrayList<Track>()
 	
 	private val releaseCache: File
 		get() = cacheDir.resolve("releases.json")
@@ -27,17 +31,20 @@ object Cache : Refresher() {
 		return releases
 	}
 	
+	suspend fun getTracks() =
+		getReleases().flatMap { it.tracks }
+	
 	override suspend fun doRefresh() {
 		refreshReleases()
 	}
 	
-	private val releases = ArrayList<Release>()
 	private suspend fun refreshReleases() {
 		logger.debug("Release refresh requested")
 		val releaseConnection = APIConnection("catalog", "release")
 			.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 5))
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
+		
 		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())
 			readCache()
 		val results = releaseConnection.getReleases() ?: run {
@@ -69,22 +76,31 @@ object Cache : Refresher() {
 		fetchTracksForReleases()
 	}
 	
+	/** Fetches the tracks for each Release.
+	 * @return true when it fetched the tracks for every Release successfully, false otherwise */
 	private suspend fun fetchTracksForReleases(): Boolean {
-		var cancelled = false
-		releases.map { release ->
-			GlobalScope.launch(globalDispatcher) {
-				if (cancelled)
-					return@launch
-				val releaseTracks = release.getTracksOrFetch()
-				if (releaseTracks == null) {
-					cancelled = true
+		var failed = 0
+		releases.associateWith { release ->
+			GlobalScope.async(globalDispatcher) {
+				if(release.tracks.isNotEmpty()) return@async true
+				val tracks = APIConnection("catalog", "release", release.id, "tracks").getTracks()
+				if (tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
+					return@async false
+				} else {
+					release.tracks = tracks
+					return@async true
 				}
 			}
-		}.forEach { it.join() }
+		}.forEach {
+			if (!it.value.await()) {
+				failed++
+				releases.remove(it.key)
+			}
+		}
 		if (Settings.ENABLECACHE())
 			writeCache()
-		return !cancelled
+		return failed == 0
 	}
 	
 	private fun writeCache() {

@@ -93,7 +93,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	
 	companion object {
 		fun connectWithCookie(httpGet: HttpGet): CloseableHttpResponse {
-			logger.trace("Connecting to ${httpGet.uri}")
+			logger.trace { "Connecting to ${httpGet.uri}" }
 			val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
 			return HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
 		}

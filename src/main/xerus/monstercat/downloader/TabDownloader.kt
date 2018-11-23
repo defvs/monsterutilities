@@ -12,8 +12,6 @@ import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
 import kotlinx.coroutines.*
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
 import xerus.ktutil.*
@@ -35,7 +33,6 @@ import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -58,7 +55,6 @@ class TabDownloader : VTab() {
 	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
 	
 	init {
-		FilterableTreeItem.autoExpand = true
 		FilterableTreeItem.autoLeaf = false
 		
 		// Check if no items in the views are selected
@@ -82,7 +78,7 @@ class TabDownloader : VTab() {
 			else { parent, value ->
 				parent != songView.root &&
 					// Match titles
-					(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks?.any { it.toString().contains(searchText, true) } } ?: false) &&
+					(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks.any { it.toString().contains(searchText, true) } } ?: false) &&
 					// Match Releasedate
 					(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
 			}
@@ -159,7 +155,6 @@ class TabDownloader : VTab() {
 			1, 3)
 		add(patternPane)
 		
-		// TODO EPS_TO_SINGLES
 		// SongView
 		add(searchField)
 		add(HBox(5.0, Label("Releasedate").grow(Priority.NEVER), releaseSearch.conditionBox, releaseSearch.searchField))
@@ -181,7 +176,7 @@ class TabDownloader : VTab() {
 			selectionModel.selectedIndexProperty().listen { DOWNLOADCOVERS.set(it.toInt()) }
 		})
 		
-		val epAsSingle = CheckBox("Treat EPs with less than")
+		val epAsSingle = CheckBox("Treat Collections with less than")
 		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
 		val epAsSingleAmount = intSpinner(2, 20, EPS_TO_SINGLES().takeIf { it != 0 } ?: 4)
 		arrayOf(epAsSingle.selectedProperty(), epAsSingleAmount.valueProperty()).addListener {
@@ -218,19 +213,38 @@ class TabDownloader : VTab() {
 					val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
 					albums.forEach { it.isSelected = true }
 					@Suppress("UNCHECKED_CAST")
-					val selectedItems = albums.flatMap { it.children } as List<FilterableTreeItem<MusicItem>>
-					val selectedReleases = selectedItems.mapTo(ArrayList()) { it.value as Release }
-					val selectedTracks = selectedItems.flatMapTo(ArrayList()) { it.children.map { it.value as Track } }
-					logger.trace("Filtered out " + selectedItems.filter {
-						val tracks = it.children.mapTo(ArrayList()) { it.value as Track }
-						if (tracks.all { selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it) }) {
+					val selectedAlbums = albums.flatMap { it.children } as List<FilterableTreeItem<Release>>
+					val selectedTracks = selectedAlbums.flatMapTo(ArrayList()) { it.value.tracks }
+					val filtered = selectedAlbums.filter {
+						val releaseTracks = (it.value as Release).tracks
+						if (releaseTracks.all { (selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it)).printIt(it) }) {
 							it.isSelected = false
-							selectedReleases.remove(it.value)
+							val tracks = ArrayList(releaseTracks)
 							selectedTracks.removeIf { track -> (track in tracks).also { bool -> if (bool) tracks.remove(track) } }
 							return@filter true
 						}
 						false
-					})
+					}
+					logger.trace { "Filtered out $filtered" }
+					songView.getItemsInCategory(Release.Type.SINGLE).filter {
+						val tracks = it.value.tracks
+						if(tracks.size == 1) {
+							it.isSelected = true
+							selectedTracks.add(tracks.first())
+							return@filter false
+						} else {
+							return@filter true
+						}
+					}.plus(songView.getItemsInCategory(Release.Type.MCOLLECTION)).forEach {
+						it.children.forEach {
+							@Suppress("UNCHECKED_CAST")
+							val tr = it as CheckBoxTreeItem<Track>
+							if(tr.value !in selectedTracks) {
+								tr.isSelected = true
+								selectedTracks.add(tr.value)
+							}
+						}
+					}
 				}
 			}
 		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
