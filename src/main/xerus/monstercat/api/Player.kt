@@ -2,7 +2,10 @@ package xerus.monstercat.api
 
 import javafx.event.EventHandler
 import javafx.geometry.Pos
-import javafx.scene.control.*
+import javafx.scene.control.Label
+import javafx.scene.control.ProgressBar
+import javafx.scene.control.Slider
+import javafx.scene.control.ToggleButton
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.VBox
@@ -32,11 +35,11 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private val seekBar = ProgressBar(0.0).apply {
 		id("seek-bar")
 		setSize(height = 0.0)
-		Settings.PLAYERSEEKBARHEIGHT.listen { if (player != null) transitionToHeight(Settings.PLAYERSEEKBARHEIGHT()) }
+		Settings.PLAYERSEEKBARHEIGHT.listen { if(player != null) transitionToHeight(Settings.PLAYERSEEKBARHEIGHT()) }
 		
 		maxWidth = Double.MAX_VALUE
 		val handler = EventHandler<MouseEvent> { event ->
-			if (event.button == MouseButton.PRIMARY) {
+			if(event.button == MouseButton.PRIMARY) {
 				val b1 = layoutBounds
 				val mouseX = event.sceneX
 				val percent = (mouseX - b1.minX) / (b1.maxX - b1.minX)
@@ -94,7 +97,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		fadeOut()
 		GlobalScope.launch {
 			val latest = Cache.getReleases().lastOrNull() ?: return@launch
-			while (fading) delay(50)
+			while(fading) delay(50)
 			showText("Latest Release: $latest")
 			onFx {
 				add(buttonWithId("play") { play(latest) })
@@ -110,12 +113,12 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	val player get() = activePlayer.value
 	
 	init {
-		box.visibleProperty().listen { visible -> if (!visible) disposePlayer() }
+		box.visibleProperty().listen { visible -> if(!visible) disposePlayer() }
 	}
 	
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun playTrack(track: Track) {
-		activeTrack.value = null
+		disposePlayer()
 		val hash = track.streamHash ?: run {
 			showBack("$track is currently not available for streaming!")
 			return
@@ -152,7 +155,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	private val pauseButton = ToggleButton().id("play-pause").onClick { if (isSelected) player?.pause() else player?.play() }
+	private val pauseButton = ToggleButton().id("play-pause").onClick { if(isSelected) player?.pause() else player?.play() }
 	private val stopButton = buttonWithId("stop") { reset() }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
@@ -182,7 +185,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 			showText("Searching for \"$title\"...")
 			disposePlayer()
 			val track = APIUtils.find(title, artists)
-			if (track == null) {
+			if(track == null) {
 				onFx { showBack("Track not found") }
 				return@launch
 			}
@@ -201,12 +204,12 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	fun playTracks(tracks: List<Track>, index: Int) {
 		playTrack(tracks[index])
 		onFx {
-			if (index > 0)
+			if(index > 0)
 				children.add(children.size - 3, buttonWithId("skipback") { playTracks(tracks, index - 1) })
-			if (index < tracks.lastIndex)
+			if(index < tracks.lastIndex)
 				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
 		}
-		player?.setOnEndOfMedia { if (tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
+		player?.setOnEndOfMedia { if(tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
 	}
 	
 }
