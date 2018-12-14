@@ -46,7 +46,7 @@ class TabSettings : VTab() {
 		}
 		addLabeled("Startup Tab:", startTab)
 		
-		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Skins.availableSkins)).apply {
+		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
 			valueProperty().bindBidirectional(Settings.SKIN)
 		})
 		val slider = Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0)

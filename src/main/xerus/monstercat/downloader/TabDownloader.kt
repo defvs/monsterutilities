@@ -83,7 +83,7 @@ class TabDownloader : VTab() {
 					(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
 			}
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
-		searchField.textProperty().addListener { _ ->
+		searchField.textProperty().listen {
 			songView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
 		}
 		

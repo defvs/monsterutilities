@@ -15,11 +15,11 @@ version = "dev" + commitNumber +
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.10"
+	kotlin("jvm") version "1.3.11"
 	application
-	id("com.github.johnrengelman.shadow") version "4.0.2"
+	id("com.github.johnrengelman.shadow") version "4.0.3"
 	id("com.github.ben-manes.versions") version "0.20.0"
-	id("com.github.breadmoirai.github-release") version "2.0.1"
+	id("com.github.breadmoirai.github-release") version "2.2.1"
 }
 
 // source directories
@@ -53,7 +53,7 @@ dependencies {
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.27.0")
 	
-	val junitVersion = "5.3.1"
+	val junitVersion = "5.3.2"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
 }

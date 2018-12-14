@@ -9,6 +9,7 @@ import xerus.ktutil.helpers.DelayedRefresher
 import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.Snackbar
 import xerus.ktutil.readToObject
 import xerus.ktutil.writeToFile
@@ -130,7 +131,7 @@ abstract class FetchTab : VTab() {
 	
 	companion object {
 		init {
-			Settings.GENRECOLORINTENSITY.addListener { _ -> viewRefresher() }
+			Settings.GENRECOLORINTENSITY.listen { viewRefresher() }
 		}
 		
 		private val viewRefresher = DelayedRefresher(400) {
