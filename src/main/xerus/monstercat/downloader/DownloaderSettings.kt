@@ -11,12 +11,13 @@ val DOWNLOADDIRALBUM = DownloaderSettings.create("directoryAlbum", "{%renderedAr
 val DOWNLOADDIRPODCAST = DownloaderSettings.create("directoryPodcasts", "Podcast")
 val DOWNLOADDIRMIXES = DownloaderSettings.create("directoryMixes", "Mixes")
 
-val ALBUMMIXES = DownloaderSettings.create("albummixes", "Include")
+val ALBUMMIXES = DownloaderSettings.create("albummixes", "Keep")
 val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatterns[0])
 val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", albumTrackPatterns[0])
 
 val EPS_TO_SINGLES = DownloaderSettings.create("epsAsSingles", 0)
 val DOWNLOADCOVERS = DownloaderSettings.create("coverDownload", 1)
+val COVERARTSIZE = DownloaderSettings.create("coverArtSize", 1024)
 val COVERPATTERN = DownloaderSettings.create("coverPattern", "{%renderedArtists% - }%title%")
 
 val QUALITY = DownloaderSettings.create("quality")

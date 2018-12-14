@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	
 	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
-	App.launch("MonsterUtilities $VERSION", Settings.SKIN(), { stage ->
+	App.launch("MonsterUtilities $VERSION", Settings.THEME(), { stage ->
 		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 				?: null.apply { logger.warn("Resource $it not found!") }

@@ -7,11 +7,17 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.*
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.StackPane
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
 import xerus.ktutil.*
@@ -26,7 +32,10 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.CookieValidity
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.Artist
+import xerus.monstercat.api.response.MusicItem
+import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
@@ -39,9 +48,6 @@ import kotlin.math.roundToLong
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
-
-val String.normalised
-	get() = trim().toLowerCase()
 
 // Todo selecting items is not recursive for track-items
 class TabDownloader : VTab() {
@@ -175,6 +181,28 @@ class TabDownloader : VTab() {
 			selectionModel.select(DOWNLOADCOVERS())
 			selectionModel.selectedIndexProperty().listen { DOWNLOADCOVERS.set(it.toInt()) }
 		})
+		
+		addLabeled("Album Mixes", ComboBox<String>(ImmutableObservableList("Keep", "Exclude", "Separate")).apply {
+			selectionModel.select(ALBUMMIXES())
+			selectionModel.selectedItemProperty().listen { ALBUMMIXES.set(it) }
+		})
+		
+		addLabeled("Cover art size", Spinner(object : SpinnerValueFactory<Int>() {
+			init {
+				valueProperty().bindBidirectional(COVERARTSIZE)
+			}
+			
+			override fun increment(steps: Int) {
+				for (i in 0 until steps)
+					if (value < 8000)
+						value *= 2
+			}
+			
+			override fun decrement(steps: Int) {
+				for (i in 0 until steps)
+					value /= 2
+			}
+		}))
 		
 		val epAsSingle = CheckBox("Treat Collections with less than")
 		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
@@ -342,7 +370,7 @@ class TabDownloader : VTab() {
 					progressLabel.text = "$done / $total Errors: $e"
 				else
 					counter = GlobalScope.launch {
-						val estimate = ((estimatedLength / lengths.sum() + total / done - 2) * timer.time() / 1000).roundToLong()
+						val estimate = ((estimatedLength / lengths.sum().coerceAtLeast(1.0) + total / done - 2) * timer.time() / 1000).roundToLong()
 						time = if (time > 0) (time * 9 + estimate) / 10 else estimate
 						logger.trace("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
 						while (time > 0) {

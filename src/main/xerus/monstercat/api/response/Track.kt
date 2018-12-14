@@ -5,6 +5,7 @@ import xerus.ktutil.replaceIllegalFileChars
 import xerus.ktutil.to
 import xerus.monstercat.api.splitTitle
 import xerus.monstercat.downloader.TRACKNAMEPATTERN
+import xerus.monstercat.downloader.splitArtists
 import java.util.Collections.emptyList
 
 open class Track : MusicItem() {
@@ -42,6 +43,8 @@ open class Track : MusicItem() {
 		if (titleClean.isNotEmpty())
 			return
 		artistsTitle = formatArtists(artistsTitle)
+		if(artists.isEmpty() && artistsTitle.isNotEmpty())
+			artists = artistsTitle.splitArtists()
 		val split = title.splitTitle()
 		titleClean = split[0]
 		if (split.size > 1)

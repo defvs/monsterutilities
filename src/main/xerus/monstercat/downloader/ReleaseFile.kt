@@ -8,11 +8,16 @@ import xerus.monstercat.api.response.Track
 import java.util.regex.Pattern
 
 val delimiters = arrayOf(" & ", ", ", " and ", " x ")
-val exceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns")
-val artistMasker = StringMasker("artist", *exceptions)
+// todo fetch from https://connect.monstercat.com/api/catalog/artist
+val artistExceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns", "A.M.C & Turno")
+val artistMasker = StringMasker("artist", *artistExceptions)
 
 /** artists - tracknumber title */
 val namePattern: Pattern = Pattern.compile("([^-]+) - (.+ - )?(\\d+) (.+)")
+
+/** Splits up artists & trim whitespaces */
+fun String.splitArtists() =
+	artistMasker.unmask(artistMasker.mask(this).replace(delimiters.joinToString("|").toRegex(), ";")).split(";").map { Artist(it.trim()) }
 
 class ReleaseFile(filename: String, @JvmField val album: String? = null) : Track() {
 	
@@ -22,13 +27,7 @@ class ReleaseFile(filename: String, @JvmField val album: String? = null) : Track
 	init {
 		val m = namePattern.matcher(filename)
 		if (m.matches()) {
-			// split up artists
-			artistsTitle = m.group(1)
-			var artist = artistMasker.mask(artistsTitle)
-			artist = artist.replace(delimiters.joinToString("|").toRegex(), ";")
-			artist = artistMasker.unmask(artist)
-			// trim whitespaces
-			artists = artist.split(";").map { Artist(it.trim()) }
+			artists = m.group(1).splitArtists()
 			
 			// get other stuff
 			track = m.group(3).toInt()

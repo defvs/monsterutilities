@@ -2,7 +2,6 @@ package xerus.monstercat.downloader
 
 import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
@@ -13,7 +12,6 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.net.URI
 import java.nio.file.Path
 
 fun getCover(coverUrl: String, size: Int? = null) =
@@ -26,8 +24,8 @@ fun Release.folder(): Path = basePath.resolve(when {
 	else -> DOWNLOADDIRSINGLE()
 })
 
-fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
-	?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
+fun Release.path(): Path = if (isMulti) folder() else folder().resolve(
+	ReleaseFile("${renderedArtists.nullIfEmpty() ?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 private inline val basePath
 	get() = DOWNLOADDIR()
@@ -110,21 +108,33 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		val folder = if (toSingle) basePath else release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
 		val downloadFolder =
-			if (folder.exists())
+			if (folder.exists() || folder == basePath)
 				folder
 			else
-				partFolder.createDirs()
+				partFolder
+		downloadFolder.createDirs()
+		
 		logger.debug("Downloading $release to $downloadFolder")
-		if (DOWNLOADCOVERS() == 2 || DOWNLOADCOVERS() == 1 && release.isMulti && !toSingle) {
-			getCover(release.coverUrl, 1024).copyTo(downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.split(".").last()).toFile().outputStream())
-		}
+		var downloadedTracks = 0
 		tr@ for (track in tracks!!) {
+			var filename = downloadFolder.resolve(track.toFileName().addFormatSuffix())
+			if (track.title.contains("Album Mix"))
+				when (ALBUMMIXES()) {
+					"Separate" -> filename = basePath.resolve("Mixes").createDirs().resolve(track.toFileName().addFormatSuffix())
+					"Exclude" -> continue@tr
+				}
 			createConnection(release.id, { it }, "track=" + track.id)
-			downloadFile(downloadFolder.resolve(track.toFileName().addFormatSuffix()))
+			downloadFile(filename)
 			abort()
 			if (isCancelled)
 				break@tr
+			downloadedTracks++
 		}
+		if (downloadedTracks > 0 && (DOWNLOADCOVERS() == 2 || DOWNLOADCOVERS() == 1 && release.isMulti && !toSingle)) {
+			updateMessage("Cover")
+			getCover(release.coverUrl, COVERARTSIZE()).copyTo(downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.split(".").last()).toFile().outputStream())
+		}
+		
 		if (!isCancelled && partFolder.exists()) {
 			folder.toFile().deleteRecursively()
 			partFolder.renameTo(folder)

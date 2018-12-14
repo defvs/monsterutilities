@@ -10,6 +10,7 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.util.StringConverter
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
@@ -46,8 +47,12 @@ class TabSettings : VTab() {
 		}
 		addLabeled("Startup Tab:", startTab)
 		
-		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
-			valueProperty().bindBidirectional(Settings.SKIN)
+		addLabeled("Theme:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
+			converter = object: StringConverter<Themes>() {
+				override fun toString(theme: Themes) = theme.toString().toLowerCase().capitalize()
+				override fun fromString(string: String) = Themes.valueOf(string.toUpperCase())
+			}
+			valueProperty().bindBidirectional(Settings.THEME)
 		})
 		val slider = Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0)
 		Settings.GENRECOLORINTENSITY.dependOn(slider.valueProperty()) { it.toInt() }
