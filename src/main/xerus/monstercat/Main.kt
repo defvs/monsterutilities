@@ -8,7 +8,6 @@ import kotlinx.coroutines.*
 import mu.KotlinLogging
 import xerus.ktutil.SystemUtils
 import xerus.ktutil.getResource
-import xerus.ktutil.javafx.applySkin
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.ui.SimpleFrame
 import java.io.File
@@ -52,15 +51,13 @@ fun main(args: Array<String>) {
 	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	
 	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
-	App.launch("MonsterUtilities $VERSION", { stage ->
+	App.launch("MonsterUtilities $VERSION", Settings.SKIN(), { stage ->
 		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 				?: null.apply { logger.warn("Resource $it not found!") }
 		})
 	}, {
-		val scene = Scene(MonsterUtilities(checkUpdate), 800.0, 700.0)
-		scene.applySkin(Settings.SKIN())
-		scene
+		Scene(MonsterUtilities(checkUpdate), 800.0, 700.0)
 	})
 	globalThreadPool.shutdown()
 	logger.info("Main has shut down!")

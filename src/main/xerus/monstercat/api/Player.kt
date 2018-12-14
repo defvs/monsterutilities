@@ -156,7 +156,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	private val stopButton = buttonWithId("stop") { reset() }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
-		valueProperty().addListener { _ -> updateVolume() }
+		valueProperty().listen { updateVolume() }
 	}
 	
 	private fun playing(text: String) {

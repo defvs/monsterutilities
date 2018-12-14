@@ -90,7 +90,7 @@ class TabDownloader : VTab() {
 			else { parent, value -> parent != releaseView.root && value.toString().contains(searchField.text, true) && releaseSearch.predicate.test(value) }
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
 		trackView.root.bindPredicate(searchField.textProperty())
-		searchField.textProperty().addListener { _ ->
+		searchField.textProperty().listen {
 			releaseView.root.children.forEach { (it as CheckBoxTreeItem).updateSelection() }
 			trackView.root.updateSelection()
 		}

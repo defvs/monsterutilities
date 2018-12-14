@@ -5,7 +5,8 @@ import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
 import mu.KotlinLogging
-import xerus.ktutil.javafx.applySkin
+import xerus.ktutil.javafx.applyTheme
+import xerus.ktutil.javafx.Themes
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
 import xerus.monstercat.tabs.FetchTab
@@ -30,7 +31,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
 	val GENRECOLORINTENSITY = create("genrecolors", 80)
 	
-	val SKIN = create("skin", "black")
+	val SKIN = create("skin", Themes.BLACK)
 	
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")
@@ -54,7 +55,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 					val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?",
 						content = "Unstable builds contain the latest features and fixes, but may also introduce unexpected bugs, regressions and incompatible changes. Use at your own risk!\n" +
 							"The unstable version can be used alongside the stable one and will forcibly update itself whenever possible.")
-					alert.resultProperty().addListener { _ ->
+					alert.resultProperty().listen {
 						if (alert.result.buttonData == ButtonBar.ButtonData.YES) {
 							monsterUtilities.checkForUpdate(true, true)
 						} else {
@@ -67,7 +68,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 			}
 		})
 		
-		Settings.SKIN.listen { monsterUtilities.scene.applySkin(it) }
+		Settings.SKIN.listen { monsterUtilities.scene.applyTheme(it) }
 	}
 	
 }
