@@ -1,6 +1,7 @@
 package xerus.monstercat.downloader
 
-import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.Observable
+import javafx.beans.value.ObservableValue
 import javafx.scene.control.CheckBoxTreeItem
 import javafx.scene.control.ContextMenu
 import kotlinx.coroutines.GlobalScope
@@ -10,7 +11,9 @@ import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
 import xerus.ktutil.javafx.onFx
+import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.addOneTimeListener
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.api.Cache
 import xerus.monstercat.api.Player
@@ -19,20 +22,20 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import kotlin.math.max
 
-class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading...")) {
+class SongView(val sorter: ObservableValue<ReleaseSorting>) : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading...")) {
 	val logger = KotlinLogging.logger { }
-	private val ready = SimpleBooleanProperty(false)
+	private val ready = SimpleObservable(false)
 	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
 	
 	init {
 		isShowRoot = true
 		setOnMouseClicked {
-			if (it.clickCount == 2) {
+			if(it.clickCount == 2) {
 				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
 				val value = selected.value
-				if (value is Release)
+				if(value is Release)
 					Player.play(value)
-				else if (value is Track)
+				else if(value is Track)
 					Player.playTrack(value)
 			}
 		}
@@ -62,13 +65,13 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 				isShowRoot = false
 				root.internalChildren.addAll(roots.values)
 				logger.debug("Fully loaded up with ${roots.keys} displaying ${root.children.sumBy { r -> r.children.sumBy { t -> max(1, t.children.size) } }} items")
-				ready.set(true)
+				ready.value = true
 			}
 		}
 	}
 	
 	fun onReady(function: () -> Unit) {
-		if (ready.get())
+		if(ready.value)
 			function()
 		else
 			ready.addOneTimeListener { function() }
@@ -76,7 +79,7 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 	
 	suspend fun fetchItems() {
 		Cache.getReleases().forEach { release ->
-			if (!release.downloadable) {
+			if(!release.downloadable) {
 				logger.trace { "Not displaying $release since it is not downloadable" }
 				return@forEach
 			}
@@ -88,15 +91,12 @@ class SongView : FilterableCheckTreeView<MusicItem>(RootMusicItem("Loading..."))
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 		}
-		roots.forEach {
-			it.value.internalChildren.run {
-				sortBy { (it.value as Release).releaseDate }
-				forEach { tr ->
-					(tr as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == tr.value.id }?.trackNumber }
-				}
-			}
-		}
-		//roots.flatMap { it.value.internalChildren }.forEach { item -> (item as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == item.value.id }?.trackNumber } }
+		sorter.listen { sortReleases(it.selector) }.changed(null, null, sorter.value)
+		roots.flatMap { it.value.internalChildren }.forEach { release -> (release as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == release.value.id }?.trackNumber } }
+	}
+	
+	fun <T : Comparable<T>> sortReleases(selector: (Release) -> T) {
+		roots.forEach { _, item -> item.internalChildren.sortBy { selector(it.value as Release) } }
 	}
 	
 	@Suppress("UNCHECKED_CAST")

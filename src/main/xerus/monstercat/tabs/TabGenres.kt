@@ -5,8 +5,8 @@ import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.layout.VBox
-import xerus.ktutil.helpers.RoughMap
-import xerus.ktutil.helpers.Row
+import xerus.ktutil.collections.RoughMap
+import xerus.ktutil.collections.StringRow
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
@@ -21,7 +21,7 @@ val genreColor = { item: String? ->
 
 class TabGenres : FetchTab() {
 	
-	private val view = TreeTableView<Row>().apply {
+	private val view = TreeTableView<StringRow>().apply {
 		columnResizePolicy = TreeTableView.CONSTRAINED_RESIZE_POLICY
 	}
 	
@@ -29,7 +29,7 @@ class TabGenres : FetchTab() {
 		styleClass("tab-genres")
 		val searchField = TextField()
 		VBox.setMargin(searchField, Insets(0.0, 0.0, 6.0, 0.0)) // apparently can't set this in css
-		val root = FilterableTreeItem(Row())
+		val root = FilterableTreeItem(StringRow())
 		root.bindPredicate(searchField.textProperty()) { row, text -> row.subList(0, 3).any { it.contains(text, true) } }
 		view.isShowRoot = false
 		data.addListener(InvalidationListener {
@@ -39,19 +39,19 @@ class TabGenres : FetchTab() {
 			var curLevel = 0
 			
 			val hex = cols.find("Hex")
-			if (hex == null) logger.warn("No hex Column found!")
+			if(hex == null) logger.warn("No hex Column found!")
 			
 			var style = ""
-			for (list in data) {
-				if (list.isEmpty())
+			for(list in data) {
+				if(list.isEmpty())
 					continue
-				val row = Row(10, *list.toTypedArray())
+				val row = StringRow(10, *list.toTypedArray())
 				val nextLevel = row.indexOfFirst { it.isNotEmpty() }
-				if (nextLevel < curLevel)
-					repeat(curLevel - nextLevel) { cur = cur.parent as? FilterableTreeItem<Row> ?: cur.also { logger.warn("$cur should have a parent!") } }
+				if(nextLevel < curLevel)
+					repeat(curLevel - nextLevel) { cur = cur.parent as? FilterableTreeItem<StringRow> ?: cur.also { logger.warn("$cur should have a parent!") } }
 				
-				if (hex != null) {
-					if (nextLevel == 0) {
+				if(hex != null) {
+					if(nextLevel == 0) {
 						style = row[hex]
 						genreColors.put(row[0], style)
 					}
@@ -64,20 +64,20 @@ class TabGenres : FetchTab() {
 				curLevel = nextLevel + 1
 				cur = new
 			}
-			if (hex != null)
+			if(hex != null)
 				refreshViews()
 		})
 		
 		view.setRowFactory {
-			TreeTableRow<Row>().apply {
-				if (GENRECOLORINTENSITY() > 0) {
+			TreeTableRow<StringRow>().apply {
+				if(GENRECOLORINTENSITY() > 0) {
 					val hex = cols.find("Hex") ?: return@apply
 					itemProperty().listen { style = genreColor(it?.get(hex)) }
 				}
 			}
 		}
 		
-		val columns = arrayOf<TreeTableColumn<Row, String?>>(
+		val columns = arrayOf<TreeTableColumn<StringRow, String?>>(
 			TreeTableColumn("Genre") { it.value.value.firstOrNull { it.isNotEmpty() } },
 			TreeTableColumn("Typical BPM") { it.value.value[cols.findUnsafe("BPM")] },
 			TreeTableColumn("Typical Beat") { it.value.value[cols.findUnsafe("Beat")] })
@@ -86,20 +86,20 @@ class TabGenres : FetchTab() {
 		columns.forEach {
 			it.isSortable = false
 			it.setCellFactory {
-				object : TreeTableCell<Row, String?>() {
+				object : TreeTableCell<StringRow, String?>() {
 					override fun updateItem(item: String?, empty: Boolean) {
 						super.updateItem(item, empty)
-						if (item == null || empty) {
+						if(item == null || empty) {
 							text = null
 							style = ""
 						} else {
 							text = item
 							val treeItem = this.treeTableRow.treeItem
-							font = if (treeItem != null && treeItem.parent === root) {
+							font = if(treeItem != null && treeItem.parent === root) {
 								font.bold()
 							} else {
 								style = ""
-								if (item.contains("listed in", true))
+								if(item.contains("listed in", true))
 									font.italic()
 								else
 									font.format()

@@ -48,7 +48,7 @@ class TabSettings : VTab() {
 		addLabeled("Startup Tab:", startTab)
 		
 		addLabeled("Theme:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
-			converter = object: StringConverter<Themes>() {
+			converter = object : StringConverter<Themes>() {
 				override fun toString(theme: Themes) = theme.toString().toLowerCase().capitalize()
 				override fun fromString(string: String) = Themes.valueOf(string.toUpperCase())
 			}
@@ -80,13 +80,13 @@ class TabSettings : VTab() {
 				App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 					initStyle(StageStyle.UTILITY)
 					resultProperty().listen {
-						if (it.buttonData == ButtonBar.ButtonData.YES) {
+						if(it.buttonData == ButtonBar.ButtonData.YES) {
 							try {
 								Settings.clear()
 								DownloaderSettings.clear()
 								cacheDir.deleteRecursively()
 								Cache.clear()
-							} catch (e: Exception) {
+							} catch(e: Exception) {
 								monsterUtilities.showError(e)
 							}
 							App.restart()
@@ -132,7 +132,7 @@ class TabSettings : VTab() {
 				addRow(1, Label("Message"), messageArea)
 			}
 			setResultConverter {
-				return@setResultConverter if (it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
+				return@setResultConverter if(it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
 					null
 				else {
 					Feedback(subjectField.text, messageArea.text)
@@ -173,7 +173,7 @@ class TabSettings : VTab() {
 		val response = HttpClientBuilder.create().build().execute(postRequest)
 		val status = response.statusLine
 		logger.debug("Feedback Response: $status")
-		if (status.statusCode == 200) {
+		if(status.statusCode == 200) {
 			monsterUtilities.showMessage("Your feedback was submitted successfully!")
 		} else {
 			val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
@@ -181,7 +181,7 @@ class TabSettings : VTab() {
 			App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
 				buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
 				resultProperty().listen {
-					when (it) {
+					when(it) {
 						retry -> onFx { dialog.show() }
 						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
 					}

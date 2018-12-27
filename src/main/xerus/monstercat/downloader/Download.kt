@@ -24,7 +24,7 @@ fun Release.folder(): Path = basePath.resolve(when {
 	else -> DOWNLOADDIRSINGLE()
 })
 
-fun Release.path(): Path = if (isMulti) folder() else folder().resolve(
+fun Release.path(): Path = if(isMulti) folder() else folder().resolve(
 	ReleaseFile("${renderedArtists.nullIfEmpty() ?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
 
 private inline val basePath
@@ -61,7 +61,7 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
 		val entity = connection!!.getResponse().entity
 		length = entity.contentLength
-		if (length == 0L)
+		if(length == 0L)
 			throw EmptyResponseException(releaseId)
 		updateProgress(0, length)
 		val input = streamConverter(entity.content)
@@ -85,7 +85,7 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 			updateProgress(inputStream.count)
 			isCancelled
 		}
-		if (isCancelled) {
+		if(isCancelled) {
 			logger.trace("Download of $partFile cancelled, deleting: " + partFile.delete())
 		} else {
 			file.delete()
@@ -102,13 +102,13 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>?) : Download(release, release.coverUrl) {
 	
 	override fun download() {
-		if (tracks == null)
+		if(tracks == null)
 			tracks = release.tracks
 		val toSingle = tracks!!.size < EPS_TO_SINGLES()
-		val folder = if (toSingle) basePath else release.folder()
+		val folder = if(toSingle) basePath else release.folder()
 		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
 		val downloadFolder =
-			if (folder.exists() || folder == basePath)
+			if(folder.exists() || folder == basePath)
 				folder
 			else
 				partFolder
@@ -116,26 +116,27 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		
 		logger.debug("Downloading $release to $downloadFolder")
 		var downloadedTracks = 0
-		tr@ for (track in tracks!!) {
+		tr@ for(track in tracks!!) {
 			var filename = downloadFolder.resolve(track.toFileName().addFormatSuffix())
-			if (track.title.contains("Album Mix"))
-				when (ALBUMMIXES()) {
-					"Separate" -> filename = basePath.resolve("Mixes").createDirs().resolve(track.toFileName().addFormatSuffix())
-					"Exclude" -> continue@tr
+			if(track.title.contains("Album Mix"))
+				@Suppress("NON_EXHAUSTIVE_WHEN")
+				when(ALBUMMIXES()) {
+					AlbumMixes.SEPARATE -> filename = basePath.resolve("Mixes").createDirs().resolve(track.toFileName().addFormatSuffix())
+					AlbumMixes.EXCLUDE -> continue@tr
 				}
 			createConnection(release.id, { it }, "track=" + track.id)
 			downloadFile(filename)
 			abort()
-			if (isCancelled)
+			if(isCancelled)
 				break@tr
 			downloadedTracks++
 		}
-		if (downloadedTracks > 0 && (DOWNLOADCOVERS() == 2 || DOWNLOADCOVERS() == 1 && release.isMulti && !toSingle)) {
+		if(downloadedTracks > 0 && (DOWNLOADCOVERS() == DownloadCovers.ALL || DOWNLOADCOVERS() == DownloadCovers.COLLECTIONS && release.isMulti && !toSingle)) {
 			updateMessage("Cover")
 			getCover(release.coverUrl, COVERARTSIZE()).copyTo(downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.split(".").last()).toFile().outputStream())
 		}
 		
-		if (!isCancelled && partFolder.exists()) {
+		if(!isCancelled && partFolder.exists()) {
 			folder.toFile().deleteRecursively()
 			partFolder.renameTo(folder)
 		}

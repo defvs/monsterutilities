@@ -5,8 +5,8 @@ import javafx.scene.control.Label
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableRow
 import javafx.scene.text.Font
+import xerus.ktutil.collections.ArraySet
 import xerus.ktutil.containsAny
-import xerus.ktutil.helpers.ArraySet
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.*
@@ -50,7 +50,7 @@ class TabCatalog : TableTab() {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
 		table.setOnMouseClicked { me ->
-			if (me.clickCount == 2) {
+			if(me.clickCount == 2) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}
@@ -60,9 +60,9 @@ class TabCatalog : TableTab() {
 	private fun setColumns(columns: List<String>) {
 		val visibleColumns = Settings.VISIBLECATALOGCOLUMNS()
 		val newColumns = ArrayList<TableColumn<List<String>, *>>(columns.size)
-		for (colName in columns) {
+		for(colName in columns) {
 			val existing = table.columns.find { it.text == colName }
-			if (existing != null) {
+			if(existing != null) {
 				newColumns.add(existing)
 				continue
 			}
@@ -70,7 +70,7 @@ class TabCatalog : TableTab() {
 				val notFound = ArraySet<String>()
 				val colValue = { list: List<String> ->
 					cols.find(colName)?.let { list[it] }.also {
-						if (it == null && notFound.add(colName)) {
+						if(it == null && notFound.add(colName)) {
 							logger.warn("Column $colName not found!")
 						}
 					}
@@ -90,13 +90,13 @@ class TabCatalog : TableTab() {
 						TableColumn<List<String>, String>(colName) { colValue(it.value) ?: "" }
 					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
 				}
-				if (col is SearchableColumn<List<String>, *>)
+				if(col is SearchableColumn<List<String>, *>)
 					searchables.add(col)
-				if (isColumnCentered(colName))
+				if(isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"
 				newColumns.add(col)
 				col.isVisible = visibleColumns.contains(colName, true)
-			} catch (e: Exception) {
+			} catch(e: Exception) {
 				logger.warn("TabCatalog column initialization failed with $e", e)
 			}
 		}
@@ -111,7 +111,7 @@ class TabCatalog : TableTab() {
 			table.columns.forEach { col ->
 				@Suppress("UNCHECKED_CAST")
 				val widths = ArrayList<Double>(table.items.size)
-				for (item in table.items) {
+				for(item in table.items) {
 					// improve read font - (skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
 					widths.add(col.getCellData(item).toString().textWidth(Font.font("System", 11.0)) + 6)
 				}
