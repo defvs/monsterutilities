@@ -26,7 +26,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.*
 import xerus.ktutil.preferences.PropertySetting
 import xerus.monstercat.api.APIConnection
-import xerus.monstercat.api.CookieValidity
+import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.response.*
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
@@ -274,37 +274,39 @@ class TabDownloader : VTab() {
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
 			textProperty().bindBidirectional(CONNECTSID)
 			maxWidth = Double.MAX_VALUE
-		}.grow(), Button("Start Download").apply {
-			arrayOf<Observable>(patternValid, noItemsSelected, CONNECTSID, QUALITY).addListener {
+		}.grow(), Button("Checking connection...").apply {
+			this.prefWidth = 200.0
+			CONNECTSID.listen { text = "Checking connect.sid..." }
+			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY).addListener {
 				checkFx { refreshDownloadButton(this) }
-			}.invalidated(CONNECTSID)
+			}
 		})
 	}
 	
 	private fun refreshDownloadButton(button: Button) {
-		button.text = "Checking..."
-		GlobalScope.launch {
-			var valid = false
-			val text = when(APIConnection.checkCookie()) {
-				CookieValidity.NOCONNECTION -> "No connection"
-				CookieValidity.NOUSER -> "Invalid connect.sid"
-				CookieValidity.NOGOLD -> "Account is not subscribed to Gold"
-				CookieValidity.GOLD -> when {
-					!patternValid.value -> "Invalid pattern"
-					QUALITY().isEmpty() -> "No format selected"
-					noItemsSelected.value -> "Nothing selected to download"
-					else -> {
-						valid = true
-						"Start Download"
-					}
+		updateDownloadButtonAction(button, false)
+		var valid = false
+		val text = when(APIConnection.connectValidity.value) {
+			ConnectValidity.NOCONNECTION -> "No connection"
+			ConnectValidity.NOUSER -> "Invalid connect.sid"
+			ConnectValidity.NOGOLD -> "No Gold subscription"
+			ConnectValidity.GOLD -> when {
+				!patternValid.value -> "Invalid pattern"
+				QUALITY().isEmpty() -> "No format selected"
+				noItemsSelected.value -> "Nothing selected to download"
+				else -> {
+					valid = true
+					"Start Download"
 				}
 			}
-			onFx {
-				button.text = text
-				if(valid) button.setOnAction { Downloader() }
-				else button.setOnAction { refreshDownloadButton(button) }
-			}
 		}
+		button.text = text
+		updateDownloadButtonAction(button, valid)
+	}
+	
+	private fun updateDownloadButtonAction(button: Button, valid: Boolean) {
+		if(valid) button.setOnAction { Downloader() }
+		else button.setOnAction { refreshDownloadButton(button) }
 	}
 	
 	inner class Downloader {
