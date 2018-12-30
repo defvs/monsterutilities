@@ -1,7 +1,6 @@
 package xerus.monstercat.api
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
@@ -11,12 +10,12 @@ import xerus.monstercat.api.response.ReleaseList
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
+import java.util.function.BiConsumer
 
 object Cache : Refresher() {
 	private val logger = KotlinLogging.logger { }
 	
 	private val releases = ArrayList<Release>()
-	private val tracks = ArrayList<Track>()
 	
 	private val releaseCache: File
 		get() = cacheDir.resolve("releases.json")
@@ -31,6 +30,7 @@ object Cache : Refresher() {
 		return releases
 	}
 	
+	/** Gets all tracks by flatMapping all the tracks of */
 	suspend fun getTracks() =
 		getReleases().flatMap { it.tracks }
 	
@@ -81,22 +81,21 @@ object Cache : Refresher() {
 	private suspend fun fetchTracksForReleases(): Boolean {
 		var failed = 0
 		releases.associateWith { release ->
+			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
-				if(release.tracks.isNotEmpty()) return@async true
 				val tracks = APIConnection("catalog", "release", release.id, "tracks").getTracks()
 				if (tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
+					failed++
 					return@async false
 				} else {
 					release.tracks = tracks
 					return@async true
 				}
 			}
-		}.forEach {
-			if (!it.value.await()) {
-				failed++
-				releases.remove(it.key)
-			}
+		}.forEach { e ->
+			if (e.value?.await() == false)
+				releases.remove(e.key)
 		}
 		if (Settings.ENABLECACHE())
 			writeCache()

@@ -1,5 +1,6 @@
 package xerus.monstercat.tabs
 
+import java.awt.Desktop
 import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.scene.control.*
@@ -67,6 +68,9 @@ class TabSettings : VTab() {
 		})
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
+		addRow(createButton("Open Cache directory") {
+			Desktop.getDesktop().open(cacheDir)
+		})
 		addButton("Check for Updates") { monsterUtilities.checkForUpdate(true) }
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		

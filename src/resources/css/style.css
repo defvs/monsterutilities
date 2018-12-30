@@ -20,7 +20,7 @@
 .tree-table-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-table-row-cell:filled:selected,
 .table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected,
 .tree-table-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-table-row-cell .tree-table-cell:selected {
-	myText: ladder(#999, -fx-text-background-color, hsb(210, 90%, 100%));
+	myText: ladder(#888, -fx-text-background-color, hsb(210, 90%, 100%));
 }
 
 /* Selected when control is not focused */
@@ -30,7 +30,13 @@
 .tree-table-row-cell:filled:selected,
 .table-row-cell:filled > .table-cell:selected,
 .tree-table-row-cell:filled > .tree-table-cell:selected {
-	myText: ladder(#666, -fx-text-background-color, hsb(210, 90%, 100%));
+	myText: ladder(#444, -fx-text-background-color, hsb(210, 90%, 100%));
+}
+
+/* highlight non-downloadable releases red */
+/*noinspection CssInvalidFunction*/
+.tree-cell.not-downloadable {
+	myText: ladder(#888, -fx-text-background-color, hsb(0, 90%, 100%));
 }
 
 .button, .button:focused {

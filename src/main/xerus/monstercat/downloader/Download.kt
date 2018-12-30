@@ -119,10 +119,10 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		tr@ for(track in tracks!!) {
 			var filename = downloadFolder.resolve(track.toFileName().addFormatSuffix())
 			if(track.title.contains("Album Mix"))
-				@Suppress("NON_EXHAUSTIVE_WHEN")
 				when(ALBUMMIXES()) {
 					AlbumMixes.SEPARATE -> filename = basePath.resolve("Mixes").createDirs().resolve(track.toFileName().addFormatSuffix())
 					AlbumMixes.EXCLUDE -> continue@tr
+					else -> {}
 				}
 			createConnection(release.id, { it }, "track=" + track.id)
 			downloadFile(filename)

@@ -43,13 +43,13 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities-%version%.jar")
 	
 	init {
-		Settings.ENABLECACHE.listen { selected ->
+		ENABLECACHE.listen { selected ->
 			logger.debug("Cache " + (if (selected) "en" else "dis") + "abled")
 			if (selected)
 				FetchTab.writeCache()
 		}
 		
-		Settings.UNSTABLE.addListener(object : ChangeListener<Boolean> {
+		UNSTABLE.addListener(object : ChangeListener<Boolean> {
 			override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
 				if (new) {
 					val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?",
@@ -59,16 +59,16 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 						if (alert.result.buttonData == ButtonBar.ButtonData.YES) {
 							monsterUtilities.checkForUpdate(true, true)
 						} else {
-							Settings.UNSTABLE.removeListener(this)
-							Settings.UNSTABLE.set(false)
-							Settings.UNSTABLE.addListener(this)
+							UNSTABLE.removeListener(this)
+							UNSTABLE.set(false)
+							UNSTABLE.addListener(this)
 						}
 					}
 				}
 			}
 		})
 		
-		Settings.THEME.listen { monsterUtilities.scene.applyTheme(it) }
+		THEME.listen { monsterUtilities.scene.applyTheme(it) }
 	}
 	
 }

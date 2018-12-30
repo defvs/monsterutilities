@@ -1,5 +1,6 @@
 package xerus.monstercat.downloader
 
+import javafx.animation.PauseTransition
 import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.collections.ObservableList
@@ -10,6 +11,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.util.Duration
 import javafx.util.StringConverter
 import kotlinx.coroutines.*
 import org.controlsfx.control.SegmentedButton
@@ -203,14 +205,15 @@ class TabDownloader : VTab() {
 		}
 		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles"))
 		
-		addRow(CheckBox("Exclude already downloaded Songs").tooltip("Only works if the Patterns and Folders are correctly set")
-			.also {
-				it.selectedProperty().listen { selected ->
+		addRow(CheckBox("Exclude already downloaded Songs")
+			.tooltip("Only works if the Patterns and Folders are correctly set")
+			.apply {
+				selectedProperty().listen { selected ->
 					songView.onReady {
 						GlobalScope.launch {
 							if(selected) {
-								songView.roots.forEach {
-									it.value.internalChildren.removeIf {
+								songView.roots.forEach { _, value ->
+									value.internalChildren.removeIf {
 										(it.value as Release).path().exists()
 									}
 								}
@@ -272,14 +275,19 @@ class TabDownloader : VTab() {
 			promptText = "connect.sid"
 			// todo better instructions
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
-			textProperty().bindBidirectional(CONNECTSID)
+			val textListener = textProperty().debounce(400) { text ->
+				CONNECTSID.set(text)
+			}
+			CONNECTSID.listen { textProperty().setWithoutListener(it, textListener) }
 			maxWidth = Double.MAX_VALUE
 		}.grow(), Button("Checking connection...").apply {
-			this.prefWidth = 200.0
+			prefWidth = 200.0
 			CONNECTSID.listen { text = "Checking connect.sid..." }
-			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY).addListener {
+			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
 				checkFx { refreshDownloadButton(this) }
 			}
+			if(APIConnection.connectValidity.value != ConnectValidity.NOCONNECTION)
+				refreshDownloadButton(this)
 		})
 	}
 	
@@ -291,9 +299,10 @@ class TabDownloader : VTab() {
 			ConnectValidity.NOUSER -> "Invalid connect.sid"
 			ConnectValidity.NOGOLD -> "No Gold subscription"
 			ConnectValidity.GOLD -> when {
-				!patternValid.value -> "Invalid pattern"
+				!songView.ready.value -> "Fetching Releases..."
+				!patternValid.value -> "Invalid name pattern"
 				QUALITY().isEmpty() -> "No format selected"
-				noItemsSelected.value -> "Nothing selected to download"
+				noItemsSelected.value -> "Nothing to download"
 				else -> {
 					valid = true
 					"Start Download"

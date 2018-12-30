@@ -12,10 +12,11 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicCookieStore
+import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
-import org.apache.http.pool.PoolStats
+import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
@@ -25,8 +26,13 @@ import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
 import java.io.InputStream
+import java.lang.ref.WeakReference
 import java.net.URI
 import kotlin.reflect.KClass
+import javafx.animation.PauseTransition
+import javafx.util.Duration
+import java.util.concurrent.TimeUnit
+
 
 private val logger = KotlinLogging.logger { }
 
@@ -99,10 +105,16 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
-		var httpClient = createHttpClient(CONNECTSID())
+		val maxConnections = 100 + Runtime.getRuntime().availableProcessors() * 50
+		private var httpClient = createHttpClient(CONNECTSID())
+		
+		val connectValidity = SimpleObservable(ConnectValidity.NOCONNECTION, true)
+		
+		private lateinit var connectionManager: PoolingHttpClientConnectionManager
 		
 		init {
-			CONNECTSID.listen { checkConnectsid(it) }.changed(null, null, CONNECTSID())
+			checkConnectsid(CONNECTSID())
+			CONNECTSID.listen { updateConnectsid(it) }
 		}
 		
 		fun connectWithCookie(httpGet: HttpGet): CloseableHttpResponse {
@@ -110,37 +122,60 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			return httpClient.execute(httpGet)
 		}
 		
-		fun createHttpClient(connectsid: String) = HttpClientBuilder.create()
-			.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).setConnectTimeout(10000).setSocketTimeout(10000).setConnectionRequestTimeout(10000).build())
-			.setDefaultCookieStore(BasicClientCookie("connect.sid", connectsid).run {
-				domain = "connect.monstercat.com"
-				path = "/"
-				BasicCookieStore().also { it.addCookie(this) }
-			})
-			.setConnectionManager(PoolingHttpClientConnectionManager().apply {
-				defaultMaxPerRoute = 500
-				maxTotal = 500
-				if(logger.isTraceEnabled)
-					GlobalScope.launch {
-						val manager = this@apply
-						val name = manager.javaClass.simpleName + "@" + manager.javaClass.hashCode()
-						var stats: PoolStats = manager.totalStats
-						while(true) {
-							val newstats = manager.totalStats
-							if(stats.leased != newstats.leased || stats.pending != newstats.pending) {
-								stats = this@apply.totalStats
-								logger.trace("$name: $stats")
-							}
-							delay(500)
-						}
-					}
-			})
-			.build()
+		private fun updateConnectsid(connectsid: String) {
+			val oldClient = httpClient
+			val manager = connectionManager
+			GlobalScope.launch {
+				while(manager.totalStats.leased > 0)
+					delay(200)
+				oldClient.close()
+			}
+			httpClient = createHttpClient(connectsid)
+			checkConnectsid(connectsid)
+		}
 		
-		val connectValidity = SimpleObservable(ConnectValidity.NOCONNECTION)
+		
+		private fun createHttpClient(connectsid: String): CloseableHttpClient {
+			return HttpClientBuilder.create()
+				.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+				.setDefaultCookieStore(BasicClientCookie("connect.sid", connectsid).run {
+					domain = "connect.monstercat.com"
+					path = "/"
+					BasicCookieStore().also { it.addCookie(this) }
+				})
+				.setConnectionManager(createConnectionManager())
+				.build()
+		}
+		
+		private fun createConnectionManager(): PoolingHttpClientConnectionManager {
+			connectionManager = PoolingHttpClientConnectionManager(10, TimeUnit.SECONDS).apply {
+				defaultMaxPerRoute = maxConnections
+				maxTotal = maxConnections
+			}
+			// trace ConnectionManager stats
+			if(logger.isTraceEnabled)
+				GlobalScope.launch {
+					val name = connectionManager.javaClass.simpleName + "@" + connectionManager.hashCode()
+					var stats = connectionManager.totalStats
+					val managerWeak = WeakReference(connectionManager)
+					while(!managerWeak.isEmpty()) {
+						val newStats = managerWeak.get()?.totalStats ?: break
+						if(stats.leased != newStats.leased || stats.pending != newStats.pending || stats.available != newStats.available) {
+							logger.trace("$name: $newStats")
+							stats = newStats
+						}
+						delay(500)
+					}
+				}
+			return connectionManager
+		}
 		
 		private var lastResult: ConnectResult? = null
 		private fun checkConnectsid(connectsid: String) {
+			if(connectsid.isBlank()) {
+				connectValidity.value = ConnectValidity.NOUSER
+				return
+			}
 			if(lastResult?.connectsid != connectsid) {
 				GlobalScope.launch {
 					val result = getConnectValidity(connectsid)
@@ -155,7 +190,6 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		}
 		
 		private fun getConnectValidity(connectsid: String): ConnectResult {
-			httpClient = createHttpClient(connectsid)
 			val session = APIConnection("self", "session").parseJSON(Session::class.java)
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION

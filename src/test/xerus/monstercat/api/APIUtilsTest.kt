@@ -8,8 +8,9 @@ internal class APIUtilsTest {
 	
 	@Test
 	suspend fun find() {
-		check(APIUtils.find("Edge Of The World", "Razihel & Xilent")!!.artists, Artist("Razihel")) { v, e -> v.contains(e) }
-		check(APIUtils.find("Edge Of The World", "Karma Fields")!!.artistsTitle, "Karma Fields")
+		val edge = APIUtils.find("Edge Of The World", "Karma Fields")!!
+		check(edge.artists, Artist("Razihel")) { v, e -> v.contains(e) }
+		check(edge.artistsTitle, "Karma Fields")
 	}
 	
 	fun <T, U> check(value: T, expected: U, test: (T, U) -> Boolean = { v, e -> v == e }) {
