@@ -48,7 +48,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 		}
 	}
 	private val treeCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
-		val loadingGif = ImageView(Image(getResourceAsFile("img/loading-16.gif")!!.inputStream()))
+		val loadingGif = ImageView(Image("img/loading-16.gif"))
 		object : TreeCell<MusicItem>() {
 			init {
 				treeItemProperty().listen {
