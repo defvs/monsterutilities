@@ -177,7 +177,7 @@ class TabDownloader : VTab() {
 		QUALITY.listen { buttons.forEach { button -> button.isSelected = button.userData == it } }
 		
 		// Misc options
-		addLabeled("Keep separate cover arts for ", createComboBox(DOWNLOADCOVERS))
+		addLabeled("Download separate cover arts for ", createComboBox(DOWNLOADCOVERS))
 		addLabeled("Album Mixes", createComboBox(ALBUMMIXES))
 		
 		addLabeled("Cover art size", Spinner(object : SpinnerValueFactory<Int>() {
@@ -271,7 +271,7 @@ class TabDownloader : VTab() {
 			}
 		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
 		
-		addRow(TextField().apply {
+		addRow(TextField(CONNECTSID()).apply {
 			promptText = "connect.sid"
 			// todo better instructions
 			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")

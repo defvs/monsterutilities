@@ -15,7 +15,8 @@ import java.io.InputStream
 import java.nio.file.Path
 
 fun getCover(coverUrl: String, size: Int? = null) =
-	HttpClientBuilder.create().build().execute(HttpGet(coverUrl + size?.let { "?image_width=$it" }.orEmpty())).entity.content
+	HttpClientBuilder.create().build().execute(HttpGet(
+		coverUrl.replace("[", "%5B").replace("]", "%5D") + size?.let { "?image_width=$it" }.orEmpty())).entity.content
 
 fun Release.folder(): Path = basePath.resolve(when {
 	isMulti -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
@@ -55,6 +56,7 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		private set
 	
 	private var connection: APIConnection? = null
+	@Suppress("UnstableApiUsage")
 	private lateinit var inputStream: CountingInputStream
 	
 	protected fun <T : InputStream> createConnection(releaseId: String, streamConverter: (InputStream) -> T, vararg queries: String): T {
