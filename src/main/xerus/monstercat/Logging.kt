@@ -17,10 +17,14 @@ import org.slf4j.LoggerFactory
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.getStackTraceString
 import java.io.File
+import java.util.*
 
 private val logDir: File
 	get() = cacheDir.resolve("logs").apply { mkdirs() }
-private val logFile = logDir.resolve("log${currentSeconds()}.txt")
+private fun Int.padDate() = toString().padStart(2, '0')
+private val logFile = logDir.resolve("log_${Calendar.getInstance().let {
+	"${(it.get(Calendar.MONTH) + 1).padDate()}-${it.get(Calendar.DAY_OF_MONTH).padDate()}-${it.get(Calendar.HOUR_OF_DAY).padDate()}"
+}}_${currentSeconds()}.txt")
 private var logLevel: Level = Level.WARN
 
 internal fun initLogging(args: Array<String>) {
@@ -38,14 +42,12 @@ internal fun initLogging(args: Array<String>) {
 	logger.info("Logging to $logFile")
 	GlobalScope.launch {
 		val logs = logDir.listFiles()
-		if (logs.size > 10) {
+		if(logs.size > 10) {
 			logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
-				val timestamp = it.nameWithoutExtension.substring(3).toIntOrNull()
-					?: return@filter true
-				timestamp + 200_000 < currentSeconds()
+				it.lastModified() + 50 * 360_000 < System.currentTimeMillis()
 			}.also {
 				val count = it.count()
-				if (count > 0)
+				if(count > 0)
 					logger.debug("Deleting $count old logs")
 			}.forEach { it.delete() }
 		}
@@ -82,7 +84,7 @@ internal class LogbackConfigurator : ContextAwareBase(), Configurator {
 		}
 		
 		val rootLogger = lc.getLogger(Logger.ROOT_LOGGER_NAME)
-		if (logLevel.levelInt < Level.DEBUG_INT)
+		if(logLevel.levelInt < Level.DEBUG_INT)
 			rootLogger.level = logLevel
 		rootLogger.addAppender(consoleAppender)
 		rootLogger.addAppender(fileAppender)

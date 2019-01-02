@@ -29,6 +29,8 @@ import xerus.monstercat.downloader.DownloaderSettings
 import xerus.monstercat.monsterUtilities
 import java.io.FileInputStream
 import java.io.PrintStream
+import java.nio.file.attribute.FileTime
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -146,30 +148,28 @@ class TabSettings : VTab() {
 		dialog.show()
 		dialog.resultProperty().listen { result ->
 			logger.trace { "Submitting: $result" }
-			result?.run {
-				sendFeedback(subject, message)
-			}
+			result?.let { sendFeedback(it) }
 		}
 	}
 	
 	/** @return false if it should be retried */
-	private fun sendFeedback(subject: String, message: String) {
+	private fun sendFeedback(feedback: Feedback) {
 		val zipFile = cacheDir.resolve("report.zip")
 		System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
 		val files = cacheDir.walk()
 		ZipOutputStream(zipFile.outputStream()).use { zip ->
-			files.filter { it.isFile && it != zipFile }.forEach {
-				zip.putNextEntry(ZipEntry(it.toString().removePrefix(cacheDir.toString())))
-				FileInputStream(it).use {
-					it.copyTo(zip)
-				}
+			files.filter { it.isFile && it != zipFile }.forEach { file ->
+				zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
+					this.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
+				})
+				file.inputStream().use { it.copyTo(zip) }
 			}
 		}
-		logger.info("Sending feedback '$subject' with a packed size of ${zipFile.length().byteCountString()}")
+		logger.info("Sending feedback '${feedback.subject}' with a packed size of ${zipFile.length().byteCountString()}")
 		val entity = MultipartEntityBuilder.create()
 			.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
-			.addTextBody("subject", subject)
-			.addTextBody("message", message)
+			.addTextBody("subject", feedback.subject)
+			.addTextBody("message", feedback.message)
 			.addBinaryBody("log", zipFile)
 			.build()
 		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
@@ -187,7 +187,7 @@ class TabSettings : VTab() {
 				resultProperty().listen {
 					when(it) {
 						retry -> onFx { dialog.show() }
-						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
+						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, feedback.message)))
 					}
 				}
 				show()
