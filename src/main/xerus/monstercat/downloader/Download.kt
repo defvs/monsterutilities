@@ -139,8 +139,13 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		}
 		
 		if(!isCancelled && partFolder.exists()) {
+			// this has not been downloaded to the root, thus delete the original folder if it exists and move the part-folder to it
 			folder.toFile().deleteRecursively()
-			partFolder.renameTo(folder)
+			try {
+				partFolder.renameTo(folder)
+			} catch(e: Exception) {
+				logger.debug("Couldn't rename $partFolder to $folder as Paths: $e\nUsing File: " + partFolder.toFile().renameTo(folder.toFile()))
+			}
 		}
 	}
 	

@@ -141,7 +141,7 @@ class TabDownloader : VTab() {
 			}
 		
 		val patternPane = gridPane()
-		patternPane.add(Label("Singles pattern"),
+		patternPane.add(Label("Single pattern"),
 			0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
 			1, 0)
@@ -152,7 +152,7 @@ class TabDownloader : VTab() {
 				artists = listOf(Artist("Pegboard Nerds"), Artist("Excision"))
 			}),
 			1, 1)
-		patternPane.add(Label("Album Tracks pattern"),
+		patternPane.add(Label("Collection Track pattern"),
 			0, 2, 1, 2)
 		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 			1, 2)
@@ -195,7 +195,7 @@ class TabDownloader : VTab() {
 				for(i in 0 until steps)
 					value /= 2
 			}
-		}))
+		})).children.addAll(Label("Cover naming pattern"), TextField().bindText(COVERPATTERN))
 		
 		val epAsSingle = CheckBox("Treat Collections with less than")
 		epAsSingle.isSelected = EPS_TO_SINGLES() > 0

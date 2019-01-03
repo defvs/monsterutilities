@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
 	val logger = KotlinLogging.logger {}
 	logger.debug("Commandline arguments: ${args.joinToString(", ", "[", "]")}")
 	
-	if (!SystemUtils.javaVersion.startsWith("1.8")) {
+	if(!SystemUtils.javaVersion.startsWith("1.8")) {
 		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }
 		return
 	}
@@ -66,7 +66,7 @@ fun main(args: Array<String>) {
 fun showErrorSafe(error: Throwable, title: String = "Error") {
 	GlobalScope.launch {
 		var i = 0
-		while (i < 100 && !::monsterUtilities.isInitialized) {
+		while(i < 100 && !::monsterUtilities.isInitialized) {
 			delay(200)
 			i++
 		}
