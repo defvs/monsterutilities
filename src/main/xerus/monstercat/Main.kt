@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import mu.KotlinLogging
 import xerus.ktutil.SystemUtils
 import xerus.ktutil.getResource
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.ui.SimpleFrame
 import java.io.File
@@ -63,13 +64,18 @@ fun main(args: Array<String>) {
 	logger.info("Main has shut down!")
 }
 
-fun showErrorSafe(error: Throwable, title: String = "Error") {
+fun showErrorSafe(error: Throwable, title: String = "Error") = doWhenReady { showError(error, title) }
+
+fun doWhenReady(action: MonsterUtilities.() -> Unit) {
 	GlobalScope.launch {
 		var i = 0
 		while(i < 100 && !::monsterUtilities.isInitialized) {
 			delay(200)
 			i++
 		}
-		monsterUtilities.showError(error, title)
+		onFx {
+			action(monsterUtilities)
+		}
 	}
 }
+

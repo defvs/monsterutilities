@@ -9,6 +9,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.ConsoleAppender
 import ch.qos.logback.core.FileAppender
 import ch.qos.logback.core.spi.ContextAwareBase
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -16,11 +18,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.getStackTraceString
+import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.replaceIllegalFileChars
+import xerus.monstercat.tabs.TabSettings
 import java.io.File
 import java.util.*
 
 private val logDir: File
 	get() = cacheDir.resolve("logs").apply { mkdirs() }
+
 private fun Int.padDate() = toString().padStart(2, '0')
 private val logFile = logDir.resolve("log_${Calendar.getInstance().let {
 	"${(it.get(Calendar.MONTH) + 1).padDate()}-${it.get(Calendar.DAY_OF_MONTH).padDate()}-${it.get(Calendar.HOUR_OF_DAY).padDate()}"
@@ -34,8 +40,36 @@ internal fun initLogging(args: Array<String>) {
 			return@let
 		}
 	}
-	Thread.setDefaultUncaughtExceptionHandler { thread, ex ->
-		LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).warn("Uncaught exception in $thread: ${ex.getStackTraceString()}")
+	var lastPrompt = 0
+	var agreed = false
+	Thread.setDefaultUncaughtExceptionHandler { thread, e ->
+		val trace = "$thread: ${e.getStackTraceString()}"
+		LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).warn("Uncaught exception in $trace")
+		fun send() = GlobalScope.launch {
+			TabSettings.sendFeedback(TabSettings.Companion.Feedback("automated report of ${e.javaClass.name.replaceIllegalFileChars()}",
+				"Automated log report for uncaught exception in $trace"))
+		}
+		if(agreed) {
+			send()
+		} else if(lastPrompt + 10 < currentSeconds()) {
+			lastPrompt = Int.MAX_VALUE
+			doWhenReady {
+				showAlert(Alert.AlertType.WARNING, "Internal Error", "An Internal Error has occured: $e",
+					"Please let me submit your logs for debugging purposes. Thanks :)", ButtonType.YES, ButtonType.NO, ButtonType("Do not ask me again this session")).resultProperty().listen {
+					agreed = false
+					when(it) {
+						ButtonType.YES -> {
+							agreed = true
+							send()
+						}
+						ButtonType.NO -> {
+						}
+						else -> return@listen
+					}
+					lastPrompt = currentSeconds()
+				}
+			}
+		}
 	}
 	val logger = KotlinLogging.logger { }
 	logger.info("Console loglevel: $logLevel")

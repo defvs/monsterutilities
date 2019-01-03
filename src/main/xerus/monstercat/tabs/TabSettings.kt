@@ -12,9 +12,13 @@ import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
+import mu.KLogger
+import mu.KLogging
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
 import xerus.ktutil.byteCountString
@@ -107,9 +111,8 @@ class TabSettings : VTab() {
 		)
 	}
 	
-	lateinit var dialog: Dialog<Feedback>
 	fun feedback() {
-		dialog = Dialog<Feedback>().apply {
+		val dialog = Dialog<Feedback>().apply {
 			(dialogPane.scene.window as Stage).initWindowOwner(App.stage)
 			val send = ButtonType("Send", ButtonBar.ButtonData.YES)
 			dialogPane.buttonTypes.addAll(send, ButtonType.CANCEL)
@@ -148,53 +151,57 @@ class TabSettings : VTab() {
 		dialog.show()
 		dialog.resultProperty().listen { result ->
 			logger.trace { "Submitting: $result" }
-			result?.let { sendFeedback(it) }
-		}
-	}
-	
-	/** @return false if it should be retried */
-	private fun sendFeedback(feedback: Feedback) {
-		val zipFile = cacheDir.resolve("report.zip")
-		System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
-		val files = cacheDir.walk()
-		ZipOutputStream(zipFile.outputStream()).use { zip ->
-			files.filter { it.isFile && it != zipFile }.forEach { file ->
-				zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
-					this.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
-				})
-				file.inputStream().use { it.copyTo(zip) }
-			}
-		}
-		logger.info("Sending feedback '${feedback.subject}' with a packed size of ${zipFile.length().byteCountString()}")
-		val entity = MultipartEntityBuilder.create()
-			.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
-			.addTextBody("subject", feedback.subject)
-			.addTextBody("message", feedback.message)
-			.addBinaryBody("log", zipFile)
-			.build()
-		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
-		postRequest.entity = entity
-		val response = HttpClientBuilder.create().build().execute(postRequest)
-		val status = response.statusLine
-		logger.debug("Feedback Response: $status")
-		if(status.statusCode == 200) {
-			monsterUtilities.showMessage("Your feedback was submitted successfully!")
-		} else {
-			val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
-			val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
-			App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
-				buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
-				resultProperty().listen {
-					when(it) {
-						retry -> onFx { dialog.show() }
-						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, feedback.message)))
+			result?.let { feedback ->
+				val response = sendFeedback(feedback)
+				val status = response.statusLine
+				logger.debug("Feedback Response: $status")
+				if(status.statusCode == 200) {
+					monsterUtilities.showMessage("Your feedback was submitted successfully!")
+				} else {
+					val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
+					val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
+					App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
+						buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
+						resultProperty().listen {
+							when(it) {
+								retry -> onFx { dialog.show() }
+								copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, feedback.message)))
+							}
+						}
+						show()
 					}
 				}
-				show()
 			}
 		}
 	}
 	
-	data class Feedback(val subject: String, val message: String)
+	companion object: KLogging() {
+		
+		fun sendFeedback(feedback: Feedback): CloseableHttpResponse {
+			val zipFile = cacheDir.resolve("report.zip")
+			System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
+			val files = cacheDir.walk()
+			ZipOutputStream(zipFile.outputStream()).use { zip ->
+				files.filter { it.isFile && it != zipFile }.forEach { file ->
+					zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
+						this.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
+					})
+					file.inputStream().use { it.copyTo(zip) }
+				}
+			}
+			logger.info("Sending feedback '${feedback.subject}' with a packed size of ${zipFile.length().byteCountString()}")
+			val entity = MultipartEntityBuilder.create()
+				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+				.addTextBody("subject", feedback.subject)
+				.addTextBody("message", feedback.message)
+				.addBinaryBody("log", zipFile)
+				.build()
+			val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
+			postRequest.entity = entity
+			return HttpClientBuilder.create().build().execute(postRequest)
+		}
+		
+		data class Feedback(val subject: String, val message: String)
+	}
 	
 }

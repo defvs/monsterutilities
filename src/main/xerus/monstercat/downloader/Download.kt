@@ -71,9 +71,9 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Unit>(
 		return input
 	}
 	
-	override fun failed() = abort()
+	override fun failed() = closeConnection()
 	
-	protected fun abort() {
+	protected fun closeConnection() {
 		connection?.abort()
 	}
 	
@@ -124,22 +124,27 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 				when(ALBUMMIXES()) {
 					AlbumMixes.SEPARATE -> filename = basePath.resolve("Mixes").createDirs().resolve(track.toFileName().addFormatSuffix())
 					AlbumMixes.EXCLUDE -> continue@tr
-					else -> {}
+					else -> {
+					}
 				}
 			createConnection(release.id, { it }, "track=" + track.id)
 			downloadFile(filename)
-			abort()
+			closeConnection()
 			if(isCancelled)
 				break@tr
 			downloadedTracks++
 		}
 		if(downloadedTracks > 0 && (DOWNLOADCOVERS() == DownloadCovers.ALL || DOWNLOADCOVERS() == DownloadCovers.COLLECTIONS && release.isMulti && !toSingle)) {
 			updateMessage("Cover")
-			getCover(release.coverUrl, COVERARTSIZE()).copyTo(downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.split(".").last()).toFile().outputStream())
+			downloadFolder.resolve(release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.substringAfterLast('.'))
+				.toFile().outputStream().use { out ->
+					getCover(release.coverUrl, COVERARTSIZE()).use { it.copyTo(out) }
+				}
+			
 		}
 		
 		if(!isCancelled && partFolder.exists()) {
-			// this has not been downloaded to the root, thus delete the original folder if it exists and move the part-folder to it
+			// this Release has not been downloaded to the root, thus delete the original subfolder if it exists and move the part-folder to it
 			folder.toFile().deleteRecursively()
 			try {
 				partFolder.renameTo(folder)

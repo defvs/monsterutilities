@@ -205,7 +205,7 @@ class TabDownloader : VTab() {
 		}
 		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles"))
 		
-		addRow(CheckBox("Exclude already downloaded Songs")
+		addRow(CheckBox("Exclude already downloaded Songs (WIP)")
 			.tooltip("Only works if the Patterns and Folders are correctly set")
 			.apply {
 				selectedProperty().listen { selected ->

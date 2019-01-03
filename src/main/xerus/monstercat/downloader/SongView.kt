@@ -9,7 +9,6 @@ import javafx.util.Callback
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import xerus.ktutil.getResourceAsFile
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
@@ -125,8 +124,11 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 		val releases = Cache.getReleases()
 		releases.forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
-			if(!release.downloadable)
+			if(!release.downloadable) {
+				if(notDownloadable < 5)
+					logger.trace("Not downloadable: $release")
 				notDownloadable++
+			}
 			roots.getOrPut(release.type) {
 				FilterableTreeItem(RootMusicItem(release.type))
 			}.internalChildren.add(treeItem)
