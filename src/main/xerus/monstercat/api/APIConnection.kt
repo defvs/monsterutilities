@@ -29,8 +29,6 @@ import java.io.InputStream
 import java.lang.ref.WeakReference
 import java.net.URI
 import kotlin.reflect.KClass
-import javafx.animation.PauseTransition
-import javafx.util.Duration
 import java.util.concurrent.TimeUnit
 
 
@@ -83,7 +81,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		response = connectWithCookie(httpGet!!)
+		response = execute(httpGet!!)
 	}
 	
 	private var response: HttpResponse? = null
@@ -117,7 +115,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			CONNECTSID.listen { updateConnectsid(it) }
 		}
 		
-		fun connectWithCookie(httpGet: HttpGet): CloseableHttpResponse {
+		fun execute(httpGet: HttpGet): CloseableHttpResponse {
 			logger.trace { "Connecting to ${httpGet.uri}" }
 			return httpClient.execute(httpGet)
 		}

@@ -22,8 +22,6 @@ open class Track : MusicItem() {
 	var artists: List<Artist> = emptyList()
 	@Key
 	var bpm: Double? = null
-	@Key
-	var duration: Double? = null
 	
 	var titleClean: String = ""
 	var remix: String = ""
@@ -36,16 +34,15 @@ open class Track : MusicItem() {
 	val streamHash: String?
 		get() = albums.find { it.streamHash.isNotEmpty() }?.streamHash
 	
-	open fun toFileName() =
-		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
-	
 	open fun init() {
 		if (titleClean.isNotEmpty())
 			return
 		artistsTitle = formatArtists(artistsTitle)
 		if(artists.isEmpty() && artistsTitle.isNotEmpty())
 			artists = artistsTitle.splitArtists()
+		artists = artists.distinct()
 		val split = title.splitTitle()
+		// TODO braces in title (e.g. "I (still) dream of You")
 		titleClean = split[0]
 		if (split.size > 1)
 			split.subList(1, split.lastIndex).forEach {
@@ -56,6 +53,9 @@ open class Track : MusicItem() {
 				}
 			}
 	}
+	
+	val isAlbumMix
+		get() = title.contains("Album Mix")
 	
 	override fun toString(pattern: String): String {
 		init()

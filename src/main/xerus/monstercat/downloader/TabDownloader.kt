@@ -1,6 +1,5 @@
 package xerus.monstercat.downloader
 
-import javafx.animation.PauseTransition
 import javafx.beans.Observable
 import javafx.beans.property.Property
 import javafx.collections.ObservableList
@@ -11,13 +10,13 @@ import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.stage.Stage
 import javafx.stage.StageStyle
-import javafx.util.Duration
 import javafx.util.StringConverter
 import kotlinx.coroutines.*
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
 import xerus.ktutil.*
 import xerus.ktutil.collections.CacheMap
+import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.helpers.Timer
 import xerus.ktutil.javafx.*
@@ -37,7 +36,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
-import kotlin.math.roundToLong
+import kotlin.math.absoluteValue
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
@@ -141,7 +140,7 @@ class TabDownloader : VTab() {
 			}
 		
 		val patternPane = gridPane()
-		patternPane.add(Label("Single pattern"),
+		patternPane.add(Label("Single Track pattern"),
 			0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
 			1, 0)
@@ -198,32 +197,44 @@ class TabDownloader : VTab() {
 		})).children.addAll(Label("Cover naming pattern"), TextField().bindText(COVERPATTERN))
 		
 		val epAsSingle = CheckBox("Treat Collections with less than")
-		epAsSingle.isSelected = EPS_TO_SINGLES() > 0
-		val epAsSingleAmount = intSpinner(2, 20, EPS_TO_SINGLES().takeIf { it != 0 } ?: 4)
+		epAsSingle.isSelected = EPSTOSINGLES() > 0
+		val epAsSingleAmount = intSpinner(2, 20, EPSTOSINGLES().takeIf { it != 0 } ?: 3)
 		arrayOf(epAsSingle.selectedProperty(), epAsSingleAmount.valueProperty()).addListener {
-			EPS_TO_SINGLES.set(if(epAsSingle.isSelected) epAsSingleAmount.value else 0)
+			EPSTOSINGLES.set(if(epAsSingle.isSelected) epAsSingleAmount.value else 0)
 		}
 		addRow(epAsSingle, epAsSingleAmount, Label(" Songs as Singles"))
 		
-		addRow(CheckBox("Exclude already downloaded Songs (WIP)")
+		addRow(CheckBox("Exclude already downloaded Releases")
 			.tooltip("Only works if the Patterns and Folders are correctly set")
 			.apply {
 				selectedProperty().listen { selected ->
+					logger.debug("Exclude already downloaded Releases: $selected")
 					songView.onReady {
-						GlobalScope.launch {
-							if(selected) {
+						if(selected) {
+							GlobalScope.launch {
+								var removed = 0
 								songView.roots.forEach { _, value ->
 									value.internalChildren.removeIf {
-										(it.value as Release).path().exists()
+										val result = (it.value as Release).run {
+											val folder = downloadFolder()
+											if(!folder.exists())
+												return@run false
+											tracks.all { track ->
+												(track.isAlbumMix && ALBUMMIXES() != AlbumMixes.KEEP) ||
+													folder.resolve(track.toFileName().addFormatSuffix()).exists()
+											}
+										}
+										if(result) {
+											removed++
+											logger.trace { "Excluded ${it.value}" }
+										}
+										result
 									}
 								}
-							} else {
-								songView.root.internalChildren.clear()
-								songView.roots.clear()
-								launch {
-									songView.load()
-								}
+								logger.debug("Removed $removed already downloaded Releases")
 							}
+						} else {
+							songView.load()
 						}
 					}
 				}
@@ -239,7 +250,7 @@ class TabDownloader : VTab() {
 					val selectedTracks = selectedAlbums.flatMapTo(ArrayList()) { it.value.tracks }
 					val filtered = selectedAlbums.filter {
 						val releaseTracks = (it.value as Release).tracks
-						if(releaseTracks.all { (selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it)).printIt(it) }) {
+						if(releaseTracks.all { (selectedTracks.indexOf(it) != selectedTracks.lastIndexOf(it)) }) {
 							it.isSelected = false
 							val tracks = ArrayList(releaseTracks)
 							selectedTracks.removeIf { track -> (track in tracks).also { bool -> if(bool) tracks.remove(track) } }
@@ -247,14 +258,19 @@ class TabDownloader : VTab() {
 						}
 						false
 					}
-					logger.trace { "Filtered out $filtered" }
+					logger.trace { "Filtered out Collections in Smart Select: $filtered" }
 					songView.getItemsInCategory(Release.Type.SINGLE).filter {
 						val tracks = it.value.tracks
 						if(tracks.size == 1) {
-							it.isSelected = true
-							selectedTracks.add(tracks.first())
+							// an actual single, check it directly
+							val track = tracks.first()
+							if(!selectedTracks.contains(track)) {
+								it.isSelected = true
+								selectedTracks.add(track)
+							}
 							return@filter false
 						} else {
+							// has multiple tracks, check with collections
 							return@filter true
 						}
 					}.plus(songView.getItemsInCategory(Release.Type.MCOLLECTION)).forEach {
@@ -322,8 +338,7 @@ class TabDownloader : VTab() {
 		
 		private val timer = Timer()
 		private val log = LogTextArea()
-		private val items: Map<Release, Collection<Track>?>
-		private var total: Int
+		private val items: Map<Release, Collection<Track>>
 		
 		private lateinit var downloader: Job
 		private lateinit var tasks: ObservableList<Download>
@@ -334,16 +349,20 @@ class TabDownloader : VTab() {
 				val item = it as FilterableTreeItem
 				item.isSelected || item.internalChildren.any { (it as CheckBoxTreeItem).isSelected }
 			}.associate {
-				(it.value as Release) to (it as FilterableTreeItem<MusicItem>).internalChildren.takeUnless { it.isEmpty() }
-					?.filter { (it as CheckBoxTreeItem).isSelected }?.map { it.value as Track }
+				val release = (it.value as Release)
+				release to ((it as FilterableTreeItem<MusicItem>).internalChildren.takeUnless { it.isEmpty() }
+					?.filter { (it as CheckBoxTreeItem).isSelected }?.map { it.value as Track } ?: release.tracks)
 			}
-			logger.info("Starting Downloader for ${items.size} Releases")
-			total = items.size
 			onFx {
 				buildUI()
 				startDownload()
 			}
 		}
+		
+		private var tracksLeft = items.values.sumBy { it.size }
+		private val state = DownloaderState(items.size)
+		/** Stores the average time it took to download a track for each Release */
+		private val times = ArrayList<Long>(items.size)
 		
 		private fun buildUI() {
 			children.clear()
@@ -354,33 +373,34 @@ class TabDownloader : VTab() {
 			}
 			add(cancelButton.allowExpand(vertical = false))
 			
-			addLabeled("Download Threads", intSpinner(0, 5) syncTo DOWNLOADTHREADS)
-			val progressLabel = Label("0 / $total Errors: 0")
+			addLabeled("Download Threads", intSpinner(0, 5) syncWith DOWNLOADTHREADS)
+			val progressLabel = Label("0 / ${state.total} Errors: 0")
 			val progressBar = ProgressBar()
 			add(StackPane(progressBar.allowExpand(vertical = false), progressLabel))
 			add(log)
 			var counter: Job? = null
-			var time = 0L
+			var timeLeft = 0L
 			state.listen {
 				counter?.cancel()
 				val s = state.success
 				val e = state.errors
 				val done = s + e
-				val estimatedLength = total * lengths.mapIndexed { index, element -> element * Math.pow(1.6, index.toDouble()) }.sum() / lengths.size.downTo(1).sum()
-				progressBar.progress = done / total.toDouble()
-				if(done == total)
-					progressLabel.text = "$done / $total Errors: $e"
+				progressBar.progress = done / state.total.toDouble()
+				
+				if(done == state.total)
+					progressLabel.text = "$done / ${state.total} Errors: $e"
 				else
 					counter = GlobalScope.launch {
-						val estimate = ((estimatedLength / lengths.sum().coerceAtLeast(1.0) + total / done - 2) * timer.time() / 1000).roundToLong()
-						time = if(time > 0) (time * 9 + estimate) / 10 else estimate
-						logger.trace("Estimate: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))} Weighed: ${formatTimeDynamic(time, time.coerceAtLeast(60))}")
-						while(time > 0) {
+						val estimate = (tracksLeft * times.average()).toLong() / 1000 / DOWNLOADTHREADS()
+						// do not adjust if difference smaller than 8%
+						timeLeft = if(timeLeft > 0 && (estimate.toDouble() / timeLeft - 1).absoluteValue < 0.08) timeLeft else estimate
+						logger.trace("Estimated time left for $tracksLeft tracks: ${formatTimeDynamic(estimate, estimate.coerceAtLeast(60))}")
+						while(timeLeft > 0) {
 							onFx {
-								progressLabel.text = "$done / $total Errors: $e - Estimated time left: " + formatTimeDynamic(time, time.coerceAtLeast(60))
+								progressLabel.text = "$done / ${state.total} Errors: $e - Estimated time left: " + formatTimeDynamic(timeLeft, timeLeft.coerceAtLeast(60))
 							}
 							delay(TimeUnit.SECONDS.toMillis(1))
-							time--
+							timeLeft--
 						}
 					}
 			}
@@ -389,7 +409,7 @@ class TabDownloader : VTab() {
 			val thumbnailCache = CacheMap<String, Image>()
 			taskView.setGraphicFactory {
 				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
-					Image(getCover(it, 64))
+					Image(getCover(it, 64).content)
 				})
 			}
 			tasks = taskView.tasks
@@ -405,24 +425,28 @@ class TabDownloader : VTab() {
 			fill(taskView)
 		}
 		
-		private val lengths = ArrayList<Double>(items.size)
-		private val state = DownloaderState(total)
 		private fun startDownload() {
+			logger.info("Starting Downloader for ${items.size} Releases with $tracksLeft Tracks")
 			downloader = GlobalScope.launch {
 				log("Download started")
 				var queued = 0
 				for(item in items) {
-					val download = ReleaseDownload(item.key, item.value)
+					val download: Download = ReleaseDownload(item.key, item.value)
+					val tracks = item.value.size
+					download.progressProperty()
 					download.setOnCancelled {
-						total--
+						tracksLeft -= tracks
+						state.cancelled()
 						log("Cancelled ${item.key}")
 					}
 					download.setOnSucceeded {
-						lengths.add(download.length.toDouble() / 10000)
+						tracksLeft -= tracks
+						times.add(download.get() / tracks)
 						state.success()
 						log("Downloaded ${item.key}")
 					}
 					download.setOnFailed {
+						tracksLeft -= tracks
 						val exception = download.exception
 						state.error(exception)
 						logger.error("$download failed with $exception", exception)
@@ -451,7 +475,7 @@ class TabDownloader : VTab() {
 	
 }
 
-inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T : Enum<T>, T : namedEnum = ComboBox<T>(ImmutableObservableList(*enumValues<T>())).apply {
+inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T : Enum<T>, T : Named = ComboBox<T>(ImmutableObservableList(*enumValues<T>())).apply {
 	converter = object : StringConverter<T>() {
 		val values = enumValues<T>().associateBy { it.displayName }
 		override fun toString(`object`: T) = `object`.displayName

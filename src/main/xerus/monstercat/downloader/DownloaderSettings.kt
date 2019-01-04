@@ -1,5 +1,6 @@
 package xerus.monstercat.downloader
 
+import xerus.ktutil.helpers.Named
 import xerus.ktutil.preferences.SettingsNode
 import xerus.monstercat.api.response.Release
 import java.nio.file.Paths
@@ -8,7 +9,7 @@ object DownloaderSettings : SettingsNode("xerus/monsterutilities/downloader")
 
 val SONGSORTING = DownloaderSettings.create("songViewReleaseSorting", ReleaseSorting.DATE)
 
-enum class ReleaseSorting(val selector: (Release) -> String) : namedEnum {
+enum class ReleaseSorting(val selector: (Release) -> String) : Named {
 	DATE(Release::releaseDate),
 	TITLE(Release::title),
 	ARTIST(Release::renderedArtists),
@@ -26,10 +27,10 @@ val DOWNLOADDIRMIXES = DownloaderSettings.create("directoryMixes", "Mixes")
 val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatterns[0])
 val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", albumTrackPatterns[0])
 
-val EPS_TO_SINGLES = DownloaderSettings.create("epsAsSingles", 0)
+val EPSTOSINGLES = DownloaderSettings.create("epsAsSingles", 0)
 val DOWNLOADCOVERS = DownloaderSettings.create("coverDownload", DownloadCovers.COLLECTIONS)
 
-enum class DownloadCovers(override val displayName: String) : namedEnum {
+enum class DownloadCovers(override val displayName: String) : Named {
 	NONE("Nothing"),
 	COLLECTIONS("Collections"),
 	ALL("Collections & Singles")
@@ -37,7 +38,7 @@ enum class DownloadCovers(override val displayName: String) : namedEnum {
 
 val ALBUMMIXES = DownloaderSettings.create("albummixes", AlbumMixes.KEEP)
 
-enum class AlbumMixes(override val displayName: String) : namedEnum {
+enum class AlbumMixes(override val displayName: String) : Named {
 	KEEP("Keep"),
 	SEPARATE("Separate"),
 	EXCLUDE("Exclude")
@@ -53,7 +54,3 @@ val CONNECTSID = DownloaderSettings.create("connect.sid")
 val DOWNLOADTHREADS = DownloaderSettings.create("threads", Runtime.getRuntime().availableProcessors().minus(1).coerceIn(2, 4))
 
 val LASTDOWNLOADTIME = DownloaderSettings.create("lastdownloadtime", 0)
-
-interface namedEnum {
-	val displayName: String
-}

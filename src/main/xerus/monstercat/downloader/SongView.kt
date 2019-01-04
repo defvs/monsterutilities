@@ -79,9 +79,16 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				MenuItem("Collapse all") { expandAll(false) })
 		}
 		contextMenu = ContextMenu(*defaultItems())
+		onReady {
+			APIConnection.connectValidity.addListener { _, old, new ->
+				if(old != new && new == ConnectValidity.GOLD)
+					load()
+			}
+		}
 		load()
 	}
 	
+	/** Asynchronously fetches the Releases and updates the View when done */
 	fun load() {
 		ready.value = false
 		GlobalScope.launch {
@@ -92,10 +99,6 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				root.internalChildren.setAll(roots.values)
 				logger.debug("Completely loaded with ${roots.keys} displaying ${root.children.sumBy { r -> r.children.sumBy { t -> max(1, t.children.size) } }} items")
 				ready.value = true
-			}
-			APIConnection.connectValidity.addListener { _, old, new ->
-				if(old != new && new == ConnectValidity.GOLD)
-					load()
 			}
 		}
 	}
