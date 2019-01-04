@@ -23,6 +23,7 @@ import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.tabs.TabSettings
 import java.io.File
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 private val logDir: File
 	get() = cacheDir.resolve("logs").apply { mkdirs() }
@@ -40,37 +41,41 @@ internal fun initLogging(args: Array<String>) {
 			return@let
 		}
 	}
-	var lastPrompt = 0
+	val lastPrompt = AtomicInteger(0)
 	var agreed = false
 	Thread.setDefaultUncaughtExceptionHandler { thread, e ->
 		val trace = "$thread: ${e.getStackTraceString()}"
-		LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).warn("Uncaught exception in $trace")
-		fun send() = GlobalScope.launch {
+		val rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+		rootLogger.warn("Uncaught exception in $trace")
+		fun sendReport() = GlobalScope.launch {
 			TabSettings.sendFeedback(TabSettings.Companion.Feedback("automated report of ${e.javaClass.name.replaceIllegalFileChars()}",
 				"Automated log report for uncaught exception in $trace"))
 		}
 		if(agreed) {
-			send()
-		} else if(lastPrompt + 10 < currentSeconds()) {
-			lastPrompt = Int.MAX_VALUE
+			rootLogger.info("Automatically sending report")
+			sendReport()
+		} else if(lastPrompt.getAndSet(Int.MAX_VALUE) < currentSeconds() - 30) {
 			doWhenReady {
+				rootLogger.debug("Showing prompt for submitting uncaught exception")
 				showAlert(Alert.AlertType.WARNING, "Internal Error", "An Internal Error has occured: $e",
 					"Please let me submit your logs for debugging purposes. Thanks :)", ButtonType.YES, ButtonType.NO, ButtonType("Do not ask me again this session")).resultProperty().listen {
 					agreed = false
 					when(it) {
 						ButtonType.YES -> {
 							agreed = true
-							send()
+							sendReport()
 						}
 						ButtonType.NO -> {
 						}
 						else -> return@listen
 					}
-					lastPrompt = currentSeconds()
+					rootLogger.debug("Send report response: $it")
+					lastPrompt.set(currentSeconds())
 				}
 			}
 		}
 	}
+	
 	val logger = KotlinLogging.logger { }
 	logger.info("Console loglevel: $logLevel")
 	logger.info("Logging to $logFile")
