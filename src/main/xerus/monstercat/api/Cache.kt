@@ -1,18 +1,19 @@
 package xerus.monstercat.api
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.*
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
-import xerus.monstercat.api.response.Track
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
-import java.util.function.BiConsumer
 
-object Cache : Refresher() {
+private const val cacheVersion = 1
+
+object Cache: Refresher() {
 	private val logger = KotlinLogging.logger { }
 	
 	private val releases = ArrayList<Release>()
@@ -24,13 +25,13 @@ object Cache : Refresher() {
 	private var lastCookie: String = ""
 	
 	suspend fun getReleases(): ArrayList<Release> {
-		if (lastCookie != CONNECTSID() || releases.isEmpty() || currentSeconds() - lastRefresh > 1000)
+		if(lastCookie != CONNECTSID() || releases.isEmpty() || currentSeconds() - lastRefresh > 1000)
 			refresh(true)
 		job.join()
 		return releases
 	}
 	
-	/** Gets all tracks by flatMapping all the tracks of */
+	/** Gets all tracks by flatMapping all the tracks of all Releases */
 	suspend fun getTracks() =
 		getReleases().flatMap { it.tracks }
 	
@@ -45,19 +46,19 @@ object Cache : Refresher() {
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
 		
-		if (releases.isEmpty() && Settings.ENABLECACHE() && releaseCache.exists())
+		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
 		val results = releaseConnection.getReleases() ?: run {
 			logger.info("Release refresh failed!")
 			return
 		}
-		if (releases.containsAll(results) && fetchTracksForReleases()) {
+		if(releases.containsAll(results) && fetchTracksForReleases()) {
 			logger.debug("Releases are already up to date!")
 			return
 		}
 		val ind = releases.lastIndexOf(results.last())
 		
-		if (ind == -1) {
+		if(ind == -1) {
 			logger.info("Full Release refresh initiated")
 			releaseConnection.removeQuery("limit").getReleases()?.let {
 				releases.clear()
@@ -77,14 +78,14 @@ object Cache : Refresher() {
 	}
 	
 	/** Fetches the tracks for each Release.
-	 * @return true when it fetched the tracks for every Release successfully, false otherwise */
+	 * @return true iff it fetched the tracks for every Release successfully */
 	private suspend fun fetchTracksForReleases(): Boolean {
 		var failed = 0
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
 				val tracks = APIConnection("catalog", "release", release.id, "tracks").getTracks()
-				if (tracks == null) {
+				if(tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
 					failed++
 					return@async false
@@ -94,27 +95,39 @@ object Cache : Refresher() {
 				}
 			}
 		}.forEach { e ->
-			if (e.value?.await() == false)
+			if(e.value?.await() == false)
 				releases.remove(e.key)
 		}
-		if (Settings.ENABLECACHE())
+		if(Settings.ENABLECACHE())
 			writeCache()
 		return failed == 0
 	}
 	
 	private fun writeCache() {
 		logger.trace("Writing ${releases.size} Releases to $releaseCache")
-		releaseCache.writeText(Sheets.JSON_FACTORY.toPrettyString(releases))
+		releaseCache.writeText(cacheVersion.toString().padStart(2, '0') + "\n" + Sheets.JSON_FACTORY.toPrettyString(releases))
 		logger.debug("Wrote ${releases.size} Releases to $releaseCache")
 	}
 	
 	private fun readCache(): Boolean {
+		if(!releaseCache.exists())
+			return false
 		return try {
-			releases.addAll(Sheets.JSON_FACTORY.fromString(releaseCache.reader().readText(), ReleaseList::class.java))
+			releaseCache.reader().use { reader ->
+				val version = CharArray(3).let {
+					reader.read(it)
+					String(it, 0, 2).toIntOrNull()
+				}
+				if(version != cacheVersion) {
+					logger.debug("Cache outdated - current: $version new: $cacheVersion")
+					return false
+				}
+				releases.addAll(Sheets.JSON_FACTORY.fromString(reader.readText(), ReleaseList::class.java))
+			}
 			logger.debug("Read ${releases.size} Releases from $releaseCache")
 			true
-		} catch (e: Throwable) {
-			logger.debug("Cache corrupted - clearing: $e", e)
+		} catch(e: Throwable) {
+			logger.debug("Cache reading failed: $e", e)
 			releases.clear()
 			false
 		}
