@@ -146,7 +146,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		}
 		
 		private fun createConnectionManager(): PoolingHttpClientConnectionManager {
-			connectionManager = PoolingHttpClientConnectionManager(10, TimeUnit.SECONDS).apply {
+			connectionManager = PoolingHttpClientConnectionManager().apply {
 				defaultMaxPerRoute = maxConnections
 				maxTotal = maxConnections
 			}

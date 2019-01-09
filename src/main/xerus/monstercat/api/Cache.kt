@@ -67,7 +67,7 @@ object Cache: Refresher() {
 				logger.warn("Release refresh failed!")
 				return
 			}
-			logger.info("Found ${releases.size} Releases")
+			logger.info("API returned ${releases.size} Releases")
 		} else {
 			val s = releases.size
 			releases.removeAll(releases.subList(ind, releases.size))
@@ -80,6 +80,7 @@ object Cache: Refresher() {
 	/** Fetches the tracks for each Release.
 	 * @return true iff it fetched the tracks for every Release successfully */
 	private suspend fun fetchTracksForReleases(): Boolean {
+		logger.info("Fetching Tracks for ${releases.size} Releases")
 		var failed = 0
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
@@ -98,6 +99,7 @@ object Cache: Refresher() {
 			if(e.value?.await() == false)
 				releases.remove(e.key)
 		}
+		logger.debug { "Fetched ${releases.sumBy { it.tracks.size }} Tracks" }
 		if(Settings.ENABLECACHE())
 			writeCache()
 		return failed == 0
