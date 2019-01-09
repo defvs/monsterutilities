@@ -15,7 +15,7 @@ data class Release(
 	@Key var coverUrl: String = "",
 	@Key var downloadable: Boolean = false) : MusicItem() {
 	
-	@Key var isMulti: Boolean = false
+	@Key var isCollection: Boolean = false
 	
 	@Key var tracks: List<Track> = ArrayList()
 	
@@ -24,15 +24,16 @@ data class Release(
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		coverUrl = coverUrl.replace(" ", "%20")
+		tracks.forEach { it.setRelease(this) }
 		
 		if (!isType(Type.MIXES, Type.PODCAST)) {
-			isMulti = true
+			isCollection = true
 			type = when {
 				title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") -> Type.MCOLLECTION
 				title.contains("Best of") || title.endsWith("Anniversary") -> Type.BESTOF
 				type == "EP" || type == "Album" -> Type.ALBUM
 				else -> {
-					isMulti = false
+					isCollection = false
 					type
 				}
 			}

@@ -1,14 +1,25 @@
 package xerus.monstercat.api
 
 import mu.KotlinLogging
+import xerus.ktutil.helpers.StringMasker
+import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.to
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.api.response.declaredKeys
-import java.net.URLEncoder
-import java.util.regex.Pattern
 
-fun String.splitTitle() = split('(', ')', '[', ']').map { it.trim() }
+val artistDelimiters = arrayOf(" & ", ", ", " and ", " x ", " feat. ")
+// todo fetch from https://connect.monstercat.com/api/catalog/artist
+val artistExceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns", "A.M.C & Turno")
+val artistMasker = StringMasker("artist", *artistExceptions)
+
+/** Splits up artists & trim whitespaces */
+fun String.splitArtists() =
+	artistMasker.unmask(artistMasker.mask(this).replace(artistDelimiters.joinToString("|").toRegex(), ";")).split(";")
+
+fun String.splitTitle(): List<String> {
+	val matches = Regex("(.*?)(?: \\((.*?)\\))?(?: \\[(.*?)])?(?: \\((.*?)\\))?").matchEntire(this)!!
+	return matches.groupValues.subList(1, matches.groupValues.size).mapNotNull { it.trim().nullIfEmpty() }
+}
 
 object APIUtils {
 	private val logger = KotlinLogging.logger { }

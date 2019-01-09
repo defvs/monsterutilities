@@ -25,7 +25,7 @@ val DOWNLOADDIRPODCAST = DownloaderSettings.create("directoryPodcasts", "Podcast
 val DOWNLOADDIRMIXES = DownloaderSettings.create("directoryMixes", "Mixes")
 
 val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatterns[0])
-val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", albumTrackPatterns[0])
+val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", trackPatterns[0])
 
 val EPSTOSINGLES = DownloaderSettings.create("epsAsSingles", 0)
 val DOWNLOADCOVERS = DownloaderSettings.create("coverDownload", DownloadCovers.COLLECTIONS)

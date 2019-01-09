@@ -18,7 +18,6 @@ import xerus.ktutil.*
 import xerus.ktutil.collections.CacheMap
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
-import xerus.ktutil.helpers.Timer
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
@@ -39,10 +38,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
-val trackPatterns = ImmutableObservableList("%artistsTitle% - %title%", "%artists|, % - %title%", "%artists|enumeration% - %title%", "%artists|, % - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
-val albumTrackPatterns = ImmutableObservableList("%artistsTitle% - %track% %title%", "%artists|enumeration% - %title%", *trackPatterns.items)
+val trackPatterns = ImmutableObservableList(
+	"%artistsTitle% - %title%",
+	"%artists|enumerate% - %title%",
+	"%artistsSplit|, % - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}",
+	"%albumArtists% - %albumName% - %trackNumber% %title%",
+	"%albumId% %trackNumber% - %artistsSplit|enumerate% - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 
-// Todo selecting items is not recursive for track-items
 class TabDownloader : VTab() {
 	
 	private val songView = SongView(SONGSORTING)
@@ -77,11 +79,13 @@ class TabDownloader : VTab() {
 			val searchText = searchField.text
 			if(releaseSearch.predicate == alwaysTruePredicate && searchText.isEmpty()) null
 			else { parent, value ->
+				val release = value as? Release
 				parent != songView.root &&
 					// Match titles
-					(value.toString().contains(searchText, true) || (value as? Release)?.let { it.tracks.any { it.toString().contains(searchText, true) } } ?: false) &&
+					(value.toString().contains(searchText, true) ||
+						release?.tracks?.any { it.toString().contains(searchText, true) } ?: false) &&
 					// Match Releasedate
-					(value as? Release)?.let { releaseSearch.predicate.test(it) } ?: false
+					release?.let { releaseSearch.predicate.test(it) } ?: false
 			}
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
 		
@@ -140,6 +144,7 @@ class TabDownloader : VTab() {
 			}
 		
 		val patternPane = gridPane()
+		// todo grow combobox without reducing label size
 		patternPane.add(Label("Single Track pattern"),
 			0, 0, 1, 2)
 		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(TRACKNAMEPATTERN) },
@@ -148,15 +153,28 @@ class TabDownloader : VTab() {
 			Track().apply {
 				title = "Bring The Madness (feat. Mayor Apeshit) (Aero Chord Remix)"
 				artistsTitle = "Excision & Pegboard Nerds"
-				artists = listOf(Artist("Pegboard Nerds"), Artist("Excision"))
+				artists = listOf(ArtistRel("Pegboard Nerds", "Primary"), ArtistRel("Aero Chord", "Remixer"))
+				albumName = "Bring The Madness (The Remixes)"
+				albumId = "MCEP068"
+				trackNumber = 1
+				albumArtists = "Excision, Pegboard Nerds"
 			}),
 			1, 1)
 		patternPane.add(Label("Collection Track pattern"),
 			0, 2, 1, 2)
-		patternPane.add(ComboBox<String>(albumTrackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
+		patternPane.add(ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(ALBUMTRACKNAMEPATTERN) },
 			1, 2)
 		patternPane.add(patternLabel(ALBUMTRACKNAMEPATTERN,
-			ReleaseFile("Gareth Emery & Standerwick - 3 Saving Light (INTERCOM Remix) [feat. HALIENE]", "Saving Light (The Remixes) [feat. HALIENE]")),
+			Track().apply {
+				title = "Saving Light (INTERCOM Remix) [feat. HALIENE]"
+				artistsTitle = "Gareth Emery & Standerwick"
+				artists = listOf(ArtistRel("Gareth Emery", "Primary"), ArtistRel("Standerwick", "Primary"),
+					ArtistRel("HALIENE", "Featured"), ArtistRel("INTERCOM", "Remixer"))
+				albumName = "Saving Light (The Remixes) [feat. HALIENE]"
+				albumId = "MCEP120"
+				trackNumber = 3
+				albumArtists = "Gareth Emery & Standerwick"
+			}),
 			1, 3)
 		add(patternPane)
 		
@@ -221,7 +239,7 @@ class TabDownloader : VTab() {
 												return@run false
 											tracks.all { track ->
 												(track.isAlbumMix && ALBUMMIXES() != AlbumMixes.KEEP) ||
-													folder.resolve(track.toFileName().addFormatSuffix()).exists()
+													folder.resolve(track.toFileName(isMulti()).addFormatSuffix()).exists()
 											}
 										}
 										if(result) {
@@ -336,7 +354,6 @@ class TabDownloader : VTab() {
 	
 	inner class Downloader {
 		
-		private val timer = Timer()
 		private val log = LogTextArea()
 		private val items: Map<Release, Collection<Track>>
 		
@@ -433,7 +450,6 @@ class TabDownloader : VTab() {
 				for(item in items) {
 					val download: Download = ReleaseDownload(item.key, item.value)
 					val tracks = item.value.size
-					download.progressProperty()
 					download.setOnCancelled {
 						tracksLeft -= tracks
 						state.cancelled()

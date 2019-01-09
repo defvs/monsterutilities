@@ -20,8 +20,8 @@ fun getCover(coverUrl: String, size: Int? = null): HttpEntity =
 private inline val basePath
 	get() = DOWNLOADDIR()
 
-fun Track.toFileName() =
-	toString(TRACKNAMEPATTERN()).replace(':', '꞉').replaceIllegalFileChars()
+fun Track.toFileName(inAlbum: Boolean) =
+	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replace(':', '꞉').replaceIllegalFileChars()
 
 fun Release.downloadFolder(): Path = basePath.resolve(when {
 	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
@@ -30,7 +30,7 @@ fun Release.downloadFolder(): Path = basePath.resolve(when {
 	else -> DOWNLOADDIRSINGLE()
 })
 
-fun Release.isMulti() = isMulti && tracks.size >= EPSTOSINGLES()
+fun Release.isMulti() = isCollection && tracks.size >= EPSTOSINGLES()
 
 fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
@@ -102,21 +102,23 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 			else
 				partFolder
 		downloadFolder.createDirs()
-		val downloadCover = DOWNLOADCOVERS() == DownloadCovers.ALL || DOWNLOADCOVERS() == DownloadCovers.COLLECTIONS && release.isMulti
+		
+		val downloadCover = DOWNLOADCOVERS() == DownloadCovers.ALL || DOWNLOADCOVERS() == DownloadCovers.COLLECTIONS && release.isMulti()
 		val coverFraction = 0.2
 		maxProgress = tracks.size + coverFraction * downloadCover.toInt()
 		
 		logger.debug("Downloading $release to $downloadFolder")
 		tr@ for(track in tracks) {
-			var filename = downloadFolder.resolve(track.toFileName().addFormatSuffix())
+			val filename = track.toFileName(release.isMulti()).addFormatSuffix()
+			var trackPath = downloadFolder.resolve(filename)
 			if(track.isAlbumMix)
 				when(ALBUMMIXES()) {
-					AlbumMixes.SEPARATE -> filename = basePath.resolve(DOWNLOADDIRMIXES()).createDirs().resolve(track.toFileName().addFormatSuffix())
+					AlbumMixes.SEPARATE -> trackPath = basePath.resolve(DOWNLOADDIRMIXES()).createDirs().resolve(filename)
 					AlbumMixes.EXCLUDE -> continue@tr
 					else -> {
 					}
 				}
-			downloadTrack(release.id, track.id, filename)
+			downloadTrack(release.id, track.id, trackPath)
 			if(isCancelled)
 				break@tr
 			totalProgress++

@@ -22,13 +22,17 @@ abstract class MusicItem : Parsable {
 	abstract var id: String
 	abstract var title: String
 	fun formatArtists(artists: String) =
-		if (artists == "Various Artists" || artists == "Various" || artists == "Monstercat" && title.contains("Monstercat")) "" else artists.trim()
+		if(artists == "Various Artists" || artists == "Various" || artists == "Monstercat" && title.contains("Monstercat")) "" else artists.trim()
 }
 
 data class Album(@Key var streamHash: String = "", @Key var albumId: String = "", @Key var trackNumber: Int = 0)
 
-class Artist(@Key var name: String = "") {
+open class Artist(@Key var name: String = "", @Key var artistId: String = "") {
 	override fun toString() = name
 	override fun equals(other: Any?) = other is Artist && other.name == name
 	override fun hashCode() = name.hashCode()
+}
+
+class ArtistRel(name: String = "", @Key var role: String = "", @Key var vendor: String? = null, artistId: String = "") : Artist(name, artistId) {
+	fun debugString() = "ArtistRel(name=$name, vendor=$vendor, role=$role)"
 }
