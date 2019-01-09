@@ -1,6 +1,5 @@
 package xerus.monstercat.tabs
 
-import java.awt.Desktop
 import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.scene.control.*
@@ -12,13 +11,13 @@ import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import mu.KLogger
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import mu.KLogging
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
-import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.controlsfx.validation.*
 import xerus.ktutil.byteCountString
@@ -31,14 +30,14 @@ import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.DownloaderSettings
 import xerus.monstercat.monsterUtilities
-import java.io.FileInputStream
+import java.awt.Desktop
 import java.io.PrintStream
 import java.nio.file.attribute.FileTime
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class TabSettings : VTab() {
+class TabSettings: VTab() {
 	
 	init {
 		addButton("Show Changelog") { monsterUtilities.showChangelog() }
@@ -55,7 +54,7 @@ class TabSettings : VTab() {
 		addLabeled("Startup Tab:", startTab)
 		
 		addLabeled("Theme:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
-			converter = object : StringConverter<Themes>() {
+			converter = object: StringConverter<Themes>() {
 				override fun toString(theme: Themes) = theme.toString().toLowerCase().capitalize()
 				override fun fromString(string: String) = Themes.valueOf(string.toUpperCase())
 			}
@@ -74,9 +73,12 @@ class TabSettings : VTab() {
 		})
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
-		addRow(createButton("Open Cache directory") {
-			Desktop.getDesktop().open(cacheDir)
-		})
+		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
+			addRow(createButton("Open Cache directory") {
+				GlobalScope.launch {
+					Desktop.getDesktop().open(cacheDir)
+				}
+			})
 		addButton("Check for Updates") { monsterUtilities.checkForUpdate(true) }
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
