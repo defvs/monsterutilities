@@ -32,6 +32,7 @@ import xerus.monstercat.api.Player
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.globalDispatcher
 import kotlin.math.max
 
 class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
@@ -146,6 +147,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 	private suspend fun fetchItems() {
 		var notDownloadable = 0
 		val releases = Cache.getReleases()
+		var done = 0
 		releases.forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			if(!release.downloadable) {
@@ -163,6 +165,19 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 			}.internalChildren.add(treeItem)
 			release.tracks.takeIf { it.size > 1 }?.forEach { track ->
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
+			}
+			GlobalScope.launch(globalDispatcher) {
+				var image = getCoverImage(release.coverUrl, 16)
+				if(image.exception != null)
+					image = getCoverImage(release.coverUrl, 32, 16)
+				if(image.exception != null)
+					logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", image.exception)
+				onFx {
+					treeItem.graphic = ImageView(image)
+					done++
+					if(done % 100 == 0 || done == releases.size)
+						this@SongView.refresh()
+				}
 			}
 		}
 		logger.debug { "$notDownloadable of ${releases.size} Releases are not downloadable" }
