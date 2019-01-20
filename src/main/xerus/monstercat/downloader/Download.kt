@@ -1,10 +1,16 @@
 package xerus.monstercat.downloader
 
 import javafx.concurrent.Task
+import javafx.scene.image.Image
 import mu.KotlinLogging
 import org.apache.http.HttpEntity
 import org.apache.http.client.methods.HttpGet
-import xerus.ktutil.*
+import xerus.ktutil.copyTo
+import xerus.ktutil.createDirs
+import xerus.ktutil.exists
+import xerus.ktutil.renameTo
+import xerus.ktutil.replaceIllegalFileChars
+import xerus.ktutil.toInt
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -13,9 +19,14 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path
 
+fun getCoverImage(coverUrl: String, size: Int? = null, imageSize: Int? = null): Image =
+	getCover(coverUrl, size).content.use { if(imageSize != null) Image(it, imageSize.toDouble(), imageSize.toDouble(), false, false) else Image(it) }
+
 fun getCover(coverUrl: String, size: Int? = null): HttpEntity =
-	APIConnection.execute(HttpGet(
-		coverUrl.replace("[", "%5B").replace("]", "%5D") + size?.let { "?image_width=$it" }.orEmpty())).entity
+	APIConnection.execute(HttpGet(getCoverUrl(coverUrl, size))).entity
+
+private fun getCoverUrl(coverUrl: String, size: Int? = null) =
+	coverUrl + size?.let { "?image_width=$it" }.orEmpty()
 
 private inline val basePath
 	get() = DOWNLOADDIR()

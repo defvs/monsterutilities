@@ -425,9 +425,7 @@ class TabDownloader : VTab() {
 			val taskView = TaskProgressView<Download>()
 			val thumbnailCache = CacheMap<String, Image>()
 			taskView.setGraphicFactory {
-				ImageView(thumbnailCache.getOrPut(it.coverUrl) {
-					Image(getCover(it, 64).content)
-				})
+				ImageView(thumbnailCache.getOrPut(it.coverUrl) { getCoverImage(it, 64) })
 			}
 			tasks = taskView.tasks
 			tasks.listen {

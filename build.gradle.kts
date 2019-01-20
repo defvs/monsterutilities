@@ -61,7 +61,7 @@ dependencies {
 val jarFile
 	get() = "$name-$version.jar"
 
-val MAIN = "_Main"
+val MAIN = "_main"
 tasks {
 	
 	arrayOf(getByName<JavaExec>("run"), getByName<JavaExec>("runShadow")).forEach {

@@ -23,7 +23,7 @@ data class Release(
 		renderedArtists = formatArtists(renderedArtists)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
-		coverUrl = coverUrl.replace(" ", "%20")
+		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
 		tracks.forEach { it.setRelease(this) }
 		
 		if (!isType(Type.MIXES, Type.PODCAST)) {
