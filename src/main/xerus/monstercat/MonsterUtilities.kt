@@ -209,14 +209,30 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
-			version("dev", "pre-Release",
+			version("dev107", "Downloader Rework",
+				"Fixed many, many minor issues")
+				.change("Downloader Rework",
+					"Downloader now focuses on Releases first and incorporates Tracks subtly",
+					"\"Smart Select\" & \"Exclude already downloaded songs\" now work properly",
+					"Adjusted track naming patterns to enable more customization, fix parsing for more obscure titles",
+					"Non-downloadable songs are now properly highlighted")
+				.change("Improved cache", "Now saved as json", "Versioning ensures integrity")
+			
+			version("dev59", "Improved Downloading and Logging")
+				.change("Improved Downloader, fixed Windows part files not being renamed")
+				.change("Reworked logging to be more transparent")
+			
+			version("dev43", "Safer downloading")
+				.change("Downloader now creates part-files while downloading so your files are safe from crashes")
+				.change("Backend has been updated to cope with changes in the Monstercat API")
+			
+			version("dev30", "Rework",
 				"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
 				"Send feedback directly from the application!", "Every Slider is now scrollable with the mouse wheel")
 				.change("New Downloader!",
 					"Can download any combinations of Releases and Tracks", "Easy filtering",
 					"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
-					"Greatly improved pattern syntax with higher flexibility",
-					"Creates part-files while downloading so your files are safe from crashes")
+					"Greatly improved pattern syntax with higher flexibility")
 				.change("Settings reworked",
 					"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
 				.change("Catalog and Genre Tab show Genre colors")
@@ -224,6 +240,8 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 					"More filtering options", "Smart column size")
 				.change("Player now has a slick Seekbar inspired by the website",
 					"It can also be controlled via scrolling (suggested by AddiVF)")
+				.change("Added an Audio Equalizer")
+				.change("Added Discord Rich Presence")
 			
 			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
 				"Music playing is better integrated", "Fixed some mistakes in the Downloader")

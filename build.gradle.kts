@@ -8,6 +8,14 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.*
 import java.util.Scanner
 
+buildscript {
+	dependencies {
+		classpath("com.squareup.okhttp3:okhttp:3.12.0")
+		classpath("com.j256.simplemagic:simplemagic:1.10")
+		classpath("org.zeroturnaround:zt-exec:1.10")
+	}
+}
+
 val isUnstable = properties["release"] == null
 val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
 version = "dev" + commitNumber +
@@ -19,7 +27,7 @@ plugins {
 	application
 	id("com.github.johnrengelman.shadow") version "4.0.3"
 	id("com.github.ben-manes.versions") version "0.20.0"
-	id("com.github.breadmoirai.github-release") version "2.2.1"
+	id("com.github.breadmoirai.github-release") version "2.2.3"
 }
 
 // source directories
@@ -49,6 +57,8 @@ dependencies {
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
+	implementation("io.github.microutils", "kotlin-logging", "1.6.+")
+	
 	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20181116-1.27.0")
@@ -88,12 +98,12 @@ tasks {
 		dependsOn(shadowJar)
 		
 		setTagName(version.toString())
-		setBody(properties["m"]?.toString())
-		setReleaseName("Dev $commitNumber" + properties["n"]?.let { " - $it" }.orEmpty())
+		setBody(project.properties["m"]?.toString())
+		setReleaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
 		
 		setPrerelease(isUnstable)
 		setReleaseAssets(jarFile)
-		setToken(properties["github.token"]?.toString())
+		setToken(project.properties["github.token"]?.toString())
 		setOwner("Xerus2000")
 	}
 	
@@ -111,9 +121,9 @@ tasks {
 		
 		val s = if (OperatingSystem.current().isWindows) "\\" else ""
 		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
-			open -u ${properties["credentials.ftp"]} -e $s"
+			open -u ${project.properties["credentials.ftp"]} -e $s"
 			cd /www/downloads/files; put $jarFile;
-			cd /www/downloads; ${if (properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
+			cd /www/downloads; ${if (project.properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
 	}
 	
