@@ -36,7 +36,7 @@
 /* highlight non-downloadable releases red */
 /*noinspection CssInvalidFunction*/
 .tree-cell.not-downloadable {
-	myText: ladder(#888, -fx-text-background-color, hsb(0, 90%, 100%));
+	myText: ladder(#444, -fx-text-background-color, hsb(0, 90%, 100%));
 }
 
 .button, .button:focused {

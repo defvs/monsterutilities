@@ -1,7 +1,14 @@
 package xerus.monstercat.downloader
 
 import javafx.beans.value.ObservableValue
-import javafx.scene.control.*
+import javafx.collections.ListChangeListener
+import javafx.scene.Node
+import javafx.scene.control.CheckBox
+import javafx.scene.control.CheckBoxTreeItem
+import javafx.scene.control.ContextMenu
+import javafx.scene.control.Tooltip
+import javafx.scene.control.TreeCell
+import javafx.scene.control.TreeView
 import javafx.scene.control.cell.CheckBoxTreeCell
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -13,9 +20,15 @@ import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
 import xerus.ktutil.javafx.onFx
-import xerus.ktutil.javafx.properties.*
+import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.addOneTimeListener
+import xerus.ktutil.javafx.properties.dependOn
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.monstercat.api.*
+import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.Cache
+import xerus.monstercat.api.ConnectValidity
+import xerus.monstercat.api.Player
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -29,24 +42,32 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
 	
 	private val checkCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
-		CheckBoxTreeCell<MusicItem>().also { cell ->
-			cell.itemProperty().listen { item ->
-				if((item as? Release)?.downloadable == false ||
-					(item is Track && (cell.treeItem.parent.value  as? Release)?.downloadable == false)) {
-					if(cell.tooltip == null) {
-						cell.styleClass.add("not-downloadable")
-						cell.tooltip = Tooltip("This Release is currently not downloadable")
-					}
-				} else {
-					if(cell.tooltip != null) {
-						cell.styleClass.remove("not-downloadable")
-						cell.tooltip = null
+		object : CheckBoxTreeCell<MusicItem>() {
+			var listener = ListChangeListener<Node> { children.filterIsInstance<CheckBox>().firstOrNull()?.isDisable = true }
+			
+			init {
+				itemProperty().listen { item ->
+					if((item as? Release)?.downloadable == false ||
+						(item is Track && (treeItem.parent.value  as? Release)?.downloadable == false)) {
+						if(tooltip == null) {
+							listener.onChanged(null)
+							children.addListener(listener)
+							styleClass.add("not-downloadable")
+							tooltip = Tooltip("This Release is currently not downloadable")
+						}
+					} else {
+						if(tooltip != null) {
+							children.removeListener(listener)
+							children.filterIsInstance<CheckBox>().firstOrNull()?.isDisable = false
+							styleClass.remove("not-downloadable")
+							tooltip = null
+						}
 					}
 				}
 			}
 		}
 	}
-	private val treeCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
+	private val loadingCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
 		val loadingGif = ImageView(Image("img/loading-16.gif"))
 		object : TreeCell<MusicItem>() {
 			init {
@@ -105,7 +126,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 	
 	private fun showRoot(show: Boolean, text: String? = null) {
 		if(show) {
-			cellFactory = treeCellFactory
+			cellFactory = loadingCellFactory
 			if(text != null)
 				root.value = RootMusicItem(text)
 			isShowRoot = true
@@ -131,7 +152,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				if(notDownloadable < 5)
 					logger.trace("Not downloadable: $release")
 				notDownloadable++
+				treeItem.selectedProperty().listen {
+					if(it)
+						treeItem.isSelected = false
+				}
 			}
+			
 			roots.getOrPut(release.type) {
 				FilterableTreeItem(RootMusicItem(release.type))
 			}.internalChildren.add(treeItem)
