@@ -5,8 +5,9 @@ import javafx.scene.control.TreeItem
 import org.controlsfx.control.CheckTreeView
 import xerus.ktutil.javafx.ui.FilterableTreeItem
 
-open class FilterableCheckTreeView<T : Any>(rootValue: T) : CheckTreeView<T>() {
-	val root = FilterableTreeItem(rootValue)
+open class FilterableCheckTreeView<T : Any>(val root: FilterableTreeItem<T>) : CheckTreeView<T>() {
+	constructor(rootValue: T) : this(FilterableTreeItem(rootValue))
+	
 	val checkedItems: ObservableList<TreeItem<T>>
 		get() = checkModel.checkedItems
 	val predicate

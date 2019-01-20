@@ -5,8 +5,8 @@ import javafx.collections.ObservableList
 import javafx.scene.Node
 import javafx.scene.control.Button
 import javafx.scene.control.Label
+import xerus.ktutil.collections.RoughMap
 import xerus.ktutil.helpers.DelayedRefresher
-import xerus.ktutil.helpers.RoughMap
 import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
@@ -15,7 +15,7 @@ import xerus.ktutil.readToObject
 import xerus.ktutil.writeToFile
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets.fetchMCatalogTab
-import xerus.monstercat.api.Releases
+import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
 import xerus.monstercat.monsterUtilities
 import java.io.*
@@ -32,17 +32,17 @@ abstract class FetchTab : VTab() {
 	}
 	
 	val sheetFetcher = SimpleRefresher {
-		if (this::class != TabGenres::class) {
+		if(this::class != TabGenres::class) {
 			onFx { setPlaceholder(Label("Fetching...")) }
 			logger.debug("Fetching $tabName")
 			val sheet = fetchMCatalogTab(tabName, request)
-			if (sheet != null) {
+			if(sheet != null) {
 				readSheet(sheet)
 				writeCache(sheet)
-			} else if (data.isEmpty())
+			} else if(data.isEmpty())
 				restoreCache()
 			onFx {
-				if (data.isEmpty()) {
+				if(data.isEmpty()) {
 					logger.debug("Showing retry button for $tabName because data is empty")
 					setPlaceholder(retryButton)
 				} else
@@ -59,7 +59,7 @@ abstract class FetchTab : VTab() {
 	
 	init {
 		onFx {
-			if (this !is TabGenres)
+			if(this !is TabGenres)
 				add(notification)
 			setPlaceholder(Label("Loading..."))
 		}
@@ -94,25 +94,25 @@ abstract class FetchTab : VTab() {
 		get() = "$tabName was restored from cache"
 	
 	private fun writeCache(sheet: Any) {
-		if (!Settings.ENABLECACHE())
+		if(!Settings.ENABLECACHE())
 			return
 		logger.debug("Writing cache file $cacheFile")
 		try {
 			sheet.writeToFile(cacheFile)
-		} catch (e: IOException) {
+		} catch(e: IOException) {
 			monsterUtilities.showError(e, "Couldn't write $tabName cache!")
 		}
 	}
 	
 	private fun restoreCache() {
-		if (!Settings.ENABLECACHE())
+		if(!Settings.ENABLECACHE())
 			return
 		try {
 			readSheet(cacheFile.readToObject())
 			logger.debug("Restored cache file $cacheFile")
 			showNotification(snackbarTextCache)
-		} catch (ignored: FileNotFoundException) {
-		} catch (e: Throwable) {
+		} catch(ignored: FileNotFoundException) {
+		} catch(e: Throwable) {
 			logger.error("$this failed to restore Cache", e)
 			cacheFile.delete()
 		}
@@ -143,7 +143,7 @@ abstract class FetchTab : VTab() {
 		}
 		
 		fun writeCache() {
-			Releases.refresh()
+			Cache.refresh()
 			forAllFetchTabs { sheetFetcher.refresh() }
 		}
 		

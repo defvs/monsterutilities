@@ -1,56 +1,82 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import xerus.ktutil.replaceIllegalFileChars
 import xerus.ktutil.to
-import xerus.monstercat.downloader.TRACKNAMEPATTERN
+import xerus.monstercat.api.splitArtists
+import xerus.monstercat.api.splitTitle
 import java.util.Collections.emptyList
 
-open class Track(
-	@Key("_id") override var
-	id: String = "",
-	@Key override var
-	title: String = "",
-	@Key var
-	artistsTitle: String = "",
-	@Key var
-	albums: List<Album> = emptyList(),
-	@Key("artistRelationships")
-	var artists: List<Artist> = emptyList()) : MusicItem() {
+open class Track : MusicItem() {
 	
+	@Key("_id")
+	override var id: String = ""
+	@Key
+	var artistsTitle: String = ""
+	@Key
+	override var title: String = ""
+	@Key
+	var albums: List<Album> = emptyList()
+	@Key
+	var albumNames: List<String> = emptyList()
+	@Key
+	var albumCatalogIds: List<String> = emptyList()
+	@Key("artistRelationships")
+	var artists: List<ArtistRel> = emptyList()
+	@Key
+	var bpm: Double? = null
+	
+	var artistsSplit: List<String> = emptyList()
 	var titleClean: String = ""
 	var remix: String = ""
 	var feat: String = ""
 	var extra: String = ""
 	
-	val alb: Album
-		get() = albums.first()
+	private lateinit var release: Release
+	fun setRelease(release: Release) {
+		this.release = release
+	}
+	
+	var albumArtists = ""
+	var albumId = ""
+	var albumName = ""
+	var trackNumber = -1
 	
 	val streamHash: String?
 		get() = albums.find { it.streamHash.isNotEmpty() }?.streamHash
 	
-	open fun toFileName() =
-		toString(TRACKNAMEPATTERN()).replaceIllegalFileChars()
+	val isAlbumMix
+		get() = title.contains("Album Mix")
 	
 	open fun init() {
-		if (titleClean.isNotEmpty())
+		if(titleClean.isNotEmpty())
 			return
-		artistsTitle = formatArtists(artistsTitle)
-		val split = title.split('(', ')', '[', ']').map { it.trim() }
-		titleClean = split[0]
-		if (split.size > 1)
-			split.subList(1, split.lastIndex).forEach {
-				when {
-					it.startsWith("feat", true) -> feat = it.split(' ', limit = 2)[1]
-					it.endsWith("mix", true) || it == "Classical" -> remix = it
-					it.isNotBlank() -> extra = it
-				}
+		
+		if(::release.isInitialized) {
+			albumArtists = release.renderedArtists
+			val index = albums.indexOfFirst { it.albumId == release.id }
+			if(index > -1) {
+				albumName = albumNames[index]
+				albumId = albumCatalogIds[index]
+				trackNumber = albums[index].trackNumber
 			}
+		}
+		
+		artistsTitle = formatArtists(artistsTitle)
+		artistsSplit = artistsTitle.splitArtists()
+		
+		title.splitTitle().forEachIndexed { index, s ->
+			when {
+				index == 0 -> titleClean = s
+				s.startsWith("feat", true) -> feat = s.split(' ', limit = 2)[1]
+				s.endsWith("mix", true) || s == "Classical" -> remix = s
+				s.isNotBlank() -> extra = s
+			}
+		}
 	}
 	
-	override fun toString(pattern: String): String {
+	override fun toString(pattern: String, vararg additionalFields: Pair<String, String>): String {
 		init()
-		return super.toString(pattern)
+		return super.toString(pattern, *additionalFields)
 	}
 	
 	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)

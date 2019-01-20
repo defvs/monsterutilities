@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import mu.KotlinLogging
 import xerus.ktutil.SystemUtils
 import xerus.ktutil.getResource
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.ui.SimpleFrame
 import java.io.File
@@ -41,7 +42,7 @@ fun main(args: Array<String>) {
 	val logger = KotlinLogging.logger {}
 	logger.debug("Commandline arguments: ${args.joinToString(", ", "[", "]")}")
 	
-	if (!SystemUtils.javaVersion.startsWith("1.8")) {
+	if(!SystemUtils.javaVersion.startsWith("1.8")) {
 		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }
 		return
 	}
@@ -51,7 +52,7 @@ fun main(args: Array<String>) {
 	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
 	
 	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
-	App.launch("MonsterUtilities $VERSION", Settings.SKIN(), { stage ->
+	App.launch("MonsterUtilities $VERSION", Settings.THEME(), { stage ->
 		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 				?: null.apply { logger.warn("Resource $it not found!") }
@@ -63,13 +64,18 @@ fun main(args: Array<String>) {
 	logger.info("Main has shut down!")
 }
 
-fun showErrorSafe(error: Throwable, title: String = "Error") {
+fun showErrorSafe(error: Throwable, title: String = "Error") = doWhenReady { showError(error, title) }
+
+fun doWhenReady(action: MonsterUtilities.() -> Unit) {
 	GlobalScope.launch {
 		var i = 0
-		while (i < 100 && !::monsterUtilities.isInitialized) {
+		while(i < 100 && !::monsterUtilities.isInitialized) {
 			delay(200)
 			i++
 		}
-		monsterUtilities.showError(error, title)
+		onFx {
+			action(monsterUtilities)
+		}
 	}
 }
+

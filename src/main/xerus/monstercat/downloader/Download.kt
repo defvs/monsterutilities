@@ -1,9 +1,16 @@
 package xerus.monstercat.downloader
 
-import com.google.common.io.CountingInputStream
 import javafx.concurrent.Task
+import javafx.scene.image.Image
 import mu.KotlinLogging
-import xerus.ktutil.*
+import org.apache.http.HttpEntity
+import org.apache.http.client.methods.HttpGet
+import xerus.ktutil.copyTo
+import xerus.ktutil.createDirs
+import xerus.ktutil.exists
+import xerus.ktutil.renameTo
+import xerus.ktutil.replaceIllegalFileChars
+import xerus.ktutil.toInt
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -11,81 +18,63 @@ import xerus.monstercat.api.response.Track
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path
-import java.util.zip.ZipInputStream
 
-fun MusicItem.downloadTask() = when (this) {
-	is Track -> TrackDownload(this)
-	is Release -> ReleaseDownload(this)
-	else -> throw NoWhenBranchMatchedException()
-}
+fun getCoverImage(coverUrl: String, size: Int? = null, imageSize: Int? = null): Image =
+	getCover(coverUrl, size).content.use { if(imageSize != null) Image(it, imageSize.toDouble(), imageSize.toDouble(), false, false) else Image(it) }
 
-fun MusicItem.folder(): Path = basePath.resolve(when {
-	this !is Release -> TRACKFOLDER() // Track
-	isMulti -> toString(ALBUMFOLDER()).replaceIllegalFileChars() // Album, Monstercat Collection
-	type == "Podcast" -> PODCASTFOLDER()
-	type == "Mixes" -> MIXESFOLDER()
-	else -> SINGLEFOLDER() // Single
-})
+fun getCover(coverUrl: String, size: Int? = null): HttpEntity =
+	APIConnection.execute(HttpGet(getCoverUrl(coverUrl, size))).entity
 
-fun Release.path(): Path = if (isMulti) folder() else folder().resolve(ReleaseFile("${renderedArtists.nullIfEmpty()
-	?: "Monstercat"} - 1 $title").toFileName().addFormatSuffix())
-
-fun Track.path(): Path = folder().createDirs().resolve(toFileName().addFormatSuffix())
+private fun getCoverUrl(coverUrl: String, size: Int? = null) =
+	coverUrl + size?.let { "?image_width=$it" }.orEmpty()
 
 private inline val basePath
 	get() = DOWNLOADDIR()
 
-private fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
+fun Track.toFileName(inAlbum: Boolean) =
+	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replace(':', '꞉').replaceIllegalFileChars()
+
+fun Release.downloadFolder(): Path = basePath.resolve(when {
+	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
+	type == "Podcast" -> DOWNLOADDIRPODCAST()
+	type == "Mixes" -> DOWNLOADDIRMIXES()
+	else -> DOWNLOADDIRSINGLE()
+})
+
+fun Release.isMulti() = isCollection && tracks.size >= EPSTOSINGLES()
+
+fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 private val logger = KotlinLogging.logger { }
 
-abstract class Download(val item: MusicItem, val coverUrl: String?) : Task<Unit>() {
+abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Long>() {
 	
 	init {
 		@Suppress("LEAKINGTHIS")
 		updateTitle(item.toString())
 	}
 	
-	override fun call() = download()
+	private var startTime: Long = 0
+	protected var maxProgress: Double = 0.0
+	override fun call(): Long {
+		startTime = System.currentTimeMillis()
+		download()
+		return System.currentTimeMillis() - startTime
+	}
 	
 	abstract fun download()
 	
-	var length: Long = 0
-		private set
-	
-	private lateinit var connection: APIConnection
-	private lateinit var inputStream: CountingInputStream
-	
-	protected fun <T : InputStream> createConnection(releaseId: String, streamConverter: (InputStream) -> T, vararg queries: String): T {
-		connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=" + QUALITY(), *queries)
-		val entity = connection.getResponse().entity
-		length = entity.contentLength
-		if (length == 0L)
-			throw EmptyResponseException(releaseId)
-		updateProgress(0, length)
-		val input = streamConverter(entity.content)
-		inputStream = CountingInputStream(input)
-		return input
-	}
-	
-	override fun failed() = abort()
-	
-	protected fun abort() {
-		if (::connection.isInitialized)
-			connection.abort()
-	}
-	
-	protected fun downloadFile(path: Path) {
+	protected fun downloadFile(inputStream: InputStream, path: Path, closeIn: Boolean = false, progress: (Long) -> Double) {
 		val file = path.toFile()
 		logger.trace("Downloading $file")
 		updateMessage(file.name)
 		
 		val partFile = file.resolveSibling(file.name + ".part")
-		inputStream.copyTo(FileOutputStream(partFile), closeOut = true) {
-			updateProgress(inputStream.count)
+		inputStream.copyTo(FileOutputStream(partFile), closeIn, true) {
+			updateProgress(progress(it), maxProgress)
 			isCancelled
 		}
-		if (isCancelled) {
+		if(isCancelled) {
 			logger.trace("Download of $partFile cancelled, deleting: " + partFile.delete())
 		} else {
 			file.delete()
@@ -93,60 +82,77 @@ abstract class Download(val item: MusicItem, val coverUrl: String?) : Task<Unit>
 		}
 	}
 	
-	private fun updateProgress(progress: Long) = updateProgress(progress, length)
-	
 	override fun toString(): String = "Download(item=$item)"
 	
 }
 
-class ReleaseDownload(private val release: Release) : Download(release, release.coverUrl) {
+class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>) : Download(release, release.coverUrl) {
 	
-	override fun download() {
-		val folder = release.folder()
-		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
-		val downloadFolder =
-			if (folder.exists())
-				folder
-			else
-				partFolder.createDirs()
-		val zis = createConnection(release.id, { ZipInputStream(it) })
-		// TODO EPS_TO_SINGLES
-		zip@ do {
-			val entry = zis.nextEntry ?: break
-			if (entry.isDirectory)
-				continue
-			val name = entry.name.split("/").last()
-			if (name == "cover.false" || (name.contains("cover.") && (DOWNLOADCOVERS() == 0 || DOWNLOADCOVERS() == 1 && !release.isMulti)))
-				continue
-			val target = when {
-				name.contains("cover.") -> downloadFolder.resolve(name)
-				name.contains("Album Mix") ->
-					when (ALBUMMIXES()) {
-						"Separate" -> resolve(name, basePath.resolve("Mixes").createDirs())
-						"Exclude" -> continue@zip
-						else -> resolve(name, downloadFolder)
-					}
-				else -> resolve(name, downloadFolder)
-			}
-			downloadFile(target)
-		} while (!isCancelled)
-		if (!isCancelled && partFolder.exists()) {
-			folder.toFile().deleteRecursively()
-			partFolder.renameTo(folder)
+	private var totalProgress = 0
+	
+	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
+		val connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
+		val entity = connection.getResponse().entity
+		val contentLength = entity.contentLength
+		if(contentLength == 0L)
+			throw EmptyResponseException(connection.uri.toString())
+		val length = contentLength.toDouble()
+		downloadFile(entity.content, path, true) {
+			totalProgress + it / length
 		}
 	}
 	
-	private fun resolve(name: String, path: Path = basePath): Path =
-		path.resolve(ReleaseFile(name, release.title.takeIf { release.isMulti }).toFileName().addFormatSuffix())
-	
-}
-
-class TrackDownload(private val track: Track) : Download(track, APIConnection("catalog", "release", track.alb.albumId).parseJSON(Release::class.java)?.coverUrl) {
-	
 	override fun download() {
-		createConnection(track.alb.albumId, { it }, "track=" + track.id)
-		downloadFile(track.path())
-		abort()
+		if(tracks.isEmpty())
+			return
+		val folder = release.downloadFolder()
+		val partFolder = folder.resolveSibling(folder.fileName.toString() + ".part")
+		val downloadFolder =
+			if(folder.exists() && !partFolder.exists() || folder == basePath)
+				folder
+			else
+				partFolder
+		downloadFolder.createDirs()
+		
+		val downloadCover = DOWNLOADCOVERS() == DownloadCovers.ALL || DOWNLOADCOVERS() == DownloadCovers.COLLECTIONS && release.isMulti()
+		val coverFraction = 0.2
+		maxProgress = tracks.size + coverFraction * downloadCover.toInt()
+		
+		logger.debug("Downloading $release to $downloadFolder")
+		tr@ for(track in tracks) {
+			val filename = track.toFileName(release.isMulti()).addFormatSuffix()
+			var trackPath = downloadFolder.resolve(filename)
+			if(track.isAlbumMix)
+				when(ALBUMMIXES()) {
+					AlbumMixes.SEPARATE -> trackPath = basePath.resolve(DOWNLOADDIRMIXES()).createDirs().resolve(filename)
+					AlbumMixes.EXCLUDE -> continue@tr
+					else -> {
+					}
+				}
+			downloadTrack(release.id, track.id, trackPath)
+			if(isCancelled)
+				break@tr
+			totalProgress++
+		}
+		if(!isCancelled && downloadCover) {
+			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.substringAfterLast('.')
+			updateMessage(coverName)
+			val entity = getCover(release.coverUrl, COVERARTSIZE())
+			val length = entity.contentLength.toDouble()
+			downloadFile(entity.content, downloadFolder.resolve(coverName), true) {
+				totalProgress + (coverFraction * it / length)
+			}
+		}
+		
+		if(!isCancelled && downloadFolder == partFolder) {
+			// this Release has not been downloaded to the root, thus delete the original subfolder if it exists and move the part-folder to it
+			folder.toFile().deleteRecursively()
+			try {
+				partFolder.renameTo(folder)
+			} catch(e: Exception) {
+				logger.debug("Couldn't rename $partFolder to $folder as Paths: $e\nUsing File: " + partFolder.toFile().renameTo(folder.toFile()))
+			}
+		}
 	}
 	
 }

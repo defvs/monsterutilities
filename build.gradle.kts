@@ -45,13 +45,13 @@ repositories {
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.Xerus2000.util", "javafx", "1d6e2ecbb181070fe64f6a180f51d2c42a801f74")
+	implementation("com.github.Xerus2000.util", "javafx", "766520d3a38c9188e342dba0adf643028566db01")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20180727-1.27.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20181116-1.27.0")
 	
 	val junitVersion = "5.3.2"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
@@ -61,7 +61,7 @@ dependencies {
 val jarFile
 	get() = "$name-$version.jar"
 
-val MAIN = "_Main"
+val MAIN = "_main"
 tasks {
 	
 	arrayOf(getByName<JavaExec>("run"), getByName<JavaExec>("runShadow")).forEach {

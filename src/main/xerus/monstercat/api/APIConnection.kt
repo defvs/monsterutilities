@@ -2,23 +2,35 @@
 
 package xerus.monstercat.api
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicCookieStore
+import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
+import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
+import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
 import java.io.InputStream
+import java.lang.ref.WeakReference
 import java.net.URI
 import kotlin.reflect.KClass
+import java.util.concurrent.TimeUnit
+
 
 private val logger = KotlinLogging.logger { }
 
@@ -36,16 +48,16 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	
 	/** calls [getContent] and uses a [com.google.api.client.json.JsonFactory]
 	 * to parse the response onto a new instance of [T]
-	 * @return the response parsed onto [T] or null if there is an error */
+	 * @return the response parsed onto [T] or null if there was an error */
 	fun <T> parseJSON(destination: Class<T>): T? {
 		val inputStream = try {
 			getContent()
-		} catch (e: IOException) {
+		} catch(e: IOException) {
 			return null
 		}
 		return try {
 			Sheets.JSON_FACTORY.fromInputStream(inputStream, destination)
-		} catch (e: Exception) {
+		} catch(e: Exception) {
 			logger.warn("Error parsing response of $uri: $e", e)
 			null
 		}
@@ -69,14 +81,12 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	private var httpGet: HttpGet? = null
 	fun execute() {
 		httpGet = HttpGet(uri)
-		logger.trace("$this connecting")
-		val conf = RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()
-		response = HttpClientBuilder.create().setDefaultRequestConfig(conf).setDefaultCookieStore(cookies()).build().execute(httpGet)
+		response = execute(httpGet!!)
 	}
 	
 	private var response: HttpResponse? = null
 	fun getResponse(): HttpResponse {
-		if (response == null)
+		if(response == null)
 			execute()
 		return response!!
 	}
@@ -85,7 +95,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	 * @throws IOException when the connection fails */
 	fun getContent(): InputStream {
 		val resp = getResponse()
-		if (!resp.entity.isRepeatable)
+		if(!resp.entity.isRepeatable)
 			response = null
 		return resp.entity.content
 	}
@@ -93,37 +103,109 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
-		private var cache: Pair<String, CookieValidity>? = null
-		fun checkCookie(): CookieValidity {
-			return if (cache == null || cache?.first != CONNECTSID()) {
-				val session = APIConnection("self", "session").parseJSON(Session::class.java) ?: return CookieValidity.NOCONNECTION
-				when {
-					session.user == null -> CookieValidity.NOUSER
-					session.user!!.goldService -> {
-						Releases.refresh(true)
-						CookieValidity.GOLD
-					}
-					else -> CookieValidity.NOGOLD
-				}.also {
-					if (QUALITY().isEmpty())
-						session.settings?.run {
-							QUALITY.set(preferredDownloadFormat)
-						}
-					cache = CONNECTSID() to it
-				}
-			} else
-				cache!!.second
+		val maxConnections = 100 + Runtime.getRuntime().availableProcessors() * 50
+		private var httpClient = createHttpClient(CONNECTSID())
+		
+		val connectValidity = SimpleObservable(ConnectValidity.NOCONNECTION, true)
+		
+		private lateinit var connectionManager: PoolingHttpClientConnectionManager
+		
+		init {
+			checkConnectsid(CONNECTSID())
+			CONNECTSID.listen { updateConnectsid(it) }
 		}
 		
-		fun cookies() = BasicClientCookie("connect.sid", CONNECTSID()).run {
-			domain = "connect.monstercat.com"
-			path = "/"
-			BasicCookieStore().also { it.addCookie(this) }
+		fun execute(httpGet: HttpGet): CloseableHttpResponse {
+			logger.trace { "Connecting to ${httpGet.uri}" }
+			return httpClient.execute(httpGet)
 		}
+		
+		private fun updateConnectsid(connectsid: String) {
+			val oldClient = httpClient
+			val manager = connectionManager
+			GlobalScope.launch {
+				while(manager.totalStats.leased > 0)
+					delay(200)
+				oldClient.close()
+			}
+			httpClient = createHttpClient(connectsid)
+			checkConnectsid(connectsid)
+		}
+		
+		
+		private fun createHttpClient(connectsid: String): CloseableHttpClient {
+			return HttpClientBuilder.create()
+				.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+				.setDefaultCookieStore(BasicClientCookie("connect.sid", connectsid).run {
+					domain = "connect.monstercat.com"
+					path = "/"
+					BasicCookieStore().also { it.addCookie(this) }
+				})
+				.setConnectionManager(createConnectionManager())
+				.build()
+		}
+		
+		private fun createConnectionManager(): PoolingHttpClientConnectionManager {
+			connectionManager = PoolingHttpClientConnectionManager().apply {
+				defaultMaxPerRoute = (maxConnections * 0.9).toInt()
+				maxTotal = maxConnections
+			}
+			// trace ConnectionManager stats
+			if(logger.isTraceEnabled)
+				GlobalScope.launch {
+					val name = connectionManager.javaClass.simpleName + "@" + connectionManager.hashCode()
+					var stats = connectionManager.totalStats
+					val managerWeak = WeakReference(connectionManager)
+					while(!managerWeak.isEmpty()) {
+						val newStats = managerWeak.get()?.totalStats ?: break
+						if(stats.leased != newStats.leased || stats.pending != newStats.pending || stats.available != newStats.available) {
+							logger.trace("$name: $newStats")
+							stats = newStats
+						}
+						delay(500)
+					}
+				}
+			return connectionManager
+		}
+		
+		private var lastResult: ConnectResult? = null
+		private fun checkConnectsid(connectsid: String) {
+			if(connectsid.isBlank()) {
+				connectValidity.value = ConnectValidity.NOUSER
+				return
+			}
+			if(lastResult?.connectsid != connectsid) {
+				GlobalScope.launch {
+					val result = getConnectValidity(connectsid)
+					if(QUALITY().isEmpty())
+						result.session?.settings?.run {
+							QUALITY.set(preferredDownloadFormat)
+						}
+					lastResult = result.takeUnless { it.validity == ConnectValidity.NOCONNECTION }
+					connectValidity.value = result.validity
+				}
+			}
+		}
+		
+		private fun getConnectValidity(connectsid: String): ConnectResult {
+			val session = APIConnection("self", "session").parseJSON(Session::class.java)
+			val validity = when {
+				session == null -> ConnectValidity.NOCONNECTION
+				session.user == null -> ConnectValidity.NOUSER
+				session.user!!.goldService -> {
+					Cache.refresh(true)
+					ConnectValidity.GOLD
+				}
+				else -> ConnectValidity.NOGOLD
+			}
+			return ConnectResult(connectsid, validity, session)
+		}
+		
+		data class ConnectResult(val connectsid: String, val validity: ConnectValidity, val session: Session?)
 	}
 	
 }
 
-enum class CookieValidity {
+enum class ConnectValidity {
 	NOUSER, NOGOLD, GOLD, NOCONNECTION
 }

@@ -16,7 +16,7 @@ import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.*
-import xerus.monstercat.api.Releases
+import xerus.monstercat.api.Cache
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -70,7 +70,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				GlobalScope.launch {
-					Releases.clear()
+					Cache.clear()
 					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if (f.exists()) {
@@ -101,12 +101,14 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	
 	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
+	private fun String.devVersion() = if(startsWith("dev")) split('v', '-')[1].toInt() else null
+	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
 			try {
 				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.info("Latest version: $latestVersion")
-				if (latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION())) {
+				if (latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { VERSION.devVersion()!! < it } == true) {
 					if (userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
 					return@launch

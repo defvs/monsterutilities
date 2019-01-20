@@ -10,6 +10,11 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.util.StringConverter
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import mu.KLogging
+import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
@@ -21,16 +26,18 @@ import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
-import xerus.monstercat.api.Releases
+import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.DownloaderSettings
 import xerus.monstercat.monsterUtilities
-import java.io.FileInputStream
+import java.awt.Desktop
 import java.io.PrintStream
+import java.nio.file.attribute.FileTime
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class TabSettings : VTab() {
+class TabSettings: VTab() {
 	
 	init {
 		addButton("Show Changelog") { monsterUtilities.showChangelog() }
@@ -46,8 +53,12 @@ class TabSettings : VTab() {
 		}
 		addLabeled("Startup Tab:", startTab)
 		
-		addLabeled("Skin:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
-			valueProperty().bindBidirectional(Settings.SKIN)
+		addLabeled("Theme:", ComboBox(ImmutableObservableList(*Themes.values())).apply {
+			converter = object: StringConverter<Themes>() {
+				override fun toString(theme: Themes) = theme.toString().toLowerCase().capitalize()
+				override fun fromString(string: String) = Themes.valueOf(string.toUpperCase())
+			}
+			valueProperty().bindBidirectional(Settings.THEME)
 		})
 		val slider = Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0)
 		Settings.GENRECOLORINTENSITY.dependOn(slider.valueProperty()) { it.toInt() }
@@ -62,6 +73,12 @@ class TabSettings : VTab() {
 		})
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
+		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
+			addRow(createButton("Open Cache directory") {
+				GlobalScope.launch {
+					Desktop.getDesktop().open(cacheDir)
+				}
+			})
 		addButton("Check for Updates") { monsterUtilities.checkForUpdate(true) }
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
@@ -75,13 +92,13 @@ class TabSettings : VTab() {
 				App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 					initStyle(StageStyle.UTILITY)
 					resultProperty().listen {
-						if (it.buttonData == ButtonBar.ButtonData.YES) {
+						if(it.buttonData == ButtonBar.ButtonData.YES) {
 							try {
 								Settings.clear()
 								DownloaderSettings.clear()
 								cacheDir.deleteRecursively()
-								Releases.clear()
-							} catch (e: Exception) {
+								Cache.clear()
+							} catch(e: Exception) {
 								monsterUtilities.showError(e)
 							}
 							App.restart()
@@ -96,9 +113,8 @@ class TabSettings : VTab() {
 		)
 	}
 	
-	lateinit var dialog: Dialog<Feedback>
 	fun feedback() {
-		dialog = Dialog<Feedback>().apply {
+		val dialog = Dialog<Feedback>().apply {
 			(dialogPane.scene.window as Stage).initWindowOwner(App.stage)
 			val send = ButtonType("Send", ButtonBar.ButtonData.YES)
 			dialogPane.buttonTypes.addAll(send, ButtonType.CANCEL)
@@ -127,7 +143,7 @@ class TabSettings : VTab() {
 				addRow(1, Label("Message"), messageArea)
 			}
 			setResultConverter {
-				return@setResultConverter if (it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
+				return@setResultConverter if(it.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
 					null
 				else {
 					Feedback(subjectField.text, messageArea.text)
@@ -136,56 +152,58 @@ class TabSettings : VTab() {
 		}
 		dialog.show()
 		dialog.resultProperty().listen { result ->
-			logger.trace("Submitting: $result")
-			result?.run {
-				sendFeedback(subject, message)
-			}
-		}
-	}
-	
-	/** @return false if it should be retried */
-	private fun sendFeedback(subject: String, message: String) {
-		val zipFile = cacheDir.resolve("report.zip")
-		System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
-		val files = cacheDir.walk()
-		ZipOutputStream(zipFile.outputStream()).use { zip ->
-			files.filter { it.isFile && it != zipFile }.forEach {
-				zip.putNextEntry(ZipEntry(it.toString().removePrefix(cacheDir.toString())))
-				FileInputStream(it).use {
-					it.copyTo(zip)
-				}
-			}
-		}
-		logger.info("Sending feedback '$subject' with a packed size of ${zipFile.length().byteCountString()}")
-		val entity = MultipartEntityBuilder.create()
-			.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
-			.addTextBody("subject", subject)
-			.addTextBody("message", message)
-			.addBinaryBody("log", zipFile)
-			.build()
-		val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
-		postRequest.entity = entity
-		val response = HttpClientBuilder.create().build().execute(postRequest)
-		val status = response.statusLine
-		logger.debug("Feedback Response: $status")
-		if (status.statusCode == 200) {
-			monsterUtilities.showMessage("Your feedback was submitted successfully!")
-		} else {
-			val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
-			val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
-			App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
-				buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
-				resultProperty().listen {
-					when (it) {
-						retry -> onFx { dialog.show() }
-						copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, message)))
+			logger.trace { "Submitting: $result" }
+			result?.let { feedback ->
+				val response = sendFeedback(feedback)
+				val status = response.statusLine
+				logger.debug("Feedback Response: $status")
+				if(status.statusCode == 200) {
+					monsterUtilities.showMessage("Your feedback was submitted successfully!")
+				} else {
+					val retry = ButtonType("Try again", ButtonBar.ButtonData.YES)
+					val copy = ButtonType("Copy feedback message to clipboard", ButtonBar.ButtonData.NO)
+					App.stage.createAlert(Alert.AlertType.WARNING, content = "Feedback submission failed. Error: ${status.statusCode} - ${status.reasonPhrase}",
+						buttons = *arrayOf(retry, copy, ButtonType.CANCEL)).apply {
+						resultProperty().listen {
+							when(it) {
+								retry -> onFx { dialog.show() }
+								copy -> Clipboard.getSystemClipboard().setContent(mapOf(Pair(DataFormat.PLAIN_TEXT, feedback.message)))
+							}
+						}
+						show()
 					}
 				}
-				show()
 			}
 		}
 	}
 	
-	data class Feedback(val subject: String, val message: String)
+	companion object: KLogging() {
+		
+		fun sendFeedback(feedback: Feedback): CloseableHttpResponse {
+			val zipFile = cacheDir.resolve("report.zip")
+			System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
+			val files = cacheDir.walk()
+			ZipOutputStream(zipFile.outputStream()).use { zip ->
+				files.filter { it.isFile && it != zipFile }.forEach { file ->
+					zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
+						this.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
+					})
+					file.inputStream().use { it.copyTo(zip) }
+				}
+			}
+			logger.info("Sending feedback '${feedback.subject}' with a packed size of ${zipFile.length().byteCountString()}")
+			val entity = MultipartEntityBuilder.create()
+				.setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+				.addTextBody("subject", feedback.subject)
+				.addTextBody("message", feedback.message)
+				.addBinaryBody("log", zipFile)
+				.build()
+			val postRequest = HttpPost("http://monsterutilities.bplaced.net/feedback/")
+			postRequest.entity = entity
+			return HttpClientBuilder.create().build().execute(postRequest)
+		}
+		
+		data class Feedback(val subject: String, val message: String)
+	}
 	
 }
