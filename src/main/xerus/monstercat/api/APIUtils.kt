@@ -3,7 +3,6 @@ package xerus.monstercat.api
 import mu.KotlinLogging
 import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.nullIfEmpty
-import xerus.ktutil.to
 import xerus.ktutil.toInt
 import xerus.monstercat.api.response.Track
 
@@ -21,17 +20,27 @@ fun String.splitTitle(): List<String> {
 	return matches.groupValues.subList(1, matches.groupValues.size).mapNotNull { it.trim().nullIfEmpty() }
 }
 
+val meaninglessTitleContents = arrayOf("feat.", "Remix")
+
+fun String.splitTitleTrimmed() =
+	split(' ', ',', '[', ']', '(', ')', '&').filterNot { it in meaninglessTitleContents }
+
+
 object APIUtils {
 	private val logger = KotlinLogging.logger { }
 	
 	/** Finds the best matching Track for the given [title] and [artists] */
 	suspend fun find(title: String, artists: String): Track? {
-		val splitTitle = title.split(" ")
+		val titleSplit = "$artists $title".splitTitleTrimmed()
+		val loggingThreshold = titleSplit.size / 2
 		return Cache.getTracks().maxBy { track ->
-			splitTitle.map { track.title.contains(it).toInt() }
-			+(track.titleClean == title).toInt()
-			+(track.artistsTitle == artists).to(10, 0)
-			+track.artists.map { artists.contains(it.name).to(3, 0) }.average()
+			val splitTitleTrimmed = track.init().splitTitle
+			titleSplit.sumBy { splitTitleTrimmed.contains(it).toInt() }
+				.also {
+					if(it > loggingThreshold) {
+						logger.trace { "Rated $track with $it for \"$artists - $title\"" }
+					}
+				}
 		}
 	}
 	

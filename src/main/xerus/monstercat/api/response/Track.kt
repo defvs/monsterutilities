@@ -4,9 +4,10 @@ import com.google.api.client.util.Key
 import xerus.ktutil.to
 import xerus.monstercat.api.splitArtists
 import xerus.monstercat.api.splitTitle
+import xerus.monstercat.api.splitTitleTrimmed
 import java.util.Collections.emptyList
 
-open class Track : MusicItem() {
+open class Track: MusicItem() {
 	
 	@Key("_id")
 	override var id: String = ""
@@ -30,6 +31,7 @@ open class Track : MusicItem() {
 	var remix: String = ""
 	var feat: String = ""
 	var extra: String = ""
+	var splitTitle: List<String> = emptyList()
 	
 	private lateinit var release: Release
 	fun setRelease(release: Release) {
@@ -47,9 +49,9 @@ open class Track : MusicItem() {
 	val isAlbumMix
 		get() = title.contains("Album Mix")
 	
-	open fun init() {
+	open fun init(): Track {
 		if(titleClean.isNotEmpty())
-			return
+			return this
 		
 		if(::release.isInitialized) {
 			albumArtists = release.renderedArtists
@@ -63,6 +65,7 @@ open class Track : MusicItem() {
 		
 		artistsTitle = formatArtists(artistsTitle)
 		artistsSplit = artistsTitle.splitArtists()
+		splitTitle = "$artistsTitle $title".splitTitleTrimmed()
 		
 		title.splitTitle().forEachIndexed { index, s ->
 			when {
@@ -72,6 +75,8 @@ open class Track : MusicItem() {
 				s.isNotBlank() -> extra = s
 			}
 		}
+		
+		return this
 	}
 	
 	override fun toString(pattern: String, vararg additionalFields: Pair<String, String>): String {
