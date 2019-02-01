@@ -2,7 +2,12 @@ package xerus.monstercat
 
 import javafx.application.Platform
 import javafx.concurrent.Task
-import javafx.scene.control.*
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonBar
+import javafx.scene.control.ButtonType
+import javafx.scene.control.Label
+import javafx.scene.control.Tab
+import javafx.scene.control.TabPane
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
@@ -10,17 +15,31 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
-import xerus.ktutil.*
-import xerus.ktutil.javafx.*
+import xerus.ktutil.byteCountString
+import xerus.ktutil.copyTo
+import xerus.ktutil.currentSeconds
+import xerus.ktutil.javafx.checkFx
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
+import xerus.ktutil.javafx.createStage
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.launch
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.*
+import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.Changelog
+import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.stage
+import xerus.ktutil.to
 import xerus.monstercat.api.Cache
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
-import xerus.monstercat.tabs.*
+import xerus.monstercat.tabs.BaseTab
+import xerus.monstercat.tabs.TabCatalog
+import xerus.monstercat.tabs.TabGenres
+import xerus.monstercat.tabs.TabSettings
+import xerus.monstercat.tabs.TabSound
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
@@ -52,9 +71,9 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 				val tab = Tab(baseTab.tabName, baseTab.asNode())
 				tab.isClosable = false
 				tabPane.tabs.add(tab)
-				if (baseTab.tabName == startupTab)
+				if(baseTab.tabName == startupTab)
 					tabPane.selectionModel.select(tab)
-			} catch (e: Exception) {
+			} catch(e: Exception) {
 				monsterUtilities.showError(e, "Couldn't create ${tabClass.java.simpleName}!")
 			}
 		}
@@ -63,8 +82,8 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 		addTab(TabDownloader::class)
 		addTab(TabSound::class)
 		addTab(TabSettings::class)
-		if (VERSION != Settings.LASTVERSION.get()) {
-			if (Settings.LASTVERSION().isEmpty()) {
+		if(VERSION != Settings.LASTVERSION.get()) {
+			if(Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
 				showIntro()
 				Settings.LASTVERSION.put(VERSION)
@@ -73,14 +92,14 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 					Cache.clear()
 					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
-					if (f.exists()) {
+					if(f.exists()) {
 						logger.info("Deleting older version $f...")
 						val time = currentSeconds()
 						var res: Boolean
 						do {
 							res = f.delete()
-						} while (!res && time + 10 > currentSeconds())
-						if (res) {
+						} while(!res && time + 10 > currentSeconds())
+						if(res) {
 							Settings.DELETE.clear()
 							logger.info("Deleted $f!")
 						} else
@@ -94,7 +113,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 		
 		children.add(Player.box)
 		fill(tabPane)
-		if (checkForUpdate)
+		if(checkForUpdate)
 			checkForUpdate()
 		DiscordRPC.connect()
 	}
@@ -106,30 +125,30 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
 			try {
-				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if (unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
+				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if(unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.info("Latest version: $latestVersion")
-				if (latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { VERSION.devVersion()!! < it } == true) {
-					if (userControlled)
+				if(latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { VERSION.devVersion()!! < it } == true) {
+					if(userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
 					return@launch
 				}
-				if (unstable)
+				if(unstable)
 					update(latestVersion, true)
 				else
 					onFx {
 						val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
 						dialog.stage.icons.setAll(Image("img/updater.png"))
 						dialog.resultProperty().listen { type ->
-							if (type.buttonData == ButtonBar.ButtonData.YES) {
+							if(type.buttonData == ButtonBar.ButtonData.YES) {
 								update(latestVersion)
-							} else if (type.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
+							} else if(type.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
 								Settings.IGNOREVERSION.set(latestVersion)
 						}
 					}
-			} catch (e: UnknownHostException) {
-				if (userControlled)
+			} catch(e: UnknownHostException) {
+				if(userControlled)
 					showMessage("No connection possible!", "Updater", Alert.AlertType.INFORMATION)
-			} catch (e: Throwable) {
+			} catch(e: Throwable) {
 				showError(e, "Update failed!")
 			}
 		}
@@ -145,19 +164,19 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 			}
 			
 			override fun call() {
-				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if (unstable) "unstable" else version).openConnection()
+				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if(unstable) "unstable" else version).openConnection()
 				val contentLength = connection.contentLengthLong
 				logger.debug("Update to $version started, size ${contentLength.byteCountString()}")
 				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
 					updateProgress(it, contentLength)
 					isCancelled
 				}
-				if (isCancelled)
+				if(isCancelled)
 					logger.info("Update cancelled, deleting $newFile: ${newFile.delete().to("Success", "FAILED")}")
 			}
 			
 			override fun succeeded() {
-				if (isUnstable == unstable && jarLocation.toString().endsWith(".jar")) {
+				if(isUnstable == unstable && jarLocation.toString().endsWith(".jar")) {
 					val jar = File(jarLocation.toURI())
 					logger.info("Scheduling '$jar' for delete")
 					Settings.DELETE.set(jar)
@@ -171,7 +190,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 				val p = Runtime.getRuntime().exec(cmd)
 				val exited = p.waitFor(3, TimeUnit.SECONDS)
 				
-				if (!exited) {
+				if(!exited) {
 					Platform.exit()
 					logger.warn("Exiting $VERSION!")
 				} else {
@@ -209,6 +228,11 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
+			version("dev", "Bugfixes & Downloader aftercare",
+				"Updated & Expanded connect.sid instructions",
+				"Fixed a bug where the Player always played \"Halo Nova - The Force\"")
+				.change("Downloader", "Added cover icons for Releases in Downloader", "Fixed Track naming issues")
+			
 			version("dev107", "Downloader Rework",
 				"Fixed many, many minor issues")
 				.change("Downloader Rework",

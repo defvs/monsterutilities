@@ -7,15 +7,27 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.*
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
+import javafx.scene.layout.VBox
+import javafx.scene.text.Text
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import xerus.ktutil.*
 import xerus.ktutil.collections.CacheMap
+import xerus.ktutil.currentSeconds
+import xerus.ktutil.exists
+import xerus.ktutil.formatTimeDynamic
+import xerus.ktutil.formattedTime
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.javafx.*
@@ -23,11 +35,21 @@ import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.ktutil.javafx.ui.controls.*
+import xerus.ktutil.javafx.ui.controls.LogTextArea
+import xerus.ktutil.javafx.ui.controls.SearchRow
+import xerus.ktutil.javafx.ui.controls.Searchable
+import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
+import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
+import xerus.ktutil.str
+import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.ConnectValidity
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.ArtistRel
+import xerus.monstercat.api.response.MusicItem
+import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
 import xerus.monstercat.tabs.VTab
@@ -308,13 +330,34 @@ class TabDownloader : VTab() {
 		addRow(TextField(CONNECTSID()).apply {
 			promptText = "connect.sid"
 			// todo better instructions
-			tooltip = Tooltip("Log into monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect.monstercat.com\" and copy the content into here (which usually starts with \"s%3A\")")
+			tooltip = Tooltip("Log in on monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect2.monstercat.com\" and copy the content into here")
 			val textListener = textProperty().debounce(400) { text ->
 				CONNECTSID.set(text)
 			}
 			CONNECTSID.listen { textProperty().setWithoutListener(it, textListener) }
 			maxWidth = Double.MAX_VALUE
-		}.grow(), Button("Checking connection...").apply {
+		}.grow(), createButton("?") {
+			Alert(Alert.AlertType.NONE, null, ButtonType.OK).apply {
+				title = "How to find the connect.sid"
+				dialogPane.content = VBox(
+					Label("""Log in on monstercat.com from your browser, go to your browsers cookies (usually somewhere in settings) and find the cookie "connect.sid" from "connect2.monstercat.com" and copy the content into the Textfield. It should start with with "s%3A"."""),
+					HBox(Label("If you use Chrome, you can simply copy-paste this into your browser after logging in:"), TextField().apply {
+						isEditable = false
+						maxWidth = Double.MAX_VALUE
+						text = "chrome://settings/cookies/detail?site=connect2.monstercat.com"
+						onFx {
+							prefWidth = Text(text).let {
+								it.font = font
+								it.layoutBounds.width + padding.left + padding.right + 2.0
+							}
+						}
+					}),
+					Label("Note that the connect.sid might expire at some point, then simply go through this process again."))
+				dialogPane.minHeight = Region.USE_PREF_SIZE
+				initWindowOwner(App.stage)
+				show()
+			}
+		}, Button("Checking connection...").apply {
 			prefWidth = 200.0
 			CONNECTSID.listen { text = "Checking connect.sid..." }
 			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
