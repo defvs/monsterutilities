@@ -5,7 +5,6 @@ import javafx.beans.property.Property
 import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
-import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
@@ -23,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import xerus.ktutil.collections.CacheMap
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.exists
 import xerus.ktutil.formatTimeDynamic
@@ -46,6 +44,7 @@ import xerus.ktutil.str
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.ConnectValidity
+import xerus.monstercat.api.Covers
 import xerus.monstercat.api.response.ArtistRel
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -252,6 +251,7 @@ class TabDownloader : VTab() {
 					songView.onReady {
 						if(selected) {
 							GlobalScope.launch {
+								songView.roots.forEach { it.value.isExpanded = false }
 								var removed = 0
 								songView.roots.forEach { _, value ->
 									value.internalChildren.removeIf {
@@ -338,9 +338,9 @@ class TabDownloader : VTab() {
 			maxWidth = Double.MAX_VALUE
 		}.grow(), createButton("?") {
 			Alert(Alert.AlertType.NONE, null, ButtonType.OK).apply {
-				title = "How to find the connect.sid"
+				title = "How to get your connect.sid"
 				dialogPane.content = VBox(
-					Label("""Log in on monstercat.com from your browser, go to your browsers cookies (usually somewhere in settings) and find the cookie "connect.sid" from "connect2.monstercat.com" and copy the content into the Textfield. It should start with with "s%3A"."""),
+					Label("""Log in on monstercat.com from your browser, go to your browser's cookies (usually somewhere in settings), find the cookie "connect.sid" from "connect2.monstercat.com" and copy the content into the Textfield. It should start with with "s%3A"."""),
 					HBox(Label("If you use Chrome, you can simply copy-paste this into your browser after logging in:"), TextField().apply {
 						isEditable = false
 						maxWidth = Double.MAX_VALUE
@@ -352,16 +352,20 @@ class TabDownloader : VTab() {
 							}
 						}
 					}),
-					Label("Note that the connect.sid might expire at some point, then simply go through this process again."))
+					Label("Note that your connect.sid might expire at some point, then simply go through these steps again."))
 				dialogPane.minHeight = Region.USE_PREF_SIZE
 				initWindowOwner(App.stage)
 				show()
 			}
 		}, Button("Checking connection...").apply {
 			prefWidth = 200.0
-			CONNECTSID.listen { text = "Checking connect.sid..." }
+			CONNECTSID.listen {
+				isDisable = true
+				text = "Verifying connect.sid..."
+				logger.trace("Verifying connect.sid...")
+			}
 			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
-				checkFx { refreshDownloadButton(this) }
+				onFx { refreshDownloadButton(this) }
 			}
 			if(APIConnection.connectValidity.value != ConnectValidity.NOCONNECTION)
 				refreshDownloadButton(this)
@@ -370,29 +374,44 @@ class TabDownloader : VTab() {
 	
 	private fun refreshDownloadButton(button: Button) {
 		updateDownloadButtonAction(button, false)
+		button.isDisable = true
+		
+		var hasGold = false
 		var valid = false
 		val text = when(APIConnection.connectValidity.value) {
 			ConnectValidity.NOCONNECTION -> "No connection"
 			ConnectValidity.NOUSER -> "Invalid connect.sid"
 			ConnectValidity.NOGOLD -> "No Gold subscription"
-			ConnectValidity.GOLD -> when {
-				!songView.ready.value -> "Fetching Releases..."
-				!patternValid.value -> "Invalid name pattern"
-				QUALITY().isEmpty() -> "No format selected"
-				noItemsSelected.value -> "Nothing to download"
-				else -> {
-					valid = true
-					"Start Download"
+			ConnectValidity.GOLD -> {
+				hasGold = true
+				when {
+					!songView.ready.value -> "Fetching Releases..."
+					!patternValid.value -> "Invalid naming pattern"
+					QUALITY().isEmpty() -> "No format selected"
+					noItemsSelected.value -> "No Tracks selected"
+					else -> {
+						valid = true
+						"Start Download"
+					}
 				}
 			}
 		}
+		
+		logger.trace("Setting download button text to $text")
 		button.text = text
+		button.isDisable = hasGold && !valid
+		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to re-check you connect.sid")
 		updateDownloadButtonAction(button, valid)
 	}
 	
 	private fun updateDownloadButtonAction(button: Button, valid: Boolean) {
 		if(valid) button.setOnAction { Downloader() }
-		else button.setOnAction { refreshDownloadButton(button) }
+		else button.setOnAction {
+			button.isDisable = true
+			button.text = "Verifying connect.sid..."
+			logger.trace("Verifying connect.sid...")
+			APIConnection.checkConnectsid(CONNECTSID())
+		}
 	}
 	
 	inner class Downloader {

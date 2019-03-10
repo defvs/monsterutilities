@@ -21,7 +21,10 @@ import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.*
+import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.Session
+import xerus.monstercat.api.response.TrackResponse
+import xerus.monstercat.api.response.declaredKeys
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -29,7 +32,6 @@ import java.io.InputStream
 import java.lang.ref.WeakReference
 import java.net.URI
 import kotlin.reflect.KClass
-import java.util.concurrent.TimeUnit
 
 
 private val logger = KotlinLogging.logger { }
@@ -168,22 +170,18 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			return connectionManager
 		}
 		
-		private var lastResult: ConnectResult? = null
-		private fun checkConnectsid(connectsid: String) {
+		fun checkConnectsid(connectsid: String) {
 			if(connectsid.isBlank()) {
 				connectValidity.value = ConnectValidity.NOUSER
 				return
 			}
-			if(lastResult?.connectsid != connectsid) {
-				GlobalScope.launch {
-					val result = getConnectValidity(connectsid)
-					if(QUALITY().isEmpty())
-						result.session?.settings?.run {
-							QUALITY.set(preferredDownloadFormat)
-						}
-					lastResult = result.takeUnless { it.validity == ConnectValidity.NOCONNECTION }
-					connectValidity.value = result.validity
-				}
+			GlobalScope.launch {
+				val result = getConnectValidity(connectsid)
+				if(QUALITY().isEmpty())
+					result.session?.settings?.run {
+						QUALITY.set(preferredDownloadFormat)
+					}
+				connectValidity.value = result.validity
 			}
 		}
 		
