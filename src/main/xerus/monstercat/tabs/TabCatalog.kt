@@ -7,9 +7,15 @@ import javafx.scene.control.TableRow
 import javafx.scene.text.Font
 import xerus.ktutil.collections.ArraySet
 import xerus.ktutil.containsAny
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.TableColumn
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.controls.*
+import xerus.ktutil.javafx.textWidth
+import xerus.ktutil.javafx.ui.controls.MultiSearchable
+import xerus.ktutil.javafx.ui.controls.SearchView
+import xerus.ktutil.javafx.ui.controls.SearchableColumn
+import xerus.ktutil.javafx.ui.controls.Type
 import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
@@ -69,7 +75,7 @@ class TabCatalog : TableTab() {
 			try {
 				val notFound = ArraySet<String>()
 				val colValue = { list: List<String> ->
-					cols.find(colName)?.let { list[it] }.also {
+					cols.find(colName)?.let { list.getOrNull(it) }.also {
 						if(it == null && notFound.add(colName)) {
 							logger.warn("Column $colName not found!")
 						}
@@ -112,8 +118,9 @@ class TabCatalog : TableTab() {
 				@Suppress("UNCHECKED_CAST")
 				val widths = ArrayList<Double>(table.items.size)
 				for(item in table.items) {
-					// improve read font - (skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
-					widths.add(col.getCellData(item).toString().textWidth(Font.font("System", 11.0)) + 6)
+					// improve get font from cells
+					// (skin.tableHeaderRow.getColumnHeaderFor(col)?.lookup(".label") as? Label)?.font.printNamed("header font")
+					widths.add(col.getCellData(item)?.toString()?.textWidth(Font.font("System", 11.0)) ?: 0.0 + 6)
 				}
 				val avg = widths.average()
 				val deviation = widths.sumByDouble { (it - avg).absoluteValue } / widths.size
