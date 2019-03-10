@@ -23,8 +23,7 @@ val VERSION = getResource("version")!!.readText()
 val isUnstable = VERSION.contains('-')
 
 val cacheDir: File
-	get() = (File("/var/tmp").takeIf { it.exists() } ?: File(System.getProperty("java.io.tmpdir")))
-		.resolve("monsterutilities").apply { mkdirs() }
+	get() = SystemUtils.cacheDir.resolve("monsterutilities").apply { mkdirs() }
 
 lateinit var monsterUtilities: MonsterUtilities
 

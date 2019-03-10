@@ -1,10 +1,7 @@
 package xerus.monstercat.downloader
 
 import javafx.concurrent.Task
-import javafx.scene.image.Image
 import mu.KotlinLogging
-import org.apache.http.HttpEntity
-import org.apache.http.client.methods.HttpGet
 import xerus.ktutil.copyTo
 import xerus.ktutil.createDirs
 import xerus.ktutil.exists
@@ -12,21 +9,13 @@ import xerus.ktutil.renameTo
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.ktutil.toInt
 import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.Covers
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.file.Path
-
-fun getCoverImage(coverUrl: String, size: Int? = null, imageSize: Int? = null): Image =
-	getCover(coverUrl, size).content.use { if(imageSize != null) Image(it, imageSize.toDouble(), imageSize.toDouble(), false, false) else Image(it) }
-
-fun getCover(coverUrl: String, size: Int? = null): HttpEntity =
-	APIConnection.execute(HttpGet(getCoverUrl(coverUrl, size))).entity
-
-private fun getCoverUrl(coverUrl: String, size: Int? = null) =
-	coverUrl + size?.let { "?image_width=$it" }.orEmpty()
 
 private inline val basePath
 	get() = DOWNLOADDIR()
@@ -137,7 +126,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		if(!isCancelled && downloadCover) {
 			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.substringAfterLast('.')
 			updateMessage(coverName)
-			val entity = getCover(release.coverUrl, COVERARTSIZE())
+			val entity = Covers.fetchCover(release.coverUrl, COVERARTSIZE())
 			val length = entity.contentLength.toDouble()
 			downloadFile(entity.content, downloadFolder.resolve(coverName), true) {
 				totalProgress + (coverFraction * it / length)

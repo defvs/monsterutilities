@@ -28,6 +28,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.Cache
 import xerus.monstercat.api.ConnectValidity
+import xerus.monstercat.api.Covers
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -151,7 +152,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 		releases.forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			if(!release.downloadable) {
-				if(notDownloadable < 5)
+				if(notDownloadable < 3)
 					logger.trace("Not downloadable: $release")
 				notDownloadable++
 				treeItem.selectedProperty().listen {
@@ -167,9 +168,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 			GlobalScope.launch(globalDispatcher) {
-				var image = getCoverImage(release.coverUrl, 16)
-				if(image.exception != null)
-					image = getCoverImage(release.coverUrl, 32, 16)
+				val image = Covers.getCoverImage(release.coverUrl, 16)
 				if(image.exception != null)
 					logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", image.exception)
 				onFx {

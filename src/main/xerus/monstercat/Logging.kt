@@ -25,7 +25,7 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-private val logDir: File
+val logDir: File
 	get() = cacheDir.resolve("logs").apply { mkdirs() }
 
 private fun Int.padDate() = toString().padStart(2, '0')

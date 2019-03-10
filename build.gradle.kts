@@ -51,7 +51,7 @@ repositories {
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.Xerus2000.util", "javafx", "5b43368bccb641ff2c0c9f6085d6cab38e7032a6")
+	implementation("com.github.Xerus2000.util", "javafx", "6bc6adce50de31606732f9a14342690a96308901")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")

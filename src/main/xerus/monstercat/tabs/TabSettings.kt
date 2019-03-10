@@ -29,6 +29,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.DownloaderSettings
+import xerus.monstercat.logDir
 import xerus.monstercat.monsterUtilities
 import java.awt.Desktop
 import java.io.PrintStream
@@ -182,7 +183,7 @@ class TabSettings: VTab() {
 		fun sendFeedback(feedback: Feedback): CloseableHttpResponse {
 			val zipFile = cacheDir.resolve("report.zip")
 			System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
-			val files = cacheDir.walk()
+			val files = cacheDir.listFiles() + logDir.listFiles()
 			ZipOutputStream(zipFile.outputStream()).use { zip ->
 				files.filter { it.isFile && it != zipFile }.forEach { file ->
 					zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
