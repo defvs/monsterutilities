@@ -19,11 +19,11 @@ version = "dev" + commitNumber +
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.20"
+	kotlin("jvm") version "1.3.21"
 	application
-	id("com.github.johnrengelman.shadow") version "4.0.4"
-	id("com.github.ben-manes.versions") version "0.20.0"
-	id("com.github.breadmoirai.github-release") version "2.2.3"
+	id("com.github.johnrengelman.shadow") version "5.0.0"
+	id("com.github.ben-manes.versions") version "0.21.0"
+	id("com.github.breadmoirai.github-release") version "2.2.4"
 }
 
 // source directories
@@ -61,7 +61,7 @@ dependencies {
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190109-1.28.0")
 	
-	val junitVersion = "5.3.2"
+	val junitVersion = "5.4.0"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
 }
@@ -72,7 +72,7 @@ val jarFile
 val MAIN = "_main"
 tasks {
 	
-	arrayOf(getByName<JavaExec>("run"), getByName<JavaExec>("runShadow")).forEach {
+	arrayOf(run.get(), runShadow.get()).forEach {
 		it.group = MAIN
 		it.args = System.getProperty("args", "--loglevel debug").split(" ")
 	}
@@ -105,7 +105,7 @@ tasks {
 		setOwner("Xerus2000")
 	}
 	
-	create<Exec>("release") {
+	val release by creating(Exec::class) {
 		dependsOn(shadowJar, githubRelease)
 		group = MAIN
 		
