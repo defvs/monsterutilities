@@ -25,7 +25,7 @@ import kotlin.math.absoluteValue
 
 val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
-fun isColumnCentered(colName: String) = colName.containsAny("ID", "Date", "BPM", "Length", "Key", "Comp") || colName == "B"
+private fun isColumnCentered(colName: String) = colName.containsAny("ID", "Date", "BPM", "Length", "Key", "Comp") || colName == "B"
 
 class TabCatalog : TableTab() {
 	

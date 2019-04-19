@@ -17,7 +17,7 @@ open class TableTab : FetchTab() {
 	private fun showFoundSnackbar() {
 		val rows = table.filteredData.size
 		if (rows == data.size) {
-			if (notification.text.get() != snackbarTextCache)
+			if (notification.text.get() != tabRestoredFromCache)
 				notification.hide()
 		} else {
 			showNotification("Found $rows results", false)

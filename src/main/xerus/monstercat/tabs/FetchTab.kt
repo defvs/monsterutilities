@@ -90,7 +90,7 @@ abstract class FetchTab : VTab() {
 	private val cacheFile: File
 		get() = cacheDir.resolve(tabName)
 	
-	protected val snackbarTextCache
+	protected val tabRestoredFromCache
 		get() = "$tabName was restored from cache"
 	
 	private fun writeCache(sheet: Any) {
@@ -110,7 +110,7 @@ abstract class FetchTab : VTab() {
 		try {
 			readSheet(cacheFile.readToObject())
 			logger.debug("Restored cache file $cacheFile")
-			showNotification(snackbarTextCache)
+			showNotification(tabRestoredFromCache)
 		} catch(ignored: FileNotFoundException) {
 		} catch(e: Throwable) {
 			logger.error("$this failed to restore Cache", e)
