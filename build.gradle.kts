@@ -105,10 +105,9 @@ tasks {
 		setOwner("Xerus2000")
 	}
 	
-	val release by creating(Exec::class) {
-		dependsOn(shadowJar, githubRelease)
-		group = MAIN
-		
+	val websiteRelease by creating(Exec::class) {
+		dependsOn(shadowJar)
+        
 		val path = file("../monsterutilities-extras/website/downloads/" + if(isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {
@@ -118,11 +117,16 @@ tasks {
 		}
 		
 		val s = if(OperatingSystem.current().isWindows) "\\" else ""
-		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no;
+		commandLine("lftp", "-c", """set ftp:ssl-allow true; set ssl:verify-certificate no; set cmd:fail-exit true;
 			open -u ${project.properties["credentials.ftp"]} -e $s"
-			cd /www/downloads/files; put $jarFile;
-			cd /www/downloads; ${if(project.properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
+			cd /www/downloads/files && put $jarFile;
+			cd /www/downloads && ${if(project.properties["noversion"] == null) "put $path; put $pathLatest;" else ""}
 			quit$s" monsterutilities.bplaced.net""".filter { it != '\t' && it != '\n' })
+	}
+	
+	val release by creating {
+		dependsOn(websiteRelease, githubRelease)
+		group = MAIN
 	}
 	
 	withType<KotlinCompile> {
