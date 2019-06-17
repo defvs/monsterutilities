@@ -7,12 +7,15 @@ import kotlinx.coroutines.async
 import mu.KotlinLogging
 import xerus.ktutil.currentSeconds
 import xerus.ktutil.helpers.Refresher
-import xerus.monstercat.*
+import xerus.monstercat.Settings
+import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
 import xerus.monstercat.api.response.ReleaseResponse
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
+import xerus.monstercat.globalDispatcher
 import java.io.File
 
 private const val cacheVersion = 3
@@ -50,11 +53,13 @@ object Cache: Refresher() {
 		
 		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
-		val releaseResponse = APIConnection("catalog", "release").fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 9)).parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
+		val releaseResponse = APIConnection("catalog", "release").fields(Release::class)
+			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 9))
+			.parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
 			?: run {
-			logger.info("Release refresh failed!")
-			return
-		}
+				logger.info("Release refresh failed!")
+				return
+			}
 		val results = releaseResponse.results
 		
 		val releaseConnection = APIConnection("catalog", "release").fields(Release::class)
@@ -95,6 +100,7 @@ object Cache: Refresher() {
 	private suspend fun fetchTracksForReleases(): Boolean {
 		logger.info("Fetching Tracks for ${releases.size} Releases")
 		var failed = 0
+		var success = false
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
@@ -105,6 +111,7 @@ object Cache: Refresher() {
 					return@async false
 				} else {
 					release.tracks = tracks
+					success = true
 					return@async true
 				}
 			}
@@ -112,7 +119,10 @@ object Cache: Refresher() {
 			if(e.value?.await() == false)
 				releases.remove(e.key)
 		}
-		logger.debug { "Fetched ${releases.sumBy { it.tracks.size }} Tracks with $failed failures" }
+		if(!success && failed == 0)
+			logger.debug("Tracks are already up to date!")
+		else
+			logger.debug { "Fetched ${releases.sumBy { it.tracks.size }} Tracks with $failed failures" }
 		if(Settings.ENABLECACHE())
 			writeCache()
 		return failed == 0
