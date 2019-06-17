@@ -6,8 +6,10 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.Slider
 import javafx.scene.control.ToggleButton
+import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
@@ -29,7 +31,7 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import kotlin.math.pow
 
-object Player : FadingHBox(true, targetHeight = 25) {
+object Player: FadingHBox(true, targetHeight = 25) {
 	private val logger = KotlinLogging.logger { }
 	
 	private val seekBar = ProgressBar(0.0).apply {
@@ -162,9 +164,14 @@ object Player : FadingHBox(true, targetHeight = 25) {
 		valueProperty().listen { updateVolume() }
 	}
 	
+	private var coverUrl: String? = null
 	private fun playing(text: String) {
 		onFx {
 			showText(text)
+			if(coverUrl != null) {
+				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
+				children.add(1, Region().setSize(4.0))
+			}
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
 			add(volumeSlider)
@@ -182,6 +189,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
 		GlobalScope.launch {
+			coverUrl = null
 			showText("Searching for \"$title\"...")
 			disposePlayer()
 			val track = APIUtils.find(title, artists)
@@ -197,6 +205,7 @@ object Player : FadingHBox(true, targetHeight = 25) {
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
+		coverUrl = release.coverUrl
 		playTracks(release.tracks, 0)
 	}
 	
