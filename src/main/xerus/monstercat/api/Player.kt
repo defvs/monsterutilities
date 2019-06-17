@@ -6,11 +6,9 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.Slider
 import javafx.scene.control.ToggleButton
-import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
-import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
@@ -169,8 +167,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		onFx {
 			showText(text)
 			if(coverUrl != null) {
-				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
-				children.add(1, Region().setSize(4.0))
+				background = Background(BackgroundImage(Covers.getCoverImage(coverUrl!!), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
 			}
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
