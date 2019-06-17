@@ -19,11 +19,11 @@ version = "dev" + commitNumber +
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.21"
+	kotlin("jvm") version "1.3.31"
 	application
 	id("com.github.johnrengelman.shadow") version "5.0.0"
-	id("com.github.ben-manes.versions") version "0.21.0"
 	id("com.github.breadmoirai.github-release") version "2.2.4"
+	id("com.github.ben-manes.versions") version "0.21.0"
 }
 
 // source directories
