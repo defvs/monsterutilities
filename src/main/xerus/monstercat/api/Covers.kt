@@ -1,30 +1,22 @@
 package xerus.monstercat.api
 
-import javafx.scene.Scene
 import javafx.scene.image.Image
-import javafx.scene.image.ImageView
-import javafx.scene.layout.HBox
 import org.apache.http.HttpEntity
 import org.apache.http.client.methods.HttpGet
-import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.cacheDir
 import java.io.InputStream
-
-fun main() {
-	App.launch {
-		Scene(HBox(ImageView(Image(Covers.getCover("https://assets.monstercat.com/releases/covers/Memtrix%20-%20Blind%20In%20Light%20(Art).png")))))
-	}
-}
 
 object Covers {
 	
 	private val coverCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
 	
+	/** Returns an Image of the cover in the requested size using caching.
+	 * @param size the size of the Image - the underlying image data will always be 64x64, thus this is the default. */
 	fun getCoverImage(coverUrl: String, size: Int = 64): Image =
 		getCover(coverUrl).use { Image(it, size.toDouble(), size.toDouble(), false, false) }
 	
-	/** Returns an InputStream to the cover in size 64x64, using caching */
+	/** Returns an InputStream to the cover in size 64x64, using caching. */
 	fun getCover(coverUrl: String): InputStream {
 		val file = coverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
 		if(!file.exists()) {
@@ -37,9 +29,14 @@ object Covers {
 		return file.inputStream()
 	}
 	
+	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
+	 * @param coverUrl the base url to fetch the cover
+	 * @param size the size of the cover to be fetched from the api, with all powers of 2 being available.
+	 *             By default null, which results in the biggest size possible, usually between 2k and 8k. */
 	fun fetchCover(coverUrl: String, size: Int? = null): HttpEntity =
 		APIConnection.execute(HttpGet(getCoverUrl(coverUrl, size))).entity
 	
+	/** Attaches a parameter to the [coverUrl] for the requested [size] */
 	private fun getCoverUrl(coverUrl: String, size: Int? = null) =
 		coverUrl + size?.let { "?image_width=$it" }.orEmpty()
 	
