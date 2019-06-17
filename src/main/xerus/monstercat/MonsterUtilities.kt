@@ -228,7 +228,11 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
-			version("dev", "Bugfixes & Downloader aftercare",
+			version("dev123", "Revamp Release fetching",
+				"The Release fetching now works with the new pagination of the Monstercat API",
+				"Added a little cover art in the Player")
+			
+			version("dev116", "Bugfixes & Downloader aftercare",
 				"Updated & Expanded connect.sid instructions",
 				"Fixed a bug where the Player always played \"Halo Nova - The Force\"")
 				.change("Downloader", "Added cover icons for Releases in Downloader", "Fixed Track naming issues")
