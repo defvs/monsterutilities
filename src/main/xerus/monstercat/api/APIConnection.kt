@@ -44,7 +44,8 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		get() = URI("https", "connect.monstercat.com", path, getQuery(), null)
 	
 	fun fields(clazz: KClass<*>) = addQuery("fields", *clazz.declaredKeys.toTypedArray())
-	fun limit(limit: Int) = addQuery("limit", limit.toString())
+	fun limit(limit: Int) = replaceQuery("limit", limit.toString())
+	fun skip(skip: Int) = replaceQuery("skip", skip.toString())
 	
 	// Requesting
 	
@@ -105,7 +106,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
-		val maxConnections = 100 + Runtime.getRuntime().availableProcessors() * 50
+		val maxConnections = Runtime.getRuntime().availableProcessors().coerceAtLeast(2) * 50
 		private var httpClient = createHttpClient(CONNECTSID())
 		
 		val connectValidity = SimpleObservable(ConnectValidity.NOCONNECTION, true)

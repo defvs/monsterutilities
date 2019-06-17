@@ -1,5 +1,7 @@
 package xerus.monstercat.api
 
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import mu.KotlinLogging
@@ -8,15 +10,15 @@ import xerus.ktutil.helpers.Refresher
 import xerus.monstercat.*
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
+import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.downloader.CONNECTSID
 import java.io.File
 
-private const val cacheVersion = 2
+private const val cacheVersion = 3
 
 object Cache: Refresher() {
 	private val logger = KotlinLogging.logger { }
-	
-	private val releases = ArrayList<Release>()
 	
 	private val releaseCache: File
 		get() = cacheDir.resolve("releases.json")
@@ -24,7 +26,9 @@ object Cache: Refresher() {
 	private var lastRefresh = 0
 	private var lastCookie: String = ""
 	
-	suspend fun getReleases(): ArrayList<Release> {
+	val releases: ObservableList<Release> = FXCollections.observableArrayList<Release>()
+	
+	suspend fun getReleases(): List<Release> {
 		if(lastCookie != CONNECTSID() || releases.isEmpty() || currentSeconds() - lastRefresh > 1000)
 			refresh(true)
 		job.join()
@@ -32,8 +36,8 @@ object Cache: Refresher() {
 	}
 	
 	/** Gets all tracks by flatMapping all the tracks of all Releases */
-	suspend fun getTracks() =
-		getReleases().flatMap { it.tracks }
+	suspend fun getTracks(): Collection<Track> =
+		getReleases().flatMap { it.tracks }.toHashSet()
 	
 	override suspend fun doRefresh() {
 		refreshReleases()
@@ -41,38 +45,47 @@ object Cache: Refresher() {
 	
 	private suspend fun refreshReleases() {
 		logger.debug("Release refresh requested")
-		val releaseConnection = APIConnection("catalog", "release")
-			.fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 9))
 		lastRefresh = currentSeconds()
 		lastCookie = CONNECTSID()
 		
 		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
-		val results = releaseConnection.getReleases() ?: run {
+		val releaseResponse = APIConnection("catalog", "release").fields(Release::class).limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 9)).parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
+			?: run {
 			logger.info("Release refresh failed!")
 			return
 		}
-		if(releases.containsAll(results) && fetchTracksForReleases()) {
-			logger.debug("Releases are already up to date!")
-			return
-		}
-		val ind = releases.lastIndexOf(results.last())
+		val results = releaseResponse.results
 		
-		if(ind == -1) {
-			logger.info("Full Release refresh initiated")
-			releaseConnection.removeQuery("limit").getReleases()?.let {
+		val releaseConnection = APIConnection("catalog", "release").fields(Release::class)
+		when {
+			releaseResponse.total - releases.size > results.size || !releases.contains(results.last()) -> {
+				logger.info("Full Release refresh initiated")
 				releases.clear()
-				releases.addAll(it.asReversed())
-			} ?: run {
-				logger.warn("Release refresh failed!")
-				return
+				var i = 0
+				while(true) {
+					val result = releaseConnection.skip(i * 49).getReleases()
+					if(result == null) {
+						logger.warn("Release refresh failed!")
+						break
+					} else if(result.isEmpty()) {
+						break
+					}
+					releases.removeAll(result)
+					releases.addAll(result)
+					i++
+				}
+				logger.info("API returned ${releases.size} Releases")
 			}
-			logger.info("API returned ${releases.size} Releases")
-		} else {
-			val s = releases.size
-			releases.removeAll(releases.subList(ind, releases.size))
-			releases.addAll(results.asReversed())
-			logger.info("${releases.size - s} new Releases added, now at ${releases.size}")
+			releases.containsAll(results) && releases.size == releaseResponse.total -> {
+				logger.debug("Releases are already up to date!")
+			}
+			else -> {
+				val s = releases.size
+				releases.removeAll(results)
+				releases.addAll(0, results)
+				logger.info("${releases.size - s} new Releases added, now at ${releases.size}")
+			}
 		}
 		fetchTracksForReleases()
 	}
@@ -99,7 +112,7 @@ object Cache: Refresher() {
 			if(e.value?.await() == false)
 				releases.remove(e.key)
 		}
-		logger.debug { "Fetched ${releases.sumBy { it.tracks.size }} Tracks" }
+		logger.debug { "Fetched ${releases.sumBy { it.tracks.size }} Tracks with $failed failures" }
 		if(Settings.ENABLECACHE())
 			writeCache()
 		return failed == 0

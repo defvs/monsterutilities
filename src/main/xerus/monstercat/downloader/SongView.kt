@@ -149,7 +149,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 		var notDownloadable = 0
 		val releases = Cache.getReleases()
 		var done = 0
-		releases.forEach { release ->
+		releases.toList().forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			if(!release.downloadable) {
 				if(notDownloadable < 3)

@@ -13,7 +13,7 @@ data class Release(
 	@Key var renderedArtists: String = "",
 	@Key override var title: String = "",
 	@Key var coverUrl: String = "",
-	@Key var downloadable: Boolean = false) : MusicItem() {
+	@Key var downloadable: Boolean = false): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
 	
@@ -26,7 +26,7 @@ data class Release(
 		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
 		tracks.forEach { it.setRelease(this) }
 		
-		if (!isType(Type.MIXES, Type.PODCAST)) {
+		if(!isType(Type.MIXES, Type.PODCAST)) {
 			isCollection = true
 			type = when {
 				title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") -> Type.MCOLLECTION
@@ -41,10 +41,13 @@ data class Release(
 		return this
 	}
 	
+	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
+	
 	override fun toString(): String =
 		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
 	
-	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
+	fun debugString(): String =
+		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$renderedArtists', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
 	object Type {
 		val ALBUM = "Album"
