@@ -1,16 +1,17 @@
 # ![icon](assets/favicon.png) MonsterUtilities ![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord) [![Build Status](https://semaphoreci.com/api/v1/xerus2000/monsterutilities/branches/master/shields_badge.svg)](https://semaphoreci.com/xerus2000/monsterutilities)
 
-Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog
+Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog.
 
-[How it all began](assets/Story.md)
+- [How it all began](assets/Story.md)
+- [Getting started](#getting-started)
+- [Screenshots](#screenshots)
+- [Development](#development)
 
-## Usage
+## Getting started
 
-[Download](http://monsterutilities.bplaced.net/downloads?download) or use the GitHub releases.
+[Download from the website](http://monsterutilities.bplaced.net/downloads?download) or [from GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).
 
-> This is a pre-Release, you may encounter bugs. 
-If you do, open an issue here or send feedback from inside the application. 
-The latter will automatically include logs, which reside in `TEMP/monsterutilities/logs`
+> This is a pre-Release, you may encounter bugs. If you do, open an issue here or send feedback from inside the application. The latter will automatically include logs, which reside in `TEMP/monsterutilities/logs`
 
 To run it, you need to have Java 8 by Oracle installed on your computer.
 
@@ -36,8 +37,17 @@ identifies your Monstercat Account. Here's how to obtain it:
 Sometimes, the cache runs into issues and that may contribute to issues in the Downloader.
 Simply disable the cache, restart the application and enable it again.
 
-> If you still have issues - no problem! 
-> Hit me up on [Discord](https://discord.gg/ZEusvHS) or send Feedback directly from the application!
+> If you still have issues - no problem! Hit me up on [Discord](https://discord.gg/ZEusvHS) or send Feedback directly from the application!
+
+### Caching & Offline usage
+
+When starting the application for the first time, it will fetch and cache all Releases as well as Sheets (Catalog/Genres), which might take some time depending on your internet connection since they comprise a few MB. But after that, it will always prefer to fetch incrementally, reducing the load on your internet as well as Monstercat's Servers.  
+This also enables you to browse the Releases and Tracks offline on subsequent runs, but obviously the Player and Downloader won't work then.
+
+The cache as well as logs are stored in the TEMP directory, depending on your operating system:
+
+- Windows: `C:\Users\<username>\AppData\Local\Temp\monsterutilities` (can be overridden by changing the `java.io.tmpdir` JVM system property)
+- Unix: `/var/tmp/monsterutilities`
 
 ## Screenshots
 
@@ -72,37 +82,34 @@ The application has multiple available skins and other options if the defaults d
 
 [Gradle](https://gradle.org/) is used for building the project.
 
+If you want to build locally, you can get started without needing to install anything by checking out the project and simply executing`./gradlew run`, which will run the application right from source. More gradle tasks are [below](#important-tasks). 
+
 ### Setup
 
-If you want Gradle to use a JDK other than your system default, 
-create a `gradle.properties` file at the root of the project
-with the following line: 
+If you want Gradle to use a JDK other than your system default, create a `gradle.properties` file at the root of the project with the following line: 
 ```
 org.gradle.java.home=/path/to/jdk
 ```
 
-To fetch the Catalog and Genres, you need to create the file `src/resources/sheets-api-key` 
-and put an api key for Google Sheets into it.
-
+To fetch the Catalog and Genres, you need to create the file `src/resources/sheets-api-key` and put an api key for Google Sheets into it.
 
 ### Important Tasks
  Name        | Action
  ---         | ---
  `run`       | runs the project right from source
- `shadowJar` | Creates an executable jar with all libraries bundled in the root directory of the project
+ `shadowJar` | Creates an executable jar in the root directory of the project bundled with all libraries
  `runShadow` | Creates a shadowJar and runs it
+ `build` | Builds & tests the whole project
 
-Both run tasks can be run with the argument `-Dargs="--loglevel trace"`
-to change the log level or pass other arguments to the application.
+Both run tasks can be run with the argument `-Dargs="--loglevel trace"`to change the log level or pass other arguments to the application.
+
+If you run a self-compiled jar, the updater might automatically start on start-up. To prevent that, you can use the `--no-update` flag in the commandline.
 
 ### Logging
 
 Logging is done via slf4j wrapped by kotlin-logging and carried out by logback-classic.  
-A Logger can be created anywhere via `val logger = KotlinLogging.logger { }`
-and will automatically pick up the context where it was instantiated.
+A Logger can be created anywhere via `val logger = KotlinLogging.logger { }` and will automatically pick up the context where it was instantiated.
 
-The application runs with the WARN log level by default, however both run tasks
-automatically pass arguments to run it at DEBUG.
+The application runs with the WARN log level by default, however both run tasks automatically pass arguments to run it at DEBUG. If you want really fine-grained logs, you can also switch it to TRACE with the `--loglevel` flag, but please note that this might slow down your computer in some circumstances.
 
-The application also logs to a file in `TMP/monsterutilities/logs`, 
-the log level of which defaults to the lower of the console log level and DEBUG.
+The application also logs to a file in `TEMP/monsterutilities/logs`, the log level of which defaults to the lower of the console log level and DEBUG.
