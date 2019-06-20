@@ -26,9 +26,9 @@ For downloading and listening to the latest Track, your `connect.sid`
 needs to be entered in the bottom of the Downloader. It is a cookie that
 identifies your Monstercat Account. Here's how to obtain it:
 
-1) Log in on [monstercat.com](https://monstercat.com) and ensure that you have a valid Monstercat Gold subscription
+1) Log in on [monstercat.com/gold](https://www.monstercat.com/gold) and ensure that you have a valid Monstercat Gold subscription
 2) Go to your browser cookies and search for `connect.monstercat.com`  
-   [Quick link for Chrome](chrome://settings/cookies/detail?site=connect.monstercat.com)
+   For Chrome users: chrome://settings/cookies/detail?site=connect.monstercat.com
 3) Find the content of `connect.sid`. It is a string starting with `s%3A` and has around 90 characters.
 4) Copy that string into the `connect.sid` Textfield at the bottom of the Downloader.
 
