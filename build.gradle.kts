@@ -2,12 +2,19 @@ import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.IOException
 import java.util.*
 
 val isUnstable = properties["release"] == null
-val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
-version = "dev" + commitNumber +
-	"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
+var commitNumber: String = ""
+try {
+	commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
+	version = "dev" + commitNumber +
+		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
+} catch(e: IOException) {
+	println("Encountered an exception while determining the version - $e\nThe most likely cause is that git is not installed!")
+	version = "self-compiled"
+}
 file("src/resources/version").writeText(version as String)
 
 plugins {
