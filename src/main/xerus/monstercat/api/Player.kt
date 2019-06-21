@@ -30,7 +30,6 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
 import kotlin.math.pow
 
@@ -107,7 +106,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
-		Playlist.clear()
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -142,6 +140,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		playing("Loading $track")
 		player?.run {
 			play()
+			setOnEndOfMedia { playNext() }
 			setOnReady {
 				label.text = "Now Playing: $track"
 				val total = totalDuration.toMillis()
@@ -169,13 +168,16 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if(isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { reset() }
+	private val stopButton = buttonWithId("stop") {
+		reset()
+		Playlist.clear()
+	}
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().listen { updateVolume() }
 	}
 	private val shuffleButton = ToggleButton().id("shuffle").onClick {
-		Playlist.random = isSelected
+		Playlist.shuffle = isSelected
 	}
 	private val repeatButton = ToggleButton().id("repeat").onClick {
 		Playlist.repeat = isSelected
@@ -193,8 +195,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			add(stopButton)
 			add(buttonWithId("skipback") { playPrev() })
 			add(buttonWithId("skip") { playNext() })
-			add(shuffleButton.apply { isSelected = false })
-			add(repeatButton.apply { isSelected = false })
+			add(shuffleButton.apply { isSelected = Playlist.shuffle })
+			add(repeatButton.apply { isSelected = Playlist.repeat })
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
@@ -240,7 +242,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	fun playTracks(tracks: List<Track>, index: Int = 0) {
 		Playlist.setTracks(tracks)
 		playTrack(Playlist.tracks[index])
-		player?.setOnEndOfMedia { playNext() }
 	}
 	
 	fun playNext(){
@@ -249,6 +250,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			reset()
 		}else{
 			playTrack(next)
+			
 		}
 	}
 	

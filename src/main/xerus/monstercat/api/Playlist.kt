@@ -20,7 +20,7 @@ object Playlist {
 	}
 	
 	var repeat = false
-	var random = false
+	var shuffle = false
 	
 	operator fun get(index: Int): Track? = tracks.getOrNull(index)
 	
@@ -35,7 +35,7 @@ object Playlist {
 	
 	fun getNext() : Track?{
 		return when {
-			random -> nextSongRandom()
+			shuffle -> nextSongRandom()
 			repeat && (nextSong() == null) -> tracks[0]
 			else -> nextSong()
 		}
