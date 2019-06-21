@@ -53,6 +53,7 @@ class TabPlaylist : VTab() {
 		}
 		val item4 = MenuItem("Clear playlist") {
 			Playlist.clear()
+			Player.reset()
 		}
 		rightClickMenu.items.addAll(item1, item2, item3, item4)
 		table.contextMenu = rightClickMenu
