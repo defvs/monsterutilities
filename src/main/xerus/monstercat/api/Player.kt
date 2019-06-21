@@ -164,6 +164,12 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		prefWidth = 100.0
 		valueProperty().listen { updateVolume() }
 	}
+	private val shuffleButton = ToggleButton().id("shuffle").onClick {
+		Playlist.random = isSelected
+	}
+	private val repeatButton = ToggleButton().id("repeat").onClick {
+		Playlist.repeat = isSelected
+	}
 	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
@@ -177,6 +183,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			add(stopButton)
 			add(buttonWithId("skipback") { playPrev() })
 			add(buttonWithId("skip") { playNext() })
+			add(shuffleButton.apply { isSelected = false })
+			add(repeatButton.apply { isSelected = false })
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
