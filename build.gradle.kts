@@ -1,16 +1,8 @@
-import com.github.breadmoirai.GithubReleaseTask
+import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
-
-buildscript {
-	dependencies {
-		classpath("com.squareup.okhttp3:okhttp:3.12.1")
-		classpath("com.j256.simplemagic:simplemagic:1.14")
-		classpath("org.zeroturnaround:zt-exec:1.10")
-	}
-}
 
 val isUnstable = properties["release"] == null
 val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
@@ -19,10 +11,10 @@ version = "dev" + commitNumber +
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.31"
+	kotlin("jvm") version "1.3.40"
 	application
 	id("com.github.johnrengelman.shadow") version "5.0.0"
-	id("com.github.breadmoirai.github-release") version "2.2.4"
+	id("com.github.breadmoirai.github-release") version "2.2.6"
 	id("com.github.ben-manes.versions") version "0.21.0"
 }
 
@@ -45,21 +37,20 @@ application {
 repositories {
 	jcenter()
 	maven("https://jitpack.io")
-	maven("https://oss.jfrog.org/simple/libs-snapshot")
 }
 
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.Xerus2000.util", "javafx", "6bc6adce50de31606732f9a14342690a96308901")
+	implementation("com.github.Xerus2000.util", "javafx", "6fd9c81d25c6ac7e2315e42dc88b3556fc6b9ef7")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("io.github.microutils", "kotlin-logging", "1.6.+")
 	
-	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
+	implementation("be.bluexin", "drpc4k", "0.9")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190109-1.28.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.28.0")
 	
 	val junitVersion = "5.4.0"
 	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
@@ -68,6 +59,18 @@ dependencies {
 
 val jarFile
 	get() = "$name-$version.jar"
+
+githubRelease {
+	tagName(version.toString())
+	body(project.properties["m"]?.toString())
+	releaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
+	
+	prerelease(isUnstable)
+	releaseAssets(jarFile)
+	owner("Xerus2000")
+	
+	token(project.properties["github.token"]?.toString())
+}
 
 val MAIN = "_main"
 tasks {
@@ -82,7 +85,7 @@ tasks {
 		archiveClassifier.set("")
 		destinationDirectory.set(file("."))
 		doFirst {
-			destinationDirectory.get().asFile.listFiles().forEach {
+			destinationDirectory.get().asFile.listFiles()!!.forEach {
 				if(it.name.endsWith("jar"))
 					it.delete()
 			}
@@ -94,20 +97,11 @@ tasks {
 	
 	val githubRelease by getting(GithubReleaseTask::class) {
 		dependsOn(shadowJar)
-		
-		setTagName(version.toString())
-		setBody(project.properties["m"]?.toString())
-		setReleaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
-		
-		setPrerelease(isUnstable)
-		setReleaseAssets(jarFile)
-		setToken(project.properties["github.token"]?.toString())
-		setOwner("Xerus2000")
 	}
 	
 	val websiteRelease by creating(Exec::class) {
 		dependsOn(shadowJar)
-        
+		
 		val path = file("../monsterutilities-extras/website/downloads/" + if(isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {
