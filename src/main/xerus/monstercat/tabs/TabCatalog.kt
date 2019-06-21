@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
 import javafx.scene.control.*
+import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
 import javafx.scene.text.Font
 import kotlinx.coroutines.GlobalScope
@@ -64,6 +65,19 @@ class TabCatalog : TableTab() {
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
+				GlobalScope.launch {
+					val track = APIUtils.find(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+					if (track != null) Playlist.add(track)
+					else monsterUtilities.showMessage("The requested song could not be found.", "Cannot add to playlist", Alert.AlertType.WARNING)
+				}
+			}
+		}
+		table.setOnKeyPressed {
+			if (it.code == KeyCode.ENTER){
+				val selected = table.selectionModel.selectedItem ?: return@setOnKeyPressed
+				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
+				val selected = table.selectionModel.selectedItem ?: return@setOnKeyPressed
 				GlobalScope.launch {
 					val track = APIUtils.find(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
 					if (track != null) Playlist.add(track)
