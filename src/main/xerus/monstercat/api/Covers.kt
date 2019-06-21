@@ -29,6 +29,12 @@ object Covers {
 		return file.inputStream()
 	}
 	
+	fun getLargeCoverImage(coverUrl: String, size: Int = 1024): Image =
+			getLargeCover(coverUrl, size).use { Image(it, size.toDouble(), size.toDouble(), false, false) }
+	
+	fun getLargeCover(coverUrl: String, size: Int): InputStream =
+			fetchCover(coverUrl, size).content
+	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
 	 * @param coverUrl the base url to fetch the cover
 	 * @param size the size of the cover to be fetched from the api, with all powers of 2 being available.
