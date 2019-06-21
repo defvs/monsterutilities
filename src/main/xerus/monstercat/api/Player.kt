@@ -29,6 +29,9 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.schedule
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -90,7 +93,14 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
-			add(closeButton)
+			if (Playlist.tracks.size < 2){
+				add(closeButton)
+			}else{
+				add(buttonWithId("skip") { playNext() })
+				Timer("SkipErroredSong", false).schedule(5000) { // fixme : hardcoded delay in ms
+					playNext()
+				}
+			}
 		}
 	}
 	
