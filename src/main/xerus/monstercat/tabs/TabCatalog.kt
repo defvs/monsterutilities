@@ -1,17 +1,15 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
-import javafx.scene.control.Label
-import javafx.scene.control.TableColumn
-import javafx.scene.control.TableRow
+import javafx.scene.control.*
+import javafx.scene.input.MouseButton
 import javafx.scene.text.Font
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import xerus.ktutil.collections.ArraySet
 import xerus.ktutil.containsAny
-import xerus.ktutil.javafx.TableColumn
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.onFx
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.textWidth
 import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
@@ -19,9 +17,14 @@ import xerus.ktutil.javafx.ui.controls.Type
 import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
+import xerus.monstercat.api.APIUtils
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.Playlist
+import xerus.monstercat.monsterUtilities
 import java.time.LocalTime
 import kotlin.math.absoluteValue
+import xerus.ktutil.javafx.MenuItem
+import xerus.monstercat.api.response.Track
 
 val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
@@ -56,11 +59,59 @@ class TabCatalog : TableTab() {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
 		table.setOnMouseClicked { me ->
-			if(me.clickCount == 2) {
+			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
 				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
 				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
+				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
+				GlobalScope.launch {
+					val track = APIUtils.find(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+					if (track != null) Playlist.add(track)
+					else monsterUtilities.showMessage("The requested song could not be found.", "Cannot add to playlist", Alert.AlertType.WARNING)
+				}
 			}
 		}
+		
+		table.selectionModel.selectionMode = SelectionMode.MULTIPLE
+		val rightClickMenu = ContextMenu()
+		val item1 = MenuItem("Play") {
+			val selected = table.selectionModel.selectedItems
+			GlobalScope.launch {
+				Playlist.clear()
+				val tracklist = arrayListOf<Track>()
+				for (item in selected){
+					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+					if (track != null) tracklist.add(track)
+					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+				}
+				Player.playTracks(tracklist)
+			}
+		}
+		val item2 = MenuItem("Add to playlist") {
+			val selected = table.selectionModel.selectedItems
+			GlobalScope.launch {
+				for (item in selected){
+					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+					if (track != null) Playlist.add(track)
+					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+				}
+			}
+		}
+		val item3 = MenuItem("Play next") {
+			val selected = table.selectionModel.selectedItems
+			GlobalScope.launch {
+				for (item in selected.asReversed()){
+					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+					if (track != null) Playlist.addNext(track)
+					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+				}
+			}
+		}
+		val item4 = MenuItem("Select All") {
+			table.selectionModel.selectAll()
+		}
+		rightClickMenu.items.addAll(item1, item2, item3, item4)
+		table.contextMenu = rightClickMenu
 	}
 	
 	private fun setColumns(columns: List<String>) {

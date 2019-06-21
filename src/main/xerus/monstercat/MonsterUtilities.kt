@@ -35,11 +35,7 @@ import xerus.monstercat.api.Cache
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
-import xerus.monstercat.tabs.BaseTab
-import xerus.monstercat.tabs.TabCatalog
-import xerus.monstercat.tabs.TabGenres
-import xerus.monstercat.tabs.TabSettings
-import xerus.monstercat.tabs.TabSound
+import xerus.monstercat.tabs.*
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
@@ -78,6 +74,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 			}
 		}
 		addTab(TabCatalog::class)
+		addTab(TabPlaylist::class)
 		addTab(TabGenres::class)
 		addTab(TabDownloader::class)
 		addTab(TabSound::class)

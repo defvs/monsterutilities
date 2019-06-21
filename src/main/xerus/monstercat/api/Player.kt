@@ -97,6 +97,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
+		Playlist.clear()
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -174,6 +175,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
+			add(buttonWithId("skipback") { playPrev() })
+			add(buttonWithId("skip") { playNext() })
 			add(volumeSlider)
 			fill(pos = 0)
 			fill()
@@ -197,8 +200,14 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				onFx { showBack("Track not found") }
 				return@launch
 			}
+			playTracks(listOf(track))
+		}
+	}
+	
+	fun playFromPlaylist(index: Int){
+		val track = Playlist[index]
+		if (track != null) {
 			playTrack(track)
-			player?.setOnEndOfMedia { reset() }
 		}
 	}
 	
@@ -210,15 +219,26 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
-	fun playTracks(tracks: List<Track>, index: Int) {
-		playTrack(tracks[index])
-		onFx {
-			if(index > 0)
-				children.add(children.size - 3, buttonWithId("skipback") { playTracks(tracks, index - 1) })
-			if(index < tracks.lastIndex)
-				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
+	fun playTracks(tracks: List<Track>, index: Int = 0) {
+		Playlist.setTracks(tracks)
+		playTrack(Playlist.tracks[index])
+		player?.setOnEndOfMedia { playNext() }
+	}
+	
+	fun playNext(){
+		val next = Playlist.getNext()
+		if (next == null){
+			reset()
+		}else{
+			playTrack(next)
 		}
-		player?.setOnEndOfMedia { if(tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
+	}
+	
+	fun playPrev(){
+		val prev = Playlist.getPrev()
+		if (prev != null){
+			playTrack(prev)
+		}
 	}
 	
 }
