@@ -137,6 +137,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		logger.debug("Loading $track from $hash")
 		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		updateVolume()
+		onFx {
+			activeTrack.value = track
+		}
 		playing("Loading $track")
 		player?.run {
 			play()
@@ -146,9 +149,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-				onFx {
-					activeTrack.value = track
-				}
 			}
 			setOnError {
 				logger.warn("Error loading $track: $error", error)
