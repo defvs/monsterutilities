@@ -55,6 +55,7 @@ import xerus.monstercat.tabs.VTab
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 
@@ -465,7 +466,7 @@ class TabDownloader : VTab() {
 				val done = s + e
 				progressBar.progress = done / state.total.toDouble()
 				
-				if(done == state.total)
+				if(state.isDone)
 					progressLabel.text = "$done / ${state.total} Errors: $e"
 				else
 					counter = GlobalScope.launch {
@@ -505,12 +506,12 @@ class TabDownloader : VTab() {
 			downloader = GlobalScope.launch {
 				log("Download started")
 				var queued = 0
-				for(item in items) {
+				items@ for(item in items) {
 					val download: Download = ReleaseDownload(item.key, item.value)
 					val tracks = item.value.size
 					download.setOnCancelled {
 						tracksLeft -= tracks
-						state.cancelled()
+						state.cancel()
 						log("Cancelled ${item.key}")
 					}
 					download.setOnSucceeded {
@@ -535,7 +536,12 @@ class TabDownloader : VTab() {
 						log("Could not start download for $item: $exception")
 					}
 					while(tasks.size + queued >= DOWNLOADTHREADS())
-						delay(200)
+						try {
+							delay(200)
+						} catch(e: CancellationException) {
+							onFx { state.done() }
+							throw e
+						}
 				}
 				LASTDOWNLOADTIME.set(currentSeconds())
 			}
@@ -558,16 +564,3 @@ inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T : Enu
 	selectionModel.select(setting())
 	selectionModel.selectedItemProperty().listen { setting.set(it) }
 }
-
-/*override fun init() {
-	if () {
-		val alert = Alert(Alert.AlertType.CONFIRMATION, "The last Download ended unfinished. Do you want to continue it now?", ButtonType.YES, ButtonType.NO, ButtonType("Ask later"))
-		when (alert.showAndWait().getOrNull()) {
-			ButtonType.YES -> {
-				monsterUtilities.tabPane.selectionModel.select(monsterUtilities.tabs.indexOf(this))
-				startDownload()
-			}
-			ButtonType.NO -> { reset }
-		}
-	}
-}*/
