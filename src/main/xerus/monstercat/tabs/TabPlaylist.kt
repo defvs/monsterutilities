@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
+import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
 import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
@@ -36,6 +37,16 @@ class TabPlaylist : VTab() {
 			}
 			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
 				Playlist.removeAt(table.selectionModel.selectedIndex)
+			}
+		}
+		
+		table.setOnKeyPressed { ke ->
+			if (ke.code == KeyCode.DELETE){
+				Playlist.removeAt(table.selectionModel.selectedIndex)
+			}else if (ke.code == KeyCode.ENTER){
+				Player.playFromPlaylist(table.selectionModel.selectedIndex)
+			}else if (ke.code == KeyCode.ADD || ke.code == KeyCode.PLUS){
+				useSelectedTrack { Playlist.addNext(it) }
 			}
 		}
 		
