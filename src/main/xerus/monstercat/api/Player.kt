@@ -2,10 +2,7 @@ package xerus.monstercat.api
 
 import javafx.event.EventHandler
 import javafx.geometry.Pos
-import javafx.scene.control.Label
-import javafx.scene.control.ProgressBar
-import javafx.scene.control.Slider
-import javafx.scene.control.ToggleButton
+import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -95,7 +92,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			if (Playlist.tracks.size < 2){
 				add(closeButton)
 			}else{
-				add(buttonWithId("skip") { playNext() })
+				add(buttonWithId("skip") { playNext() }).apply {
+					tooltip = Tooltip("Skip")
+				}
 				Timer("SkipErroredSong", false).schedule(5000) { // fixme : hardcoded delay in ms
 					playNext()
 				}
@@ -168,19 +167,30 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause").onClick { if(isSelected) player?.pause() else player?.play() }
+			.apply {
+				tooltip = Tooltip("Pause / Play")
+			}
 	private val stopButton = buttonWithId("stop") {
 		reset()
 		Playlist.clear()
+	}.apply {
+		tooltip = Tooltip("Stop playing")
 	}
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().listen { updateVolume() }
+	}.apply {
+		tooltip = Tooltip("Volume")
 	}
 	private val shuffleButton = ToggleButton().id("shuffle").onClick {
 		Playlist.shuffle = isSelected
+	}.apply {
+		tooltip = Tooltip("Shuffle")
 	}
 	private val repeatButton = ToggleButton().id("repeat").onClick {
 		Playlist.repeat = isSelected
+	}.apply {
+		tooltip = Tooltip("Repeat all")
 	}
 	
 	private var coverUrl: String? = null
@@ -193,8 +203,12 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
-			add(buttonWithId("skipback") { playPrev() })
-			add(buttonWithId("skip") { playNext() })
+			add(buttonWithId("skipback") { playPrev() }).apply {
+				tooltip = Tooltip("Previous")
+			}
+			add(buttonWithId("skip") { playNext() }).apply {
+				tooltip = Tooltip("Next")
+			}
 			add(shuffleButton.apply { isSelected = Playlist.shuffle })
 			add(repeatButton.apply { isSelected = Playlist.repeat })
 			add(volumeSlider)
