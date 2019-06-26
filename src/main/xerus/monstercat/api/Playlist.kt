@@ -41,9 +41,15 @@ object Playlist {
 		}
 	}
 	
-	fun addNext(track: Track) = tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
+	fun addNext(track: Track) = tracks.run {
+		remove(track)
+		add(currentIndex.value?.let { it + 1 } ?: 0, track)
+	}
 	
-	fun add(track: Track) = tracks.add(track)
+	fun add(track: Track): Boolean = tracks.run {
+		remove(track)
+		return add(track)
+	}
 	
 	fun removeAt(index: Int?) {
 		if (index != null) tracks.removeAt(index)
