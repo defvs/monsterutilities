@@ -1,6 +1,6 @@
 package xerus.monstercat.tabs
 
-import javafx.beans.value.ChangeListener
+import javafx.beans.Observable
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
@@ -9,10 +9,9 @@ import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
-import xerus.monstercat.api.*
+import xerus.monstercat.api.Player
+import xerus.monstercat.api.Playlist
 import xerus.monstercat.api.response.Track
-import com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table
-
 
 
 class TabPlaylist : VTab() {
