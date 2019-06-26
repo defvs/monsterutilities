@@ -1,5 +1,6 @@
 package xerus.monstercat.tabs
 
+import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
@@ -10,6 +11,9 @@ import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.monstercat.api.*
 import xerus.monstercat.api.response.Track
+import com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table
+
+
 
 class TabPlaylist : VTab() {
 	var table = TableView<Track>().apply {
@@ -28,6 +32,18 @@ class TabPlaylist : VTab() {
 				ImmutableObservable(p.value.title)
 			}
 		})
+		
+		table.setRowFactory {
+			TableRow<Track>().apply {
+				Playlist.currentIndex.addListener { _, _, newValue ->
+					style = if (index == newValue) {
+						"-fx-background-color: #1f6601"
+					} else {
+						"-fx-background-color: transparent"
+					}
+				}
+			}
+		}
 		
 		table.selectionModel.selectionMode = SelectionMode.SINGLE
 		
