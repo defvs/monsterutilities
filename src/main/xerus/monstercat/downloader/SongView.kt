@@ -3,12 +3,7 @@ package xerus.monstercat.downloader
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
-import javafx.scene.control.CheckBoxTreeItem
-import javafx.scene.control.ContextMenu
-import javafx.scene.control.Tooltip
-import javafx.scene.control.TreeCell
-import javafx.scene.control.TreeView
+import javafx.scene.control.*
 import javafx.scene.control.cell.CheckBoxTreeCell
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -36,7 +31,7 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.globalDispatcher
 import kotlin.math.max
 
-class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
+class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	FilterableCheckTreeView<MusicItem>(FilterableTreeItem(RootMusicItem("Loading Releases..."))) {
 	val logger = KotlinLogging.logger { }
 	
@@ -44,7 +39,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
 	
 	private val checkCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
-		object : CheckBoxTreeCell<MusicItem>() {
+		object: CheckBoxTreeCell<MusicItem>() {
 			var listener = ListChangeListener<Node> { children.filterIsInstance<CheckBox>().firstOrNull()?.isDisable = true }
 			
 			init {
@@ -71,7 +66,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 	}
 	private val loadingCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
 		val loadingGif = ImageView(Image("img/loading-16.gif"))
-		object : TreeCell<MusicItem>() {
+		object: TreeCell<MusicItem>() {
 			init {
 				treeItemProperty().listen {
 					if(it != null) {
@@ -168,9 +163,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 			GlobalScope.launch(globalDispatcher) {
-				val image = Covers.getCoverImage(release.coverUrl, 16)
-				if(image.exception != null)
-					logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", image.exception)
+				var image = Covers.getCoverImage(release.coverUrl, 16)
+				if(image.exception != null) {
+					image = Covers.getCoverImage(release.coverUrl, 16, true)
+					if(image.exception != null)
+						logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", image.exception)
+				}
 				onFx {
 					treeItem.graphic = ImageView(image)
 					done++
@@ -184,7 +182,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 		roots.flatMap { it.value.internalChildren }.forEach { release -> (release as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == release.value.id }?.trackNumber } }
 	}
 	
-	private fun <T : Comparable<T>> sortReleases(selector: (Release) -> T) {
+	private fun <T: Comparable<T>> sortReleases(selector: (Release) -> T) {
 		roots.forEach { _, item -> item.internalChildren.sortBy { selector(it.value as Release) } }
 	}
 	
@@ -195,6 +193,6 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 }
 
 
-private class RootMusicItem(override var title: String, override var id: String = "") : MusicItem() {
+private class RootMusicItem(override var title: String, override var id: String = ""): MusicItem() {
 	override fun toString() = title
 }

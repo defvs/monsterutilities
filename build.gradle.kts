@@ -21,7 +21,7 @@ plugins {
 	kotlin("jvm") version "1.3.40"
 	application
 	id("com.github.johnrengelman.shadow") version "5.0.0"
-	id("com.github.breadmoirai.github-release") version "2.2.6"
+	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
 }
 
@@ -60,8 +60,9 @@ dependencies {
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.28.0")
 	
 	val junitVersion = "5.4.0"
-	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
+	testImplementation("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
+	testImplementation("io.kotlintest", "kotlintest-runner-junit5", "3.3.2")
 }
 
 val jarFile
