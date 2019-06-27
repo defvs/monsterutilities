@@ -19,15 +19,22 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.HttpMultipartMode
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.HttpClientBuilder
-import org.controlsfx.validation.*
+import org.controlsfx.validation.Severity
+import org.controlsfx.validation.ValidationResult
+import org.controlsfx.validation.ValidationSupport
+import org.controlsfx.validation.Validator
 import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.*
+import xerus.ktutil.javafx.properties.ImmutableObservable
+import xerus.ktutil.javafx.properties.ImmutableObservableList
+import xerus.ktutil.javafx.properties.dependOn
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
 import xerus.monstercat.cacheDir
+import xerus.monstercat.dataDir
 import xerus.monstercat.downloader.DownloaderSettings
 import xerus.monstercat.logDir
 import xerus.monstercat.monsterUtilities
@@ -83,12 +90,23 @@ class TabSettings: VTab() {
 		addButton("Check for Updates") { monsterUtilities.checkForUpdate(true) }
 		addRow(CheckBox("Check for Updates on startup").bind(Settings.AUTOUPDATE))
 		
+		val buttonWidth = 160.0
 		addRow(
-			createButton("Quick restart") {
+			createButton("Quick Restart") {
 				Settings.refresh()
 				DownloaderSettings.refresh()
 				App.restart()
-			}.apply { prefWidth = 120.0 },
+			}.apply { prefWidth = buttonWidth },
+			createButton("Clear cache & Restart") {
+				Settings.refresh()
+				DownloaderSettings.refresh()
+				try {
+					Cache.clear()
+					App.restart()
+				} catch(e: Exception) {
+					monsterUtilities.showError(e)
+				}
+			}.apply { prefWidth = buttonWidth },
 			createButton("Reset") {
 				App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 					initStyle(StageStyle.UTILITY)
@@ -97,7 +115,6 @@ class TabSettings: VTab() {
 							try {
 								Settings.clear()
 								DownloaderSettings.clear()
-								cacheDir.deleteRecursively()
 								Cache.clear()
 							} catch(e: Exception) {
 								monsterUtilities.showError(e)
@@ -108,7 +125,7 @@ class TabSettings: VTab() {
 					show()
 				}
 			}.apply {
-				prefWidth = 120.0
+				prefWidth = buttonWidth
 				textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
 			}
 		)
@@ -181,7 +198,7 @@ class TabSettings: VTab() {
 	companion object: KLogging() {
 		
 		fun sendFeedback(feedback: Feedback): CloseableHttpResponse {
-			val zipFile = cacheDir.resolve("report.zip")
+			val zipFile = dataDir.resolve("report.zip")
 			System.getProperties().list(PrintStream(cacheDir.resolve("System.properties.txt").outputStream()))
 			val files = cacheDir.listFiles() + logDir.listFiles()
 			ZipOutputStream(zipFile.outputStream()).use { zip ->

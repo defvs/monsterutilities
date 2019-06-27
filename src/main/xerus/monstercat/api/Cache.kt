@@ -160,8 +160,8 @@ object Cache: Refresher() {
 	
 	fun clear() {
 		logger.debug("Clearing Cache")
-		releaseCache.delete()
 		releases.clear()
+		cacheDir.deleteRecursively()
 	}
 	
 }

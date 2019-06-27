@@ -34,7 +34,7 @@ object Covers {
 	}
 	
 	private fun coverCacheFile(coverUrl: String) =
-		coverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
+		coverCacheDir.apply { mkdirs() }.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
 	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
 	 * @param coverUrl the base url to fetch the cover
