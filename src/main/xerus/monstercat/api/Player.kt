@@ -179,7 +179,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				val imageView = ImageView(Covers.getCoverImage(coverUrl!!, 24))
 				imageView.setOnMouseClicked {
 					if (it.button == MouseButton.PRIMARY && it.clickCount == 1){
-						val size: Double = minOf(Screen.getPrimary().visualBounds.height, Screen.getPrimary().visualBounds.height) / 2
+						val size: Double = minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
 						val pane = StackPane()
 						val largeImage = ImageView()
 						pane.add(Label("""Image loading..."""))
