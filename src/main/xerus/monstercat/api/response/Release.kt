@@ -24,9 +24,7 @@ data class Release(
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
-		tracks.forEach {
-			it.release = this
-		}
+		tracks.forEach { it.setRelease(this) }
 		
 		if(!isType(Type.MIXES, Type.PODCAST)) {
 			isCollection = true
@@ -41,17 +39,6 @@ data class Release(
 			}
 		}
 		return this
-	}
-	
-	/** Updates every track, linking it to its release.
-	 * Can be used after a track fetch.
-	 * [tracks] Tracks corresponding to that release which needs to be linked.
-	 */
-	fun updateTracks(tracks: List<Track>) {
-		this.tracks = tracks
-		this.tracks.forEach {
-			it.release = this
-		}
 	}
 	
 	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }

@@ -33,7 +33,10 @@ open class Track: MusicItem() {
 	var extra: String = ""
 	var splitTitle: List<String> = emptyList()
 	
-	lateinit var release: Release
+	private lateinit var release: Release
+	fun setRelease(release: Release) {
+		this.release = release
+	}
 	
 	var albumArtists = ""
 	var albumId = ""
@@ -50,7 +53,7 @@ open class Track: MusicItem() {
 		if(titleClean.isNotEmpty())
 			return this
 		
-		/*if(::release.isInitialized) { TODO : Remove this as it's useless, unless proven
+		if(::release.isInitialized) {
 			albumArtists = release.renderedArtists
 			val index = albums.indexOfFirst { it.albumId == release.id }
 			if(index > -1) {
@@ -58,7 +61,7 @@ open class Track: MusicItem() {
 				albumId = albumCatalogIds[index]
 				trackNumber = albums[index].trackNumber
 			}
-		}*/
+		}
 		
 		artistsTitle = formatArtists(artistsTitle)
 		artistsSplit = artistsTitle.splitArtists()
