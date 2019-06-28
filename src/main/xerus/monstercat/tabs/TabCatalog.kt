@@ -74,14 +74,25 @@ class TabCatalog : TableTab() {
 		}
 		table.setOnKeyPressed {
 			if (it.code == KeyCode.ENTER){
-				val selected = table.selectionModel.selectedItem ?: return@setOnKeyPressed
-				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
-				val selected = table.selectionModel.selectedItem ?: return@setOnKeyPressed
+				val selected = table.selectionModel.selectedItems
 				GlobalScope.launch {
-					val track = APIUtils.find(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-					if (track != null) Playlist.add(track)
-					else monsterUtilities.showMessage("The requested song could not be found.", "Cannot add to playlist", Alert.AlertType.WARNING)
+					Playlist.clear()
+					val tracklist = arrayListOf<Track>()
+					selected.forEach { item ->
+						val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+						if (track != null) tracklist.add(track)
+						else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+					}
+					Player.playTracks(tracklist)
+				}
+			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					selected.forEach { item ->
+						val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+						if (track != null) Playlist.add(track)
+						else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+					}
 				}
 			}
 		}
