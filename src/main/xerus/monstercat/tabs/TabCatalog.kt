@@ -96,7 +96,7 @@ class TabCatalog : TableTab() {
 				selected.forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) tracklist.add(track)
-					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 				}
 				Player.playTracks(tracklist)
 			}
@@ -107,7 +107,7 @@ class TabCatalog : TableTab() {
 				selected.forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) Playlist.add(track)
-					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 				}
 			}
 		}
@@ -117,7 +117,7 @@ class TabCatalog : TableTab() {
 				selected.asReversed().forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) Playlist.addNext(track)
-					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 				}
 			}
 		}
