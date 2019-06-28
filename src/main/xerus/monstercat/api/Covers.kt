@@ -35,7 +35,7 @@ object Covers {
 	}
   
 	private fun coverCacheFile(coverUrl: String) =
-		coverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
+			coverCacheDir.apply { mkdirs() }.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
   
 	fun getLargeCoverImage(coverUrl: String, size: Int = 1024, invalidate: Boolean = false): Image =
 			getLargeCover(coverUrl, invalidate).use { createImage(it, size) }
@@ -54,10 +54,7 @@ object Covers {
 	}
 	
 	private fun largeCoverCacheFile(coverUrl: String) =
-			largeCoverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
-	
-//			fetchCover(coverUrl, size).content
-  
+			largeCoverCacheDir.apply { mkdirs() }.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
 	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
 	 * @param coverUrl the base url to fetch the cover

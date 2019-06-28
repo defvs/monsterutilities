@@ -26,12 +26,12 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 val logDir: File
-	get() = cacheDir.resolve("logs").apply { mkdirs() }
+	get() = dataDir.resolve("logs").apply { mkdirs() }
 
 private fun Int.padDate() = toString().padStart(2, '0')
-private val logFile = logDir.resolve("log_${Calendar.getInstance().let {
-	"${(it.get(Calendar.MONTH) + 1).padDate()}-${it.get(Calendar.DAY_OF_MONTH).padDate()}-${it.get(Calendar.HOUR_OF_DAY).padDate()}"
-}}_${currentSeconds()}.txt")
+private val logFile = logDir.resolve("log_" +
+	"${Calendar.getInstance().let { "${(it.get(Calendar.MONTH) + 1).padDate()}-${it.get(Calendar.DAY_OF_MONTH).padDate()}-${it.get(Calendar.HOUR_OF_DAY).padDate()}" }}_" +
+	"${currentSeconds()}.txt")
 private var logLevel: Level = Level.WARN
 
 internal fun initLogging(args: Array<String>) {
@@ -80,7 +80,7 @@ internal fun initLogging(args: Array<String>) {
 	logger.info("Console loglevel: $logLevel")
 	logger.info("Logging to $logFile")
 	GlobalScope.launch {
-		val logs = logDir.listFiles()
+		val logs = logDir.apply { mkdirs() }.listFiles()
 		if(logs.size > 10) {
 			logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
 				it.lastModified() + 50 * 360_000 < System.currentTimeMillis()
