@@ -121,10 +121,17 @@ class TabCatalog : TableTab() {
 				}
 			}
 		}
-		val item4 = MenuItem("Select All") {
+		val playlistItems = {
+			arrayOf(item1, item2, item3)
+		}
+		val selectAllItem = MenuItem("Select All") {
 			table.selectionModel.selectAll()
 		}
-		rightClickMenu.items.addAll(item1, item2, item3, item4)
+		rightClickMenu.items.addAll(
+				*playlistItems(),
+				SeparatorMenuItem(),
+				selectAllItem
+		)
 		table.contextMenu = rightClickMenu
 	}
 	
