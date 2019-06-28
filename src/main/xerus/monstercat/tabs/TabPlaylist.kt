@@ -9,6 +9,7 @@ import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
+import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
 import xerus.monstercat.api.response.Track
@@ -36,6 +37,13 @@ class TabPlaylist : VTab() {
 			TableRow<Track>().apply {
 				Playlist.currentIndex.addListener { _, _, newValue ->
 					style = if (index == newValue) {
+						"-fx-background-color: #1f6601"
+					} else {
+						"-fx-background-color: transparent"
+					}
+				}
+				itemProperty().listen {
+					style = if (index == Playlist.currentIndex.value) {
 						"-fx-background-color: #1f6601"
 					} else {
 						"-fx-background-color: transparent"
