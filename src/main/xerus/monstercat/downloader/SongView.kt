@@ -3,12 +3,7 @@ package xerus.monstercat.downloader
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.scene.Node
-import javafx.scene.control.CheckBox
-import javafx.scene.control.CheckBoxTreeItem
-import javafx.scene.control.ContextMenu
-import javafx.scene.control.Tooltip
-import javafx.scene.control.TreeCell
-import javafx.scene.control.TreeView
+import javafx.scene.control.*
 import javafx.scene.control.cell.CheckBoxTreeCell
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -25,11 +20,7 @@ import xerus.ktutil.javafx.properties.addOneTimeListener
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.monstercat.api.APIConnection
-import xerus.monstercat.api.Cache
-import xerus.monstercat.api.ConnectValidity
-import xerus.monstercat.api.Covers
-import xerus.monstercat.api.Player
+import xerus.monstercat.api.*
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -101,7 +92,60 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 			arrayOf(MenuItem("Expand all") { expandAll() },
 				MenuItem("Collapse all") { expandAll(false) })
 		}
-		contextMenu = ContextMenu(*defaultItems())
+		val item1 = MenuItem("Play") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			GlobalScope.launch {
+				Playlist.clear()
+				val value = selected.value
+				when(value) {
+					is Release -> Player.play(value)
+					is Track -> Player.playTrack(value)
+				}
+			}
+		}
+		val item2 = MenuItem("Add to playlist") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			GlobalScope.launch {
+				val value = selected.value
+				when(value) {
+					is Release -> {
+						value.tracks.forEach { track ->
+							Playlist.add(track)
+						}
+					}
+					is Track -> Playlist.add(value)
+				}
+			}
+		}
+		val item3 = MenuItem("Play next") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			GlobalScope.launch {
+				val value = selected.value
+				when(value) {
+					is Release -> {
+						value.tracks.asReversed().forEach { track ->
+							Playlist.addNext(track)
+						}
+					}
+					is Track -> Playlist.addNext(value)
+				}
+			}
+		}
+		val playlistItems = {
+			arrayOf(item1, item2, item3)
+		}
+		contextMenu = ContextMenu(
+				*playlistItems(),
+				SeparatorMenuItem(),
+				*defaultItems()
+		)
+		setOnContextMenuRequested {
+			val value = selectionModel.selectedItem.value
+			val enable = (value is Track || value is Release)
+			playlistItems().forEach { item ->
+				item.isDisable = !enable
+			}
+		}
 		onReady {
 			APIConnection.connectValidity.addListener { _, old, new ->
 				if(old != new && new == ConnectValidity.GOLD)
