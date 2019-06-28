@@ -11,6 +11,7 @@ import java.net.URI
 object Covers {
 	
 	private val coverCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
+	private val largeCoverCacheDir = cacheDir.resolve("large-cover-images").apply { mkdirs() }
 	
 	/** Returns an Image of the cover in the requested size using caching.
 	 * @param size the size of the Image - the underlying image data will always be 64x64, thus this is the default. */
@@ -36,11 +37,26 @@ object Covers {
 	private fun coverCacheFile(coverUrl: String) =
 		coverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
   
-	fun getLargeCoverImage(coverUrl: String, size: Int = 1024): Image =
-			getLargeCover(coverUrl, size).use { Image(it, size.toDouble(), size.toDouble(), false, false) }
+	fun getLargeCoverImage(coverUrl: String, size: Int = 1024, invalidate: Boolean = false): Image =
+			getLargeCover(coverUrl, invalidate).use { createImage(it, size) }
+			
 	
-	fun getLargeCover(coverUrl: String, size: Int): InputStream =
-			fetchCover(coverUrl, size).content
+	fun getLargeCover(coverUrl: String, invalidate: Boolean = false) : InputStream {
+		val file = largeCoverCacheFile(coverUrl)
+		if(!file.exists() || invalidate) {
+			fetchCover(coverUrl, 2048).content.use { input ->
+				file.outputStream().use { out ->
+					input.copyTo(out)
+				}
+			}
+		}
+		return file.inputStream()
+	}
+	
+	private fun largeCoverCacheFile(coverUrl: String) =
+			largeCoverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
+	
+//			fetchCover(coverUrl, size).content
   
 	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
