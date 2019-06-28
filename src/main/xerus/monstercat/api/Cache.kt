@@ -110,7 +110,7 @@ object Cache: Refresher() {
 					failed++
 					return@async false
 				} else {
-					release.tracks = tracks
+					release.updateTracks(tracks)
 					success = true
 					return@async true
 				}
