@@ -24,7 +24,7 @@ data class Release(
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
-		tracks.forEach { it.setRelease(this) }
+		tracks.forEach { it.release = this }
 		
 		if(!isType(Type.MIXES, Type.PODCAST)) {
 			isCollection = true

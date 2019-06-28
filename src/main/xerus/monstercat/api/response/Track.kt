@@ -33,10 +33,7 @@ open class Track: MusicItem() {
 	var extra: String = ""
 	var splitTitle: List<String> = emptyList()
 	
-	private lateinit var release: Release
-	fun setRelease(release: Release) {
-		this.release = release
-	}
+	lateinit var release: Release
 	
 	var albumArtists = ""
 	var albumId = ""
