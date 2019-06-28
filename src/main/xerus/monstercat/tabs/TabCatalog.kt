@@ -93,7 +93,7 @@ class TabCatalog : TableTab() {
 			GlobalScope.launch {
 				Playlist.clear()
 				val tracklist = arrayListOf<Track>()
-				for (item in selected){
+				selected.forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) tracklist.add(track)
 					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
@@ -104,7 +104,7 @@ class TabCatalog : TableTab() {
 		val item2 = MenuItem("Add to playlist") {
 			val selected = table.selectionModel.selectedItems
 			GlobalScope.launch {
-				for (item in selected){
+				selected.forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) Playlist.add(track)
 					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
@@ -114,7 +114,7 @@ class TabCatalog : TableTab() {
 		val item3 = MenuItem("Play next") {
 			val selected = table.selectionModel.selectedItems
 			GlobalScope.launch {
-				for (item in selected.asReversed()){
+				selected.asReversed().forEach { item ->
 					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
 					if (track != null) Playlist.addNext(track)
 					else logger.error("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
