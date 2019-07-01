@@ -11,6 +11,7 @@ open class ListResponse<T> {
 
 class ReleaseResponse : ListResponse<Release>()
 class TrackResponse : ListResponse<Track>()
+class PlaylistResponse : ListResponse<ConnectPlaylist>()
 
 class ReleaseList : ArrayList<Release>()
 class TrackList : ArrayList<Track>()
