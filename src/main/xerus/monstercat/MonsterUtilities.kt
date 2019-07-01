@@ -320,21 +320,15 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	 * [x] and [y] Window position relative to screen
 	 * [animated] If we should open the window smoothly, starting from the top-left corner
 	 */
-	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null, animated: Boolean = true){
+	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null){
 		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
 		val pane = StackPane()
 		val largeImage = ImageView()
-		pane.alignment = Pos.TOP_LEFT
-		pane.add(StackPane(Label("""Image loading...""")).apply { alignment = Pos.CENTER })
+		pane.add(Label("""Image loading..."""))
 		pane.add(largeImage)
 		val stage = App.stage.createStage(title, pane).apply {
-			if (animated) {
-				height = 24.0
-				width = 24.0
-			}else {
-				height = windowSize
-				width = windowSize
-			}
+			height = windowSize
+			width = windowSize
 		}
 		stage.widthProperty().addListener { observable, oldValue, newValue ->
 			largeImage.fitHeight = newValue as Double
@@ -365,13 +359,6 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 		stage.setOnShown {
 			stage.x = x ?: stage.x
 			stage.y = y ?: stage.y
-			if (animated) {
-				GlobalScope.launch {
-					while (stage.height < windowSize) {
-						stage.height += 4.0
-						stage.width += 4.0
-						delay(TimeUnit.MILLISECONDS.toMillis(1))
-					}
 				}
 			}
 		}
