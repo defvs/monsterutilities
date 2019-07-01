@@ -317,13 +317,15 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	 * [isDecorated] True if the window has borders and title bar with close controls
 	 * [isDraggable] True if the window can be dragged by the mouse
 	 * [closeOnFocusLost] Should we close the window if we're out of focus ?
+	 * [x] and [y] Window position relative to screen
+	 * [animated] If we should open the window smoothly, starting from the top-left corner
 	 */
 	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null, animated: Boolean = true){
 		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
 		val pane = StackPane()
 		val largeImage = ImageView()
 		pane.alignment = Pos.TOP_LEFT
-		pane.add(Label("""Image loading..."""))
+		pane.add(StackPane(Label("""Image loading...""")).apply { alignment = Pos.CENTER })
 		pane.add(largeImage)
 		val stage = App.stage.createStage(title, pane).apply {
 			if (animated) {
@@ -333,6 +335,10 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 				height = windowSize
 				width = windowSize
 			}
+		}
+		stage.widthProperty().addListener { observable, oldValue, newValue ->
+			largeImage.fitHeight = newValue as Double
+			largeImage.fitWidth = newValue
 		}
 		stage.apply {
 			isResizable = false
