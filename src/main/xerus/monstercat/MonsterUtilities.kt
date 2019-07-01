@@ -2,24 +2,27 @@ package xerus.monstercat
 
 import javafx.application.Platform
 import javafx.concurrent.Task
+import javafx.event.EventHandler
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseEvent
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.stage.Screen
+import javafx.stage.StageStyle
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
 import xerus.ktutil.byteCountString
 import xerus.ktutil.copyTo
 import xerus.ktutil.currentSeconds
-import xerus.ktutil.javafx.checkFx
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
-import xerus.ktutil.javafx.createStage
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.launch
-import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.Changelog
@@ -27,6 +30,7 @@ import xerus.ktutil.javafx.ui.JFXMessageDisplay
 import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.to
 import xerus.monstercat.api.Cache
+import xerus.monstercat.api.Covers
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -304,6 +308,69 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 			dialog.initOwner(App.stage)
 			dialog.headerText = title
 			dialog.show()
+		}
+	}
+	
+	/** Shows a new window with an ImageView of the requested [coverUrl]
+	 * [title] Title of the window, only useful when decorated
+	 * [size] Height and width in pixel of the window and image
+	 * [isDecorated] True if the window has borders and title bar with close controls
+	 * [isDraggable] True if the window can be dragged by the mouse
+	 * [closeOnFocusLost] Should we close the window if we're out of focus ?
+	 */
+	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null, animated: Boolean = true){
+		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
+		val pane = StackPane()
+		val largeImage = ImageView()
+		pane.alignment = Pos.TOP_LEFT
+		pane.add(Label("""Image loading..."""))
+		pane.add(largeImage)
+		val stage = App.stage.createStage(title, pane).apply {
+			if (animated) {
+				height = 24.0
+				width = 24.0
+			}else {
+				height = windowSize
+				width = windowSize
+			}
+		}
+		stage.apply {
+			isResizable = false
+			initStyle(if (isDecorated) StageStyle.DECORATED else StageStyle.UNDECORATED)
+			if (isDraggable) {
+				var xOffset = 0.0
+				var yOffset = 0.0
+				pane.onMousePressed = EventHandler<MouseEvent> { event ->
+					xOffset = event.sceneX
+					yOffset = event.sceneY
+				}
+				pane.onMouseDragged = EventHandler<MouseEvent> { event ->
+					this.x = event.screenX - xOffset
+					this.y = event.screenY - yOffset
+				}
+			}
+			if (closeOnFocusLost) {
+				focusedProperty().addListener { _, lostFocus, _ ->
+					if (lostFocus) close()
+				}
+			}
+		}
+		stage.show()
+		stage.setOnShown {
+			stage.x = x ?: stage.x
+			stage.y = y ?: stage.y
+			if (animated) {
+				GlobalScope.launch {
+					while (stage.height < windowSize) {
+						stage.height += 4.0
+						stage.width += 4.0
+						delay(TimeUnit.MILLISECONDS.toMillis(1))
+					}
+				}
+			}
+		}
+		GlobalScope.launch {
+			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
 		}
 	}
 	

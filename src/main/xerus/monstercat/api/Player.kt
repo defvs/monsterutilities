@@ -10,11 +10,9 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Region
-import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
-import javafx.stage.Screen
 import javafx.util.Duration
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -24,7 +22,6 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
@@ -32,6 +29,9 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.monsterUtilities
+import java.util.*
+import kotlin.concurrent.schedule
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -175,20 +175,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			if(coverUrl != null) {
 				val imageView = ImageView(Covers.getCoverThumbnail(coverUrl!!, 24))
 				imageView.setOnMouseClicked {
-					if (it.button == MouseButton.PRIMARY && it.clickCount == 1){
-						val size: Double = minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
-						val pane = StackPane()
-						val largeImage = ImageView()
-						pane.add(Label("""Image loading..."""))
-						pane.add(largeImage)
-						val stage = App.stage.createStage("Cover Art", pane).apply {
-							height = size
-							width = size
-						}
-						stage.show()
-						GlobalScope.launch {
-							largeImage.image = Covers.getCoverImage(coverUrl!!, size.toInt())
-						}
+					if (it.button == MouseButton.PRIMARY && (it.clickCount == 1 || it.clickCount == 2)) {
+						val bounds = imageView.localToScreen(imageView.boundsInLocal)
+						monsterUtilities.viewCover(coverUrl!!, x = bounds.minX, y = bounds.minY)
 					}
 				}
 				children.add(0, imageView)
