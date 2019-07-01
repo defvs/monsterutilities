@@ -66,7 +66,10 @@ object Playlist {
 		tracks.setAll(playlist)
 	}
 	
-	fun nextSongRandom(): Track = tracks[(Math.random() * tracks.size).toInt()]
+	fun nextSongRandom(): Track {
+		val index = (Math.random() * tracks.size).toInt()
+		return if(index == currentIndex.value && tracks.size > 1) nextSongRandom() else tracks[index]
+	}
 	fun nextSong(): Track? {
 		val cur = currentIndex.value
 		return when {
