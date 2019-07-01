@@ -102,10 +102,7 @@ object Cache: Refresher() {
 		var failed = 0
 		var success = false
 		releases.associateWith { release ->
-			if(release.tracks.isNotEmpty()){
-				release.updateTracks(release.tracks)
-				return@associateWith null
-			}
+			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
 				val tracks = APIConnection("catalog", "release", release.id, "tracks").getTracks()
 				if(tracks == null) {

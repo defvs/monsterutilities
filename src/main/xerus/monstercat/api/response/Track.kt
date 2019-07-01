@@ -50,6 +50,16 @@ open class Track: MusicItem() {
 		if(titleClean.isNotEmpty())
 			return this
 		
+		/*if(::release.isInitialized) { TODO : Remove this as it's useless, unless proven
+			albumArtists = release.renderedArtists
+			val index = albums.indexOfFirst { it.albumId == release.id }
+			if(index > -1) {
+				albumName = albumNames[index]
+				albumId = albumCatalogIds[index]
+				trackNumber = albums[index].trackNumber
+			}
+		}*/
+		
 		artistsTitle = formatArtists(artistsTitle)
 		artistsSplit = artistsTitle.splitArtists()
 		splitTitle = "$artistsTitle $title".splitTitleTrimmed()
