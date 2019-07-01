@@ -322,10 +322,12 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	 */
 	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null){
 		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
+		
 		val pane = StackPane()
 		val largeImage = ImageView()
 		pane.add(Label("""Image loading..."""))
 		pane.add(largeImage)
+		
 		val stage = App.stage.createStage(title, pane).apply {
 			height = windowSize
 			width = windowSize
@@ -335,8 +337,15 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 			largeImage.fitWidth = newValue
 		}
 		stage.apply {
-			isResizable = false
+			this.isResizable = isResizable
+			
+			widthProperty().addListener { observable, oldValue, newValue ->
+				largeImage.fitHeight = newValue as Double
+				largeImage.fitWidth = newValue
+			}
+			
 			initStyle(if (isDecorated) StageStyle.DECORATED else StageStyle.UNDECORATED)
+			
 			if (isDraggable) {
 				var xOffset = 0.0
 				var yOffset = 0.0
@@ -349,18 +358,20 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 					this.y = event.screenY - yOffset
 				}
 			}
+			
 			if (closeOnFocusLost) {
 				focusedProperty().addListener { _, lostFocus, _ ->
 					if (lostFocus) close()
 				}
 			}
-		}
-		stage.show()
-		stage.setOnShown {
-			stage.x = x ?: stage.x
-			stage.y = y ?: stage.y
+			
+			setOnShown {
+				if(x != null && y != null) {
+					stage.x = x
+					stage.y = y
 				}
 			}
+			show()
 		}
 		GlobalScope.launch {
 			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
