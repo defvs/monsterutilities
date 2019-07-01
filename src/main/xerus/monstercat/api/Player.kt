@@ -177,7 +177,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				imageView.setOnMouseClicked {
 					if (it.button == MouseButton.PRIMARY && (it.clickCount == 1 || it.clickCount == 2)) {
 						val bounds = imageView.localToScreen(imageView.boundsInLocal)
-						monsterUtilities.viewCover(coverUrl!!, x = bounds.minX, y = bounds.minY)
+						monsterUtilities.viewCover(coverUrl!!)
 					}
 				}
 				children.add(0, imageView)
