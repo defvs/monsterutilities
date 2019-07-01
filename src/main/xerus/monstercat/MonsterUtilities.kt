@@ -318,9 +318,9 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	 * [isDraggable] True if the window can be dragged by the mouse
 	 * [closeOnFocusLost] Should we close the window if we're out of focus ?
 	 * [x] and [y] Window position relative to screen
-	 * [animated] If we should open the window smoothly, starting from the top-left corner
+	 * [isResizable] Allow resizing the window. The image will follow.
 	 */
-	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, x: Double? = null, y: Double? = null){
+	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false, x: Double? = null, y: Double? = null){
 		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
 		
 		val pane = StackPane()
