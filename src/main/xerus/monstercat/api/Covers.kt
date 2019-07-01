@@ -22,7 +22,7 @@ object Covers {
 	
 	/** Returns an Image of the cover in the requested size using caching.
 	 * @param size the size of the Image - the underlying image data will always be 64x64, thus this is the default. */
-	fun getCoverThumbnail(coverUrl: String, size: Number = 64, invalidate: Boolean = false): Image =
+	fun getThumbnailImage(coverUrl: String, size: Number = 64, invalidate: Boolean = false): Image =
 		getThumbnail(coverUrl, invalidate).use { createImage(it, size) }
 	
 	/** Returns an InputStream to the cover in size 64x64, using caching. */

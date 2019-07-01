@@ -480,7 +480,7 @@ class TabDownloader: VTab() {
 			
 			val taskView = TaskProgressView<Download>()
 			taskView.setGraphicFactory {
-				ImageView(Covers.getCoverThumbnail(it.coverUrl, 64))
+				ImageView(Covers.getThumbnailImage(it.coverUrl, 64))
 			}
 			tasks = taskView.tasks
 			tasks.listen {

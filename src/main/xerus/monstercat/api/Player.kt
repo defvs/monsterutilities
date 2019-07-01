@@ -30,8 +30,6 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
-import java.util.*
-import kotlin.concurrent.schedule
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -173,7 +171,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		onFx {
 			showText(text)
 			if(coverUrl != null) {
-				val imageView = ImageView(Covers.getCoverThumbnail(coverUrl!!, 24))
+				val imageView = ImageView(Covers.getThumbnailImage(coverUrl!!, 24))
 				imageView.setOnMouseClicked {
 					if (it.button == MouseButton.PRIMARY && (it.clickCount == 1 || it.clickCount == 2)) {
 						monsterUtilities.viewCover(coverUrl!!)
