@@ -5,8 +5,11 @@ import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
+import javafx.scene.layout.HBox
 import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
+import xerus.ktutil.javafx.add
+import xerus.ktutil.javafx.addButton
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
@@ -92,6 +95,16 @@ class TabPlaylist : VTab() {
 		rightClickMenu.items.addAll(item1, item2, item3, item4)
 		table.contextMenu = rightClickMenu
 		
+		val buttons = HBox()
+		buttons.add(Label("From Monstercat.com :"))
+		buttons.addButton("Open..."){
+			// TODO : Open dialog
+		}
+		buttons.addButton("Save..."){
+			// TODO : Save dialog
+		}
+		
+		add(buttons)
 		fill(table)
 	}
 	
