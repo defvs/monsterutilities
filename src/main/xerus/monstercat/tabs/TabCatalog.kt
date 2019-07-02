@@ -1,6 +1,7 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
+import javafx.collections.ObservableList
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
@@ -61,14 +62,14 @@ class TabCatalog : TableTab() {
 		})
 		table.setOnMouseClicked { me ->
 			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
-				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
-				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
-				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
+				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
 				GlobalScope.launch {
-					val track = APIUtils.find(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
-					if (track != null) Playlist.add(track)
-					else monsterUtilities.showMessage("The requested song could not be found.", "Cannot add to playlist", Alert.AlertType.WARNING)
+					Player.playTracks(getSongs(selected))
+				}
+			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
+				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
+				GlobalScope.launch {
+					Playlist.addAll(getSongs(selected))
 				}
 			}
 		}
@@ -76,74 +77,54 @@ class TabCatalog : TableTab() {
 			if (it.code == KeyCode.ENTER){
 				val selected = table.selectionModel.selectedItems
 				GlobalScope.launch {
-					Playlist.clear()
-					val tracklist = arrayListOf<Track>()
-					selected.forEach { item ->
-						val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-						if (track != null) tracklist.add(track)
-						else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
-					}
-					Player.playTracks(tracklist)
+					Player.playTracks(getSongs(selected))
 				}
 			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
 				val selected = table.selectionModel.selectedItems
 				GlobalScope.launch {
-					selected.forEach { item ->
-						val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-						if (track != null) Playlist.add(track)
-						else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
-					}
+					Playlist.addAll(getSongs(selected))
 				}
 			}
 		}
 		
 		table.selectionModel.selectionMode = SelectionMode.MULTIPLE
+		
 		val rightClickMenu = ContextMenu()
-		val item1 = MenuItem("Play") {
-			val selected = table.selectionModel.selectedItems
-			GlobalScope.launch {
-				Playlist.clear()
-				val tracklist = arrayListOf<Track>()
-				selected.forEach { item ->
-					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-					if (track != null) tracklist.add(track)
-					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
-				}
-				Player.playTracks(tracklist)
-			}
-		}
-		val item2 = MenuItem("Add to playlist") {
-			val selected = table.selectionModel.selectedItems
-			GlobalScope.launch {
-				selected.forEach { item ->
-					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-					if (track != null) Playlist.add(track)
-					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
-				}
-			}
-		}
-		val item3 = MenuItem("Play next") {
-			val selected = table.selectionModel.selectedItems
-			GlobalScope.launch {
-				selected.asReversed().forEach { item ->
-					val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-					if (track != null) Playlist.addNext(track)
-					else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
-				}
-			}
-		}
-		val playlistItems = {
-			arrayOf(item1, item2, item3)
-		}
-		val selectAllItem = MenuItem("Select All") {
-			table.selectionModel.selectAll()
-		}
 		rightClickMenu.items.addAll(
-				*playlistItems(),
+				MenuItem("Play") {
+					val selected = table.selectionModel.selectedItems
+					GlobalScope.launch {
+						Player.playTracks(getSongs(selected))
+					}
+				},
+				MenuItem("Add to playlist") {
+					val selected = table.selectionModel.selectedItems
+					GlobalScope.launch {
+						Playlist.addAll(getSongs(selected))
+					}
+				},
+				MenuItem("Play next") {
+					val selected = table.selectionModel.selectedItems
+					GlobalScope.launch {
+						Playlist.addAll(getSongs(selected), true)
+					}
+				},
 				SeparatorMenuItem(),
-				selectAllItem
+				MenuItem("Select All") {
+					table.selectionModel.selectAll()
+				}
 		)
 		table.contextMenu = rightClickMenu
+	}
+	
+	private suspend fun getSongs(songList: ObservableList<List<String>>): ArrayList<Track> {
+		val tracklist = arrayListOf<Track>()
+		songList.forEach { item ->
+			val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
+			if (track != null) tracklist.add(track)
+			else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+		}
+		return tracklist
 	}
 	
 	private fun setColumns(columns: List<String>) {
