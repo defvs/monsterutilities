@@ -27,6 +27,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
 import kotlin.math.pow
 
@@ -83,7 +84,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
-	private fun showBack(text: String) {
+	private fun showError(text: String) {
 		checkFx {
 			showText(text)
 			addButton { reset() }.id("back")
@@ -95,7 +96,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				add(buttonWithId("skip") { playNext() }).apply {
 					tooltip = Tooltip("Skip")
 				}
-				Timer("SkipErroredSong", false).schedule(5000) { // fixme : hardcoded delay in ms
+				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
 					playNext()
 				}
 			}
@@ -130,7 +131,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	fun playTrack(track: Track) {
 		disposePlayer()
 		val hash = track.streamHash ?: run {
-			showBack("$track is currently not available for streaming!")
+			showError("$track is currently not available for streaming!")
 			return
 		}
 		logger.debug("Loading $track from $hash")
@@ -151,7 +152,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 			setOnError {
 				logger.warn("Error loading $track: $error", error)
-				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
+				showError("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
 		}
 	}
@@ -230,7 +231,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			disposePlayer()
 			val track = APIUtils.find(title, artists)
 			if(track == null) {
-				onFx { showBack("Track not found") }
+				onFx { showError("Track not found") }
 				return@launch
 			}
 			playTracks(listOf(track))
