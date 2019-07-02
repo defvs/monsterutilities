@@ -5,8 +5,10 @@ import javafx.collections.ObservableList
 import mu.KotlinLogging
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
+import xerus.monstercat.api.response.ConnectPlaylist
 import xerus.monstercat.api.response.Track
 import java.util.*
+import kotlin.collections.ArrayList
 
 object Playlist {
 	val logger = KotlinLogging.logger { }
@@ -51,6 +53,8 @@ object Playlist {
 		return add(track)
 	}
 	
+	fun addAll(tracks: ArrayList<Track>) = this.tracks.addAll(tracks)
+	
 	fun removeAt(index: Int?) {
 		if (index != null) tracks.removeAt(index)
 		else tracks.removeAt(tracks.size - 1)
@@ -78,5 +82,11 @@ object Playlist {
 			repeat -> tracks.firstOrNull()
 			else -> return null
 		}
+	}
+	
+	fun loadPlaylist(playlist: ArrayList<Track>) {
+		clear()
+		Player.reset()
+		addAll(playlist)
 	}
 }

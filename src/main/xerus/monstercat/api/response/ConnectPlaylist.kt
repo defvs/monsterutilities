@@ -7,10 +7,11 @@ data class ConnectPlaylist(
 		@Key var name: String = "",
 		@Key var public: Boolean = false,
 		
-		@Key var tracks: List<Track> = ArrayList()
+		@Key var tracks: ArrayList<Track> = arrayListOf()
 ) {
 	fun init(): ConnectPlaylist {
 		name = name.trim()
 		return this
 	}
+	
 }

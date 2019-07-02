@@ -2,20 +2,30 @@ package xerus.monstercat.tabs
 
 import javafx.beans.Observable
 import javafx.beans.value.ObservableValue
+import javafx.collections.FXCollections
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
+import javafx.scene.layout.VBox
 import javafx.util.Callback
-import xerus.ktutil.javafx.MenuItem
-import xerus.ktutil.javafx.add
-import xerus.ktutil.javafx.addButton
-import xerus.ktutil.javafx.fill
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.ui.App
+import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.response.ConnectPlaylist
+import xerus.monstercat.api.response.Settings
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.downloader.CONNECTSID
+import xerus.monstercat.downloader.DownloaderSettings
+import xerus.monstercat.monsterUtilities
+import java.lang.Exception
 
 
 class TabPlaylist : VTab() {
@@ -98,14 +108,124 @@ class TabPlaylist : VTab() {
 		val buttons = HBox()
 		buttons.add(Label("From Monstercat.com :"))
 		buttons.addButton("Open..."){
-			// TODO : Open dialog
+			openPlaylistDialog()
 		}
 		buttons.addButton("Save..."){
-			// TODO : Save dialog
+			savePlaylistDialog()
 		}
 		
 		add(buttons)
 		fill(table)
+	}
+	
+	private fun openPlaylistDialog(){
+		val connection = APIConnection("playlist").fields(ConnectPlaylist::class)
+		
+		val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
+		
+		val parent = VBox()
+		val stage = App.stage.createStage("Open playlist from Monstercat.com", parent)
+		
+		val connectTable = TableView<ConnectPlaylist>().apply {
+			columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
+			columns.addAll(TableColumn<ConnectPlaylist, String>("Name").apply {
+				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
+					ImmutableObservable(p.value.name)
+				}
+			}, TableColumn<ConnectPlaylist, String>("Size").apply {
+				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
+					ImmutableObservable(p.value.tracks.size.toString())
+				}
+			})
+			
+			items = playlists
+			
+			selectionModel.selectionMode = SelectionMode.SINGLE
+			
+			if (APIConnection.connectValidity.value != ConnectValidity.NOGOLD && APIConnection.connectValidity.value != ConnectValidity.GOLD){
+				placeholder = Label("Please connect using connect.sid in the downloader tab.")
+			}else{
+				placeholder = Label("Loading...")
+				GlobalScope.async {
+					val results = connection.getPlaylists()
+					if (results != null && results.isNotEmpty())
+						playlists.addAll(results)
+					else
+						onFx {
+							placeholder = Label("No playlists were found on your account.")
+						}
+				}
+			}
+		}
+		
+		val urlField = TextField("").apply {
+			promptText = "Enter the playlist's URL"
+		}
+		
+		var fromUrl = false
+		
+		val buttons = HBox().apply {
+			addButton("Load") {
+				if (fromUrl){
+					val playlistId = urlField.text.substringAfterLast("/")
+					if (playlistId.length == 24){
+						GlobalScope.async {
+							val apiConnection = APIConnection("playlist", playlistId, "tracks")
+							try {
+								val tracks = apiConnection.getTracks()
+								if (tracks != null && tracks.isNotEmpty()) {
+									Playlist.loadPlaylist(tracks)
+									onFx { stage.close() }
+								}
+							}catch (e: Exception){
+								onFx {
+									monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlist were found at ${urlField.text}.")
+								}
+							}
+						}
+					}else{
+						monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist URL invalid", content = "${urlField.text} is not a valid URL.")
+					}
+				}else {
+					if (connectTable.selectionModel.selectedItem != null) {
+						GlobalScope.async {
+							val apiConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id, "tracks")
+							val tracks = apiConnection.getTracks()!!
+							Playlist.loadPlaylist(tracks)
+						}
+						stage.close()
+					}
+				}
+			}
+			addButton("From URL..."){}.apply {
+				onClick {
+					fromUrl = !fromUrl
+					
+					parent.children.removeAt(0)
+					if (fromUrl) {
+						text = "From account..."
+						parent.children.add(0, urlField)
+						parent.fill(pos = 1)
+					} else {
+						text = "From URL..."
+						parent.children.removeAt(0)
+						parent.fill(connectTable, 0)
+					}
+				}
+			}
+			addButton("Cancel") {
+				stage.close()
+			}
+		}
+		
+		// parent.add(urlField)
+		parent.add(buttons)
+		parent.fill(connectTable, 0)
+		stage.show()
+	}
+	
+	private fun savePlaylistDialog(){
+		// TODO : Playlist saving
 	}
 	
 	inline fun useSelectedTrack(action: (Track) -> Unit) {

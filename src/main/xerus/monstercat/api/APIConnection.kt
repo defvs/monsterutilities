@@ -21,10 +21,7 @@ import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.ReleaseResponse
-import xerus.monstercat.api.response.Session
-import xerus.monstercat.api.response.TrackResponse
-import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -73,6 +70,9 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
+	
+	fun getPlaylists()=
+		parseJSON(PlaylistResponse::class.java)?.results?.map { it.init() }
 	
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
