@@ -143,9 +143,9 @@ class TabDownloader: VTab() {
 				textProperty().dependOn(pattern) {
 					try {
 						track.toString(pattern.value).also { patternValid.value = true }
-					} catch(e: ParserException) {
+					} catch(e: FieldNotFoundException) {
 						patternValid.value = false
-						"No such field: " + e.cause?.cause?.message
+						"No such field: " + e.fieldName
 					} catch(e: Exception) {
 						patternValid.value = false
 						monsterUtilities.showError(e, "Error while parsing filename pattern")
