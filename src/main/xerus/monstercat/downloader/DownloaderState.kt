@@ -9,6 +9,7 @@ class DownloaderState(total: Int, success: Int = 0, errors: Int = 0) : AbstractO
 		private set
 	var success = success
 		private set
+	var isDone = false
 	
 	override fun getValue() = this
 	
@@ -22,8 +23,13 @@ class DownloaderState(total: Int, success: Int = 0, errors: Int = 0) : AbstractO
 		listeners.notifyChange(this, this)
 	}
 	
-	fun cancelled() {
+	fun cancel() {
 		total--
+		listeners.notifyChange(this, this)
+	}
+	
+	fun done() {
+		isDone = true
 		listeners.notifyChange(this, this)
 	}
 	

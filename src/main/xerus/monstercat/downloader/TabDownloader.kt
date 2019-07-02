@@ -6,12 +6,7 @@ import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.StackPane
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
 import javafx.scene.text.Text
 import javafx.stage.Stage
 import javafx.stage.StageStyle
@@ -22,10 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import xerus.ktutil.currentSeconds
-import xerus.ktutil.exists
-import xerus.ktutil.formatTimeDynamic
-import xerus.ktutil.formattedTime
+import xerus.ktutil.*
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.javafx.*
@@ -40,8 +32,6 @@ import xerus.ktutil.javafx.ui.controls.Type
 import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
-import xerus.ktutil.str
-import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.Covers
@@ -66,7 +56,7 @@ val trackPatterns = ImmutableObservableList(
 	"%albumArtists% - %albumName% - %trackNumber% %title%",
 	"%albumId% %trackNumber% - %artistsSplit|enumerate% - %titleClean%{ (feat. %feat%)}{ (%extra%)}{ [%remix%]}")
 
-class TabDownloader : VTab() {
+class TabDownloader: VTab() {
 	
 	private val songView = SongView(SONGSORTING)
 	
@@ -86,7 +76,7 @@ class TabDownloader : VTab() {
 		
 		releaseSearch.conditionBox.select(releaseSearch.conditionBox.items[1])
 		(releaseSearch.searchField as DatePicker).run {
-			converter = object : StringConverter<LocalDate>() {
+			converter = object: StringConverter<LocalDate>() {
 				override fun toString(`object`: LocalDate?) = `object`?.toString()
 				override fun fromString(string: String?) = string?.toLocalDate()
 			}
@@ -218,7 +208,7 @@ class TabDownloader : VTab() {
 		addLabeled("Download separate cover arts for ", createComboBox(DOWNLOADCOVERS))
 		addLabeled("Album Mixes", createComboBox(ALBUMMIXES))
 		
-		addLabeled("Cover art size", Spinner(object : SpinnerValueFactory<Int>() {
+		addLabeled("Cover art size", Spinner(object: SpinnerValueFactory<Int>() {
 			init {
 				valueProperty().bindBidirectional(COVERARTSIZE)
 			}
@@ -465,9 +455,13 @@ class TabDownloader : VTab() {
 				val done = s + e
 				progressBar.progress = done / state.total.toDouble()
 				
-				if(done == state.total)
-					progressLabel.text = "$done / ${state.total} Errors: $e"
-				else
+				if(state.isDone) {
+					val text = "$done / ${state.total} Errors: $e"
+					logger.debug("Downloader done: $text")
+					onFx {
+						progressLabel.text = text
+					}
+				} else {
 					counter = GlobalScope.launch {
 						val estimate = (tracksLeft * times.average()).toLong() / 1000 / DOWNLOADTHREADS()
 						// do not adjust if difference smaller than 8%
@@ -481,6 +475,7 @@ class TabDownloader : VTab() {
 							timeLeft--
 						}
 					}
+				}
 			}
 			
 			val taskView = TaskProgressView<Download>()
@@ -490,6 +485,7 @@ class TabDownloader : VTab() {
 			tasks = taskView.tasks
 			tasks.listen {
 				if(it.isEmpty()) {
+					state.done()
 					cancelButton.apply {
 						setOnMouseClicked { initialize() }
 						text = "Back"
@@ -505,12 +501,12 @@ class TabDownloader : VTab() {
 			downloader = GlobalScope.launch {
 				log("Download started")
 				var queued = 0
-				for(item in items) {
+				items@ for(item in items) {
 					val download: Download = ReleaseDownload(item.key, item.value)
 					val tracks = item.value.size
 					download.setOnCancelled {
 						tracksLeft -= tracks
-						state.cancelled()
+						state.cancel()
 						log("Cancelled ${item.key}")
 					}
 					download.setOnSucceeded {
@@ -549,8 +545,8 @@ class TabDownloader : VTab() {
 	
 }
 
-inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T : Enum<T>, T : Named = ComboBox<T>(ImmutableObservableList(*enumValues<T>())).apply {
-	converter = object : StringConverter<T>() {
+inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T: Enum<T>, T: Named = ComboBox<T>(ImmutableObservableList(*enumValues<T>())).apply {
+	converter = object: StringConverter<T>() {
 		val values = enumValues<T>().associateBy { it.displayName }
 		override fun toString(`object`: T) = `object`.displayName
 		override fun fromString(string: String) = values[string]
@@ -558,16 +554,3 @@ inline fun <reified T> createComboBox(setting: PropertySetting<T>) where T : Enu
 	selectionModel.select(setting())
 	selectionModel.selectedItemProperty().listen { setting.set(it) }
 }
-
-/*override fun init() {
-	if () {
-		val alert = Alert(Alert.AlertType.CONFIRMATION, "The last Download ended unfinished. Do you want to continue it now?", ButtonType.YES, ButtonType.NO, ButtonType("Ask later"))
-		when (alert.showAndWait().getOrNull()) {
-			ButtonType.YES -> {
-				monsterUtilities.tabPane.selectionModel.select(monsterUtilities.tabs.indexOf(this))
-				startDownload()
-			}
-			ButtonType.NO -> { reset }
-		}
-	}
-}*/
