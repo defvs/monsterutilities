@@ -88,11 +88,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 			}
 		}
 		
-		val defaultItems = {
-			arrayOf(MenuItem("Expand all") { expandAll() },
-				MenuItem("Collapse all") { expandAll(false) })
-		}
-		val item1 = MenuItem("Play") {
+		val menuPlay = MenuItem("Play") {
 			val selected = selectionModel.selectedItem ?: return@MenuItem
 			GlobalScope.launch {
 				Playlist.clear()
@@ -103,7 +99,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				}
 			}
 		}
-		val item2 = MenuItem("Add to playlist") {
+		val menuAdd = MenuItem("Add to playlist") {
 			val selected = selectionModel.selectedItem ?: return@MenuItem
 			GlobalScope.launch {
 				val value = selected.value
@@ -117,7 +113,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				}
 			}
 		}
-		val item3 = MenuItem("Play next") {
+		val menuAddNext = MenuItem("Play next") {
 			val selected = selectionModel.selectedItem ?: return@MenuItem
 			GlobalScope.launch {
 				val value = selected.value
@@ -131,20 +127,18 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>) :
 				}
 			}
 		}
-		val playlistItems = {
-			arrayOf(item1, item2, item3)
-		}
 		contextMenu = ContextMenu(
-				*playlistItems(),
+				menuPlay, menuAdd, menuAddNext,
 				SeparatorMenuItem(),
-				*defaultItems()
+				MenuItem("Expand all") { expandAll() },
+				MenuItem("Collapse all") { expandAll(false) }
 		)
 		setOnContextMenuRequested {
 			val value = selectionModel.selectedItem.value
 			val enable = (value is Track || value is Release)
-			playlistItems().forEach { item ->
-				item.isDisable = !enable
-			}
+			menuPlay.isDisable = !enable
+			menuAdd.isDisable = !enable
+			menuAddNext.isDisable = !enable
 		}
 		onReady {
 			APIConnection.connectValidity.addListener { _, old, new ->
