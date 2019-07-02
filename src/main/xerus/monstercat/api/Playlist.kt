@@ -7,6 +7,7 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
 import xerus.monstercat.api.response.Track
 import java.util.*
+import kotlin.collections.ArrayList
 
 object Playlist {
 	val logger = KotlinLogging.logger { }
@@ -77,6 +78,14 @@ object Playlist {
 			cur + 1 < tracks.size -> tracks[cur + 1]
 			repeat -> tracks.firstOrNull()
 			else -> return null
+		}
+	}
+	
+	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
+		if (asNext) tracks.reverse()
+		tracks.forEach { track ->
+			if (asNext) addNext(track)
+			else add(track)
 		}
 	}
 }
