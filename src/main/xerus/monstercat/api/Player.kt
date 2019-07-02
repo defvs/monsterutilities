@@ -166,10 +166,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	private val pauseButton = ToggleButton().id("play-pause").onClick { if(isSelected) player?.pause() else player?.play() }
-			.apply {
-				tooltip = Tooltip("Pause / Play")
-			}
+	private val pauseButton = ToggleButton().id("play-pause")
+			.onClick { if (isSelected) player?.pause() else player?.play() }
+			.apply { tooltip = Tooltip("Pause / Play") }
 	private val stopButton = buttonWithId("stop") {
 		reset()
 		Playlist.clear()
