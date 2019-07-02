@@ -11,8 +11,8 @@ import xerus.ktutil.helpers.SimpleRefresher
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.Snackbar
-import xerus.ktutil.readToObject
-import xerus.ktutil.writeToFile
+import xerus.ktutil.readSerializedObject
+import xerus.ktutil.serializeToFile
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets.fetchMCatalogTab
 import xerus.monstercat.api.Cache
@@ -98,7 +98,7 @@ abstract class FetchTab : VTab() {
 			return
 		logger.debug("Writing cache file $cacheFile")
 		try {
-			sheet.writeToFile(cacheFile)
+			sheet.serializeToFile(cacheFile)
 		} catch(e: IOException) {
 			monsterUtilities.showError(e, "Couldn't write $tabName cache!")
 		}
@@ -108,7 +108,7 @@ abstract class FetchTab : VTab() {
 		if(!Settings.ENABLECACHE())
 			return
 		try {
-			readSheet(cacheFile.readToObject())
+			readSheet(cacheFile.readSerializedObject())
 			logger.debug("Restored cache file $cacheFile")
 			showNotification(tabRestoredFromCache)
 		} catch(ignored: FileNotFoundException) {
