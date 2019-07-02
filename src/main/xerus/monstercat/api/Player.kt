@@ -254,7 +254,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
 	fun playTracks(tracks: List<Track>, index: Int = 0) {
 		Playlist.setTracks(tracks)
-		playTrack(Playlist.tracks[index])
+		playFromPlaylist(index)
 	}
 	
 	fun playNext(){
