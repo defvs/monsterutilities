@@ -17,10 +17,6 @@ open class Track: MusicItem() {
 	override var title: String = ""
 	@Key
 	var albums: List<Album> = emptyList()
-	@Key
-	var albumNames: List<String> = emptyList()
-	@Key
-	var albumCatalogIds: List<String> = emptyList()
 	@Key("artistRelationships")
 	var artists: List<ArtistRel> = emptyList()
 	@Key
@@ -33,10 +29,7 @@ open class Track: MusicItem() {
 	var extra: String = ""
 	var splitTitle: List<String> = emptyList()
 	
-	private lateinit var release: Release
-	fun setRelease(release: Release) {
-		this.release = release
-	}
+	lateinit var release: Release
 	
 	var albumArtists = ""
 	var albumId = ""
@@ -50,17 +43,14 @@ open class Track: MusicItem() {
 		get() = title.contains("Album Mix")
 	
 	open fun init(): Track {
-		if(titleClean.isNotEmpty())
+		if(albumArtists.isNotEmpty() && titleClean.isNotEmpty())
 			return this
 		
 		if(::release.isInitialized) {
 			albumArtists = release.renderedArtists
-			val index = albums.indexOfFirst { it.albumId == release.id }
-			if(index > -1) {
-				albumName = albumNames[index]
-				albumId = albumCatalogIds[index]
-				trackNumber = albums[index].trackNumber
-			}
+			albumName = release.title
+			albumId = release.catalogId
+			trackNumber = albums.find { it.albumId == release.id }?.trackNumber ?: -1
 		}
 		
 		artistsTitle = formatArtists(artistsTitle)
@@ -79,9 +69,9 @@ open class Track: MusicItem() {
 		return this
 	}
 	
-	override fun toString(pattern: String, vararg additionalFields: Pair<String, String>): String {
+	override fun toString(template: String, vararg additionalFields: Pair<String, String>): String {
 		init()
-		return super.toString(pattern, *additionalFields)
+		return super.toString(template, *additionalFields)
 	}
 	
 	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
@@ -91,4 +81,6 @@ open class Track: MusicItem() {
 	
 	override fun hashCode() = id.hashCode()
 	
+	fun debugString(): String =
+		"Track(id='$id', artistsTitle='$artistsTitle', title='$title', albums=$albums, artists=$artists, bpm=$bpm, artistsSplit=$artistsSplit, titleClean='$titleClean', remix='$remix', feat='$feat', extra='$extra', splitTitle=$splitTitle, release=${if(::release.isInitialized) release else null}, albumArtists='$albumArtists', albumId='$albumId', albumName='$albumName', trackNumber=$trackNumber)"
 }
