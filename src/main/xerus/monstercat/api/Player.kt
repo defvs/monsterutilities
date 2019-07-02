@@ -167,31 +167,23 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	private val pauseButton = ToggleButton().id("play-pause")
-			.onClick { if (isSelected) player?.pause() else player?.play() }
-			.apply { tooltip = Tooltip("Pause / Play") }
+	private val pauseButton = ToggleButton().id("play-pause").onClick {
+		if (isSelected) player?.pause() else player?.play()
+	}.apply { tooltip = Tooltip("Pause / Play") }
 	private val stopButton = buttonWithId("stop") {
 		reset()
 		Playlist.clear()
-	}.apply {
-		tooltip = Tooltip("Stop playing")
-	}
+	}.apply { tooltip = Tooltip("Stop playing") }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
 		prefWidth = 100.0
 		valueProperty().listen { updateVolume() }
-	}.apply {
-		tooltip = Tooltip("Volume")
-	}
+	}.apply { tooltip = Tooltip("Volume") }
 	private val shuffleButton = ToggleButton().id("shuffle").onClick {
 		Playlist.shuffle = isSelected
-	}.apply {
-		tooltip = Tooltip("Shuffle")
-	}
+	}.apply { tooltip = Tooltip("Shuffle") }
 	private val repeatButton = ToggleButton().id("repeat").onClick {
 		Playlist.repeat = isSelected
-	}.apply {
-		tooltip = Tooltip("Repeat all")
-	}
+	}.apply { tooltip = Tooltip("Repeat all") }
 	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
