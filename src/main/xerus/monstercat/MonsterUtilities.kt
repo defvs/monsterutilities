@@ -333,12 +333,12 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 		val stage = App.stage.createStage(title, pane).apply {
 			height = windowSize
 			width = windowSize
-		}
-		stage.widthProperty().addListener { _, _, newValue ->
-			largeImage.fitHeight = newValue as Double
-			largeImage.fitWidth = newValue
-		}
-		stage.apply {
+			if (isResizable) {
+				widthProperty().addListener { _, _, newValue ->
+					largeImage.fitHeight = newValue as Double
+					largeImage.fitWidth = newValue
+				}
+			}
 			this.isResizable = isResizable
 			
 			widthProperty().addListener { _, _, newValue ->
@@ -366,8 +366,9 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 					if (lostFocus) close()
 				}
 			}
+			show()
 		}
-		stage.show()
+		
 		GlobalScope.launch {
 			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
 		}
