@@ -11,8 +11,8 @@ import java.net.URI
 
 object Covers {
 	
-	private val coverCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
-	private val largeCoverCacheDir = cacheDir.resolve("large-cover-images").apply { mkdirs() }
+	private val thumbnailCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
+	private val coverCacheDir = cacheDir.resolve("large-cover-images").apply { mkdirs() }
 	
 	private fun coverCacheFile(file: File, coverUrl: String) =
 			file.apply { mkdirs() }.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
@@ -27,7 +27,7 @@ object Covers {
 	
 	/** Returns an InputStream to the cover in size 64x64, using caching. */
 	private fun getThumbnail(coverUrl: String, invalidate: Boolean = false): InputStream {
-		val file = coverCacheFile(coverCacheDir, coverUrl)
+		val file = coverCacheFile(thumbnailCacheDir, coverUrl)
 		if(!file.exists() || invalidate) {
 			fetchCover(coverUrl, 64).content.use { input ->
 				file.outputStream().use { out ->
@@ -45,7 +45,7 @@ object Covers {
 	
 	/** Returns an InputStream to the cover in size 2048x2048, using caching. */
 	private fun getCover(coverUrl: String, invalidate: Boolean = false) : InputStream {
-		val file = coverCacheFile(largeCoverCacheDir, coverUrl)
+		val file = coverCacheFile(coverCacheDir, coverUrl)
 		if(!file.exists() || invalidate) {
 			fetchCover(coverUrl, 2048).content.use { input ->
 				file.outputStream().use { out ->
