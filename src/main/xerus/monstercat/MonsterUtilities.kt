@@ -223,9 +223,12 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	
 	fun showChangelog() {
 		val c = Changelog().apply {
-			version("dev123", "Revamp Release fetching",
+			version("dev138", "Revamp Release fetching",
 				"The Release fetching now works with the new pagination of the Monstercat API",
-				"Added a little cover art in the Player")
+				"Added a little cover art in the Player",
+				"Fixed naming patterns in Downloader",
+				"Improved caching",
+				"Squashed many small bugs")
 			
 			version("dev116", "Bugfixes & Downloader aftercare",
 				"Updated & Expanded connect.sid instructions",
