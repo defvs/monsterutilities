@@ -129,6 +129,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		logger.debug("Loading $track from $hash")
 		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		updateVolume()
+		coverUrl = track.release.coverUrl
 		playing("Loading $track")
 		player?.run {
 			play()
