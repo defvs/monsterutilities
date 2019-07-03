@@ -334,14 +334,14 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 			height = windowSize
 			width = windowSize
 		}
-		stage.widthProperty().addListener { observable, oldValue, newValue ->
+		stage.widthProperty().addListener { _, _, newValue ->
 			largeImage.fitHeight = newValue as Double
 			largeImage.fitWidth = newValue
 		}
 		stage.apply {
 			this.isResizable = isResizable
 			
-			widthProperty().addListener { observable, oldValue, newValue ->
+			widthProperty().addListener { _, _, newValue ->
 				largeImage.fitHeight = newValue as Double
 				largeImage.fitWidth = newValue
 			}
