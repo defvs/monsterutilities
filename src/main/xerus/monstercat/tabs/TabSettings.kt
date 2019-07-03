@@ -203,9 +203,9 @@ class TabSettings: VTab() {
 			val files = cacheDir.listFiles() + logDir.listFiles()
 			ZipOutputStream(zipFile.outputStream()).use { zip ->
 				files.filter { it.isFile && it != zipFile }.forEach { file ->
-					zip.putNextEntry(ZipEntry(file.toString().removePrefix(cacheDir.toString()).replace('\\', '/').trim('/')).apply {
-						this.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
-					})
+					val entry = ZipEntry(file.toString().removePrefix(dataDir.toString()).replace('\\', '/').trim('/'))
+					entry.lastModifiedTime = FileTime.from(file.lastModified(), TimeUnit.MILLISECONDS)
+					zip.putNextEntry(entry)
 					file.inputStream().use { it.copyTo(zip) }
 				}
 			}

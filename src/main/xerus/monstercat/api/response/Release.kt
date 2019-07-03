@@ -1,13 +1,11 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import mu.KotlinLogging
 import xerus.ktutil.to
-
-val logger = KotlinLogging.logger {}
 
 data class Release(
 	@Key("_id") override var id: String = "",
+	@Key var catalogId: String = "",
 	@Key var releaseDate: String = "",
 	@Key var type: String = "",
 	@Key var renderedArtists: String = "",
@@ -18,13 +16,16 @@ data class Release(
 	@Key var isCollection: Boolean = false
 	
 	@Key var tracks: List<Track> = ArrayList()
+		set(value) {
+			value.forEach { it.release = this }
+			field = value
+		}
 	
 	fun init(): Release {
 		renderedArtists = formatArtists(renderedArtists)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
-		tracks.forEach { it.setRelease(this) }
 		
 		if(!isType(Type.MIXES, Type.PODCAST)) {
 			isCollection = true
