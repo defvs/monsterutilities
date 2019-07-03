@@ -320,10 +320,9 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	 * [isDecorated] True if the window has borders and title bar with close controls
 	 * [isDraggable] True if the window can be dragged by the mouse
 	 * [closeOnFocusLost] Should we close the window if we're out of focus ?
-	 * [x] and [y] Window position relative to screen
 	 * [isResizable] Allow resizing the window. The image will follow.
 	 */
-	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false, x: Double? = null, y: Double? = null){
+	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false){
 		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
 		
 		val pane = StackPane()
@@ -367,15 +366,8 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 					if (lostFocus) close()
 				}
 			}
-			
-			setOnShown {
-				if(x != null && y != null) {
-					stage.x = x
-					stage.y = y
-				}
-			}
-			show()
 		}
+		stage.show()
 		GlobalScope.launch {
 			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
 		}
