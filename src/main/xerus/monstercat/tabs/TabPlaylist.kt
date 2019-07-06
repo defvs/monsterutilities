@@ -89,20 +89,21 @@ class TabPlaylist : VTab() {
 		table.placeholder = Label("Your playlist is empty.")
 		
 		val rightClickMenu = ContextMenu()
-		val item1 = MenuItem("Play") {
-			Player.playFromPlaylist(table.selectionModel.selectedIndex)
-		}
-		val item2 = MenuItem("Play Next") {
-			useSelectedTrack { Playlist.addNext(it) }
-		}
-		val item3 = MenuItem("Remove") {
-			Playlist.removeAt(table.selectionModel.selectedIndex)
-		}
-		val item4 = MenuItem("Clear playlist") {
-			Playlist.clear()
-			Player.reset()
-		}
-		rightClickMenu.items.addAll(item1, item2, item3, item4)
+		rightClickMenu.items.addAll(
+				MenuItem("Play") {
+					Player.playFromPlaylist(table.selectionModel.selectedIndex)
+				},
+				MenuItem("Play Next") {
+					useSelectedTrack { Playlist.addNext(it) }
+				},
+				MenuItem("Remove") {
+					Playlist.removeAt(table.selectionModel.selectedIndex)
+				},
+				MenuItem("Clear playlist") {
+					Playlist.clear()
+					Player.reset()
+				}
+		)
 		table.contextMenu = rightClickMenu
 		
 		val buttons = HBox()

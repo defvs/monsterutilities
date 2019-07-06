@@ -2,12 +2,7 @@ package xerus.monstercat
 
 import javafx.application.Platform
 import javafx.concurrent.Task
-import javafx.scene.control.Alert
-import javafx.scene.control.ButtonBar
-import javafx.scene.control.ButtonType
-import javafx.scene.control.Label
-import javafx.scene.control.Tab
-import javafx.scene.control.TabPane
+import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.VBox
@@ -43,7 +38,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
+class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 	private val logger = KotlinLogging.logger { }
 	
 	val tabs: MutableList<BaseTab>
@@ -115,7 +110,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 		DiscordRPC.connect()
 	}
 	
-	inline fun <reified T : BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
+	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
 	private fun String.devVersion() = if(startsWith("dev")) split('v', '-')[1].toInt() else null
 	
@@ -154,7 +149,7 @@ class MonsterUtilities(checkForUpdate: Boolean) : VBox(), JFXMessageDisplay {
 	private fun update(version: String, unstable: Boolean = false) {
 		val newFile = File(Settings.FILENAMEPATTERN().replace("%version%", version, true)).absoluteFile
 		logger.info("Update initiated to $newFile")
-		val worker = object : Task<Unit>() {
+		val worker = object: Task<Unit>() {
 			init {
 				updateTitle("Downloading Update")
 				updateMessage("Downloading ${newFile.name} to ${newFile.absoluteFile.parent}")

@@ -21,7 +21,7 @@ private inline val basePath
 	get() = DOWNLOADDIR()
 
 fun Track.toFileName(inAlbum: Boolean) =
-	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replace(':', '꞉').replaceIllegalFileChars()
+	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replaceIllegalFileChars()
 
 fun Release.downloadFolder(): Path = basePath.resolve(when {
 	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection

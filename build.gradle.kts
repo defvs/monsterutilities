@@ -1,28 +1,27 @@
-import com.github.breadmoirai.GithubReleaseTask
+import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.IOException
 import java.util.*
 
-buildscript {
-	dependencies {
-		classpath("com.squareup.okhttp3:okhttp:3.12.1")
-		classpath("com.j256.simplemagic:simplemagic:1.14")
-		classpath("org.zeroturnaround:zt-exec:1.10")
-	}
-}
-
 val isUnstable = properties["release"] == null
-val commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
-version = "dev" + commitNumber +
-	"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
+var commitNumber: String = ""
+try {
+	commitNumber = Scanner(Runtime.getRuntime().exec("git rev-list --count HEAD").inputStream).next()
+	version = "dev" + commitNumber +
+		"-" + Scanner(Runtime.getRuntime().exec("git rev-parse --short HEAD").inputStream).next()
+} catch(e: IOException) {
+	println("Encountered an exception while determining the version - $e\nThe most likely cause is that git is not installed!")
+	version = "self-compiled"
+}
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.31"
+	kotlin("jvm") version "1.3.40"
 	application
 	id("com.github.johnrengelman.shadow") version "5.0.0"
-	id("com.github.breadmoirai.github-release") version "2.2.4"
+	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
 }
 
@@ -45,29 +44,41 @@ application {
 repositories {
 	jcenter()
 	maven("https://jitpack.io")
-	maven("https://oss.jfrog.org/simple/libs-snapshot")
 }
 
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.defvs.util", "javafx", "7fe4d7dbb28ee286640f980a9b8f621b77d7c9f9")
+	implementation("com.github.Xerus2000.util", "javafx", "61043c3eb09a7f0a3d3b2227bf2dac463958d237")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("io.github.microutils", "kotlin-logging", "1.6.+")
 	
-	implementation("com.github.Bluexin", "drpc4k", "16b0c60")
+	implementation("be.bluexin", "drpc4k", "0.9")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190109-1.28.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.28.0")
 	
 	val junitVersion = "5.4.0"
-	testCompile("org.junit.jupiter", "junit-jupiter-api", junitVersion)
+	testImplementation("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
+	testImplementation("io.kotlintest", "kotlintest-runner-junit5", "3.3.2")
 }
 
 val jarFile
 	get() = "$name-$version.jar"
+
+githubRelease {
+	tagName(version.toString())
+	body(project.properties["m"]?.toString())
+	releaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
+	
+	prerelease(isUnstable)
+	releaseAssets(jarFile)
+	owner("Xerus2000")
+	
+	token(project.properties["github.token"]?.toString())
+}
 
 val MAIN = "_main"
 tasks {
@@ -82,7 +93,7 @@ tasks {
 		archiveClassifier.set("")
 		destinationDirectory.set(file("."))
 		doFirst {
-			destinationDirectory.get().asFile.listFiles().forEach {
+			destinationDirectory.get().asFile.listFiles()!!.forEach {
 				if(it.name.endsWith("jar"))
 					it.delete()
 			}
@@ -94,20 +105,11 @@ tasks {
 	
 	val githubRelease by getting(GithubReleaseTask::class) {
 		dependsOn(shadowJar)
-		
-		setTagName(version.toString())
-		setBody(project.properties["m"]?.toString())
-		setReleaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
-		
-		setPrerelease(isUnstable)
-		setReleaseAssets(jarFile)
-		setToken(project.properties["github.token"]?.toString())
-		setOwner("Xerus2000")
 	}
 	
 	val websiteRelease by creating(Exec::class) {
 		dependsOn(shadowJar)
-        
+		
 		val path = file("../monsterutilities-extras/website/downloads/" + if(isUnstable) "unstable" else "latest")
 		val pathLatest = path.resolveSibling("latest") // TODO temporary workaround until real release
 		doFirst {

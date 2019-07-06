@@ -5,6 +5,8 @@ out
 build
 gradle.properties
 
+.kotlintest
+
 /*.jar
 *.log
 

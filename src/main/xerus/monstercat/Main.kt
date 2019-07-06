@@ -22,8 +22,11 @@ import javax.swing.JTextArea
 val VERSION = getResource("version")!!.readText()
 val isUnstable = VERSION.contains('-')
 
-val cacheDir: File
+val dataDir: File
 	get() = SystemUtils.cacheDir.resolve("monsterutilities").apply { mkdirs() }
+
+val cacheDir: File
+	get() = dataDir.resolve("cache").apply { mkdirs() }
 
 lateinit var monsterUtilities: MonsterUtilities
 

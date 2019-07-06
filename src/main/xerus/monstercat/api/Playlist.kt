@@ -84,9 +84,11 @@ object Playlist {
 		}
 	}
 	
-	fun loadPlaylist(playlist: ArrayList<Track>) {
-		clear()
-		Player.reset()
-		addAll(playlist)
+	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
+		if (asNext) tracks.reverse()
+		tracks.forEach { track ->
+			if (asNext) addNext(track)
+			else add(track)
+		}
 	}
 }
