@@ -175,7 +175,8 @@ class TabPlaylist : VTab() {
 							try {
 								val tracks = apiConnection.getTracks()
 								if (tracks != null && tracks.isNotEmpty()) {
-									Playlist.loadPlaylist(tracks)
+									Player.reset()
+									Playlist.setTracks(tracks)
 									onFx { stage.close() }
 								}
 							}catch (e: Exception){
@@ -191,8 +192,9 @@ class TabPlaylist : VTab() {
 					if (connectTable.selectionModel.selectedItem != null) {
 						GlobalScope.async {
 							val apiConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id, "tracks")
+							Player.reset()
 							val tracks = apiConnection.getTracks()!!
-							Playlist.loadPlaylist(tracks)
+							Playlist.setTracks(tracks)
 						}
 						stage.close()
 					}
