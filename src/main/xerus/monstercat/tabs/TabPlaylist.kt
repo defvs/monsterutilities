@@ -15,10 +15,7 @@ import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
-import xerus.monstercat.api.APIConnection
-import xerus.monstercat.api.ConnectValidity
-import xerus.monstercat.api.Player
-import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.*
 import xerus.monstercat.api.response.ConnectPlaylist
 import xerus.monstercat.api.response.Settings
 import xerus.monstercat.api.response.Track
@@ -167,18 +164,30 @@ class TabPlaylist : VTab() {
 		
 		val buttons = HBox().apply {
 			addButton("Load") {
+				suspend fun loadPlaylist(apiConnection: APIConnection){
+					val tracks = apiConnection.getTracks()
+					tracks?.forEachIndexed { index, track ->
+						val found = Cache.getTracks().find {
+							it.id == track.id
+						}
+						if (found != null)
+							tracks[index] = found
+						else
+							tracks.removeAt(index)
+					}
+					if (tracks != null && tracks.isNotEmpty()) {
+						Player.reset()
+						Playlist.setTracks(tracks)
+						onFx { stage.close() }
+					}
+				}
 				if (fromUrl){
 					val playlistId = urlField.text.substringAfterLast("/")
 					if (playlistId.length == 24){
 						GlobalScope.async {
 							val apiConnection = APIConnection("playlist", playlistId, "tracks")
 							try {
-								val tracks = apiConnection.getTracks()
-								if (tracks != null && tracks.isNotEmpty()) {
-									Player.reset()
-									Playlist.setTracks(tracks)
-									onFx { stage.close() }
-								}
+								loadPlaylist(apiConnection)
 							}catch (e: Exception){
 								onFx {
 									monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlist were found at ${urlField.text}.")
@@ -192,11 +201,8 @@ class TabPlaylist : VTab() {
 					if (connectTable.selectionModel.selectedItem != null) {
 						GlobalScope.async {
 							val apiConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id, "tracks")
-							Player.reset()
-							val tracks = apiConnection.getTracks()!!
-							Playlist.setTracks(tracks)
+							loadPlaylist(apiConnection)
 						}
-						stage.close()
 					}
 				}
 			}
