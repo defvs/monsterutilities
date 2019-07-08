@@ -119,12 +119,30 @@ class TabPlaylist : VTab() {
 	private fun openPlaylistDialog(){
 		val connection = APIConnection("playlist").fields(ConnectPlaylist::class)
 		
-		val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
-		
 		val parent = VBox()
 		val stage = App.stage.createStage("Open playlist from Monstercat.com", parent)
 		
+		suspend fun loadPlaylist(apiConnection: APIConnection){
+			val tracks = apiConnection.getTracks()
+			tracks?.forEachIndexed { index, track ->
+				val found = Cache.getTracks().find {
+					it.id == track.id
+				}
+				if (found != null)
+					tracks[index] = found
+				else
+					tracks.removeAt(index)
+			}
+			if (tracks != null && tracks.isNotEmpty()) {
+				Player.reset()
+				Playlist.setTracks(tracks)
+				onFx { stage.close() }
+			}
+		}
+		
 		val connectTable = TableView<ConnectPlaylist>().apply {
+			val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
+			
 			columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
 			columns.addAll(TableColumn<ConnectPlaylist, String>("Name").apply {
 				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
@@ -140,8 +158,19 @@ class TabPlaylist : VTab() {
 			
 			selectionModel.selectionMode = SelectionMode.SINGLE
 			
+			setOnMouseClicked {
+				if (it.button == MouseButton.PRIMARY && it.clickCount == 2)
+					if (selectionModel.selectedItem != null) {
+						GlobalScope.async {
+							val apiConnection = APIConnection("playlist", selectionModel.selectedItem.id, "tracks")
+							loadPlaylist(apiConnection)
+						}
+					}
+			}
+			
 			if (APIConnection.connectValidity.value != ConnectValidity.NOGOLD && APIConnection.connectValidity.value != ConnectValidity.GOLD){
 				placeholder = Label("Please connect using connect.sid in the downloader tab.")
+				
 			}else{
 				placeholder = Label("Loading...")
 				GlobalScope.async {
@@ -164,23 +193,6 @@ class TabPlaylist : VTab() {
 		
 		val buttons = HBox().apply {
 			addButton("Load") {
-				suspend fun loadPlaylist(apiConnection: APIConnection){
-					val tracks = apiConnection.getTracks()
-					tracks?.forEachIndexed { index, track ->
-						val found = Cache.getTracks().find {
-							it.id == track.id
-						}
-						if (found != null)
-							tracks[index] = found
-						else
-							tracks.removeAt(index)
-					}
-					if (tracks != null && tracks.isNotEmpty()) {
-						Player.reset()
-						Playlist.setTracks(tracks)
-						onFx { stage.close() }
-					}
-				}
 				if (fromUrl){
 					val playlistId = urlField.text.substringAfterLast("/")
 					if (playlistId.length == 24){
