@@ -25,14 +25,17 @@ import org.controlsfx.validation.ValidationSupport
 import org.controlsfx.validation.Validator
 import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ImmutableObservable
-import xerus.ktutil.javafx.properties.ImmutableObservableList
-import xerus.ktutil.javafx.properties.dependOn
-import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
+import xerus.monstercat.api.response.Release.Type.ALBUM
+import xerus.monstercat.api.response.Release.Type.BESTOF
+import xerus.monstercat.api.response.Release.Type.MCOLLECTION
+import xerus.monstercat.api.response.Release.Type.MIXES
+import xerus.monstercat.api.response.Release.Type.PODCAST
+import xerus.monstercat.api.response.Release.Type.SINGLE
 import xerus.monstercat.cacheDir
 import xerus.monstercat.dataDir
 import xerus.monstercat.downloader.DownloaderSettings
@@ -222,6 +225,35 @@ class TabSettings: VTab() {
 		}
 		
 		data class Feedback(val subject: String, val message: String)
+	}
+	
+	enum class PriorityLists(val priority: List<String>){
+		SGL_ALB_COL(listOf(SINGLE, ALBUM, MCOLLECTION, BESTOF, MIXES, PODCAST)),
+		ALB_SGL_COL(listOf(ALBUM, SINGLE, MCOLLECTION, BESTOF, MIXES, PODCAST)),
+		COL_SGL_ALB(listOf(MCOLLECTION, SINGLE, ALBUM, BESTOF, MIXES, PODCAST)),
+		COL_ALB_SGL(listOf(MCOLLECTION, ALBUM, SINGLE, BESTOF, MIXES, PODCAST));
+		
+		companion object {
+			fun findFromString(string: String): PriorityLists{
+				PriorityLists.values().forEach {
+					if (string == getString(it))
+						return it
+				}
+				return SGL_ALB_COL
+			}
+			
+			fun findFromList(list: List<String>): PriorityLists{
+				PriorityLists.values().forEach {
+					if (list[0] == it.priority[0] && list[1] == it.priority[1])
+						return it
+				}
+				return SGL_ALB_COL
+			}
+			
+			fun getString(list: PriorityLists): String {
+				return list.priority.subList(0, 3).toString().removeSurrounding("[", "]").replace(", ", " > ")
+			}
+		}
 	}
 	
 }
