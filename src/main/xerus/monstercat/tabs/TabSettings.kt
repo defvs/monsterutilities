@@ -83,6 +83,20 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
+		val coverPriority = ComboBox(FXCollections.observableArrayList<String>())
+		onFx {
+			PriorityLists.values().forEach { priorities ->
+				coverPriority.items.add(PriorityLists.getString(priorities))
+				coverPriority.valueProperty().bindBidirectional(Settings.PLAYERARTPRIORITY, {
+					PriorityLists.findFromString(it).priority
+				}, {
+					PriorityLists.getString(PriorityLists.findFromList(it))
+				})
+				coverPriority.select(PriorityLists.getString(PriorityLists.findFromList(Settings.PLAYERARTPRIORITY.get())))
+			}
+		}
+		addLabeled("Player Coverart priority:", coverPriority)
+		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
 			addRow(createButton("Open Cache directory") {
