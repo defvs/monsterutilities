@@ -327,7 +327,7 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 		
 		val pane = StackPane()
 		val largeImage = ImageView()
-		pane.add(Label("""Image loading..."""))
+		pane.add(Label("Cover loading..."))
 		pane.add(largeImage)
 		
 		val stage = App.stage.createStage(title, pane).apply {
