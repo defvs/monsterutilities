@@ -57,6 +57,15 @@ data class Release(
 		val PODCAST = "Podcast"
 		val MCOLLECTION = "Monstercat Collection"
 		val BESTOF = "Best of"
+		
+		val priorityList: List<String> = listOf( // TODO : Settings for this
+				SINGLE,
+				ALBUM,
+				MCOLLECTION,
+				BESTOF,
+				MIXES,
+				PODCAST
+		)
 	}
 	
 }

@@ -40,7 +40,7 @@ object Cache: Refresher() {
 	
 	/** Gets all tracks by flatMapping all the tracks of all Releases */
 	suspend fun getTracks(): Collection<Track> =
-		getReleases().flatMap { it.tracks }.toHashSet()
+		getReleases().flatMap { it.tracks }
 	
 	override suspend fun doRefresh() {
 		refreshReleases()

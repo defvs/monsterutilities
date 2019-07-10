@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.toInt
+import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 
 val artistDelimiters = arrayOf(" & ", ", ", " and ", " x ", " feat. ")
@@ -36,6 +37,8 @@ object APIUtils {
 		return Cache.getTracks().maxBy { track ->
 			val splitTitleTrimmed = track.init().splitTitle
 			titleSplit.sumBy { splitTitleTrimmed.contains(it).toInt() }
+					.times(10)
+					.plus(Release.Type.priorityList.asReversed().indexOf(track.release.type))
 				.also {
 					if(it > loggingThreshold) {
 						logger.trace { "Rated $track with $it for \"$artists - $title\"" }
