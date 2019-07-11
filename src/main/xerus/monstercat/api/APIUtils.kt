@@ -35,17 +35,20 @@ object APIUtils {
 	suspend fun find(title: String, artists: String): Track? {
 		val titleSplit = "$artists $title".splitTitleTrimmed()
 		val loggingThreshold = titleSplit.size / 2
-		return Cache.getAllTracks().maxBy { track ->
+		val tracks = Cache.getAllTracks()
+		var bestTrack = tracks.maxBy { track ->
 			val splitTitleTrimmed = track.init().splitTitle
 			titleSplit.sumBy { splitTitleTrimmed.contains(it).toInt() }
-					.times(10)
-					.plus(xerus.monstercat.Settings.PLAYERARTPRIORITY.get().asReversed().indexOf(track.release.type))
 				.also {
 					if(it > loggingThreshold) {
 						logger.trace { "Rated $track with $it for \"$artists - $title\"" }
 					}
 				}
 		}
+		bestTrack = tracks.filter { it.id == bestTrack?.id }
+				.minBy { xerus.monstercat.Settings.PLAYERARTPRIORITY.get().indexOf(it.release.type)}
+		
+		return bestTrack
 	}
 	
 }
