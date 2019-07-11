@@ -38,8 +38,13 @@ object Cache: Refresher() {
 		return releases
 	}
 	
-	/** Gets all tracks by flatMapping all the tracks of all Releases */
+	/** Gets all tracks by flatMapping all the tracks of all Releases. Two tracks with the same id will only yield one (hashSet) */
 	suspend fun getTracks(): Collection<Track> =
+		getReleases().flatMap { it.tracks }.toHashSet()
+	
+	/** Gets all tracks by flatMapping all the tracks of all Releases. Will return all tracks, regardless of id duplicates.
+	 * This is very useful when you need all tracks for a release.*/
+	suspend fun getAllTracks(): Collection<Track> =
 		getReleases().flatMap { it.tracks }
 	
 	override suspend fun doRefresh() {

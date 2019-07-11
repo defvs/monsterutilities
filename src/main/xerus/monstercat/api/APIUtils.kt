@@ -35,7 +35,7 @@ object APIUtils {
 	suspend fun find(title: String, artists: String): Track? {
 		val titleSplit = "$artists $title".splitTitleTrimmed()
 		val loggingThreshold = titleSplit.size / 2
-		return Cache.getTracks().maxBy { track ->
+		return Cache.getAllTracks().maxBy { track ->
 			val splitTitleTrimmed = track.init().splitTitle
 			titleSplit.sumBy { splitTitleTrimmed.contains(it).toInt() }
 					.times(10)
