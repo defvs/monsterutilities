@@ -1,6 +1,5 @@
 package xerus.monstercat.tabs
 
-import javafx.beans.Observable
 import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.scene.control.*
@@ -17,10 +16,7 @@ import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.monstercat.api.*
 import xerus.monstercat.api.response.ConnectPlaylist
-import xerus.monstercat.api.response.Settings
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.downloader.CONNECTSID
-import xerus.monstercat.downloader.DownloaderSettings
 import xerus.monstercat.monsterUtilities
 import java.lang.Exception
 
@@ -109,11 +105,28 @@ class TabPlaylist : VTab() {
 			openPlaylistDialog()
 		}
 		buttons.addButton("Save..."){
-			savePlaylistDialog()
+			savePlaylistDialog(Playlist.tracks)
 		}
 		
 		add(buttons)
 		fill(table)
+	}
+	
+	private suspend fun loadPlaylist(apiConnection: APIConnection){
+		val tracks = apiConnection.getTracks()
+		tracks?.forEachIndexed { index, track ->
+			val found = Cache.getTracks().find {
+				it.id == track.id
+			}
+			if (found != null)
+				tracks[index] = found
+			else
+				tracks.removeAt(index)
+		}
+		if (tracks != null && tracks.isNotEmpty()) {
+			Player.reset()
+			Playlist.setTracks(tracks)
+		}
 	}
 	
 	private fun openPlaylistDialog(){
@@ -121,24 +134,6 @@ class TabPlaylist : VTab() {
 		
 		val parent = VBox()
 		val stage = App.stage.createStage("Open playlist from Monstercat.com", parent)
-		
-		suspend fun loadPlaylist(apiConnection: APIConnection){
-			val tracks = apiConnection.getTracks()
-			tracks?.forEachIndexed { index, track ->
-				val found = Cache.getTracks().find {
-					it.id == track.id
-				}
-				if (found != null)
-					tracks[index] = found
-				else
-					tracks.removeAt(index)
-			}
-			if (tracks != null && tracks.isNotEmpty()) {
-				Player.reset()
-				Playlist.setTracks(tracks)
-				onFx { stage.close() }
-			}
-		}
 		
 		val connectTable = TableView<ConnectPlaylist>().apply {
 			val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
@@ -164,6 +159,7 @@ class TabPlaylist : VTab() {
 						GlobalScope.async {
 							val apiConnection = APIConnection("playlist", selectionModel.selectedItem.id, "tracks")
 							loadPlaylist(apiConnection)
+							onFx { stage.close() }
 						}
 					}
 			}
@@ -200,6 +196,7 @@ class TabPlaylist : VTab() {
 							val apiConnection = APIConnection("playlist", playlistId, "tracks")
 							try {
 								loadPlaylist(apiConnection)
+								onFx { stage.close() }
 							}catch (e: Exception){
 								onFx {
 									monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlist were found at ${urlField.text}.")
@@ -214,6 +211,7 @@ class TabPlaylist : VTab() {
 						GlobalScope.async {
 							val apiConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id, "tracks")
 							loadPlaylist(apiConnection)
+							onFx { stage.close() }
 						}
 					}
 				}
@@ -245,8 +243,86 @@ class TabPlaylist : VTab() {
 		stage.show()
 	}
 	
-	private fun savePlaylistDialog(){
-		// TODO : Playlist saving
+	private fun savePlaylistDialog(playlist: List<Track>){
+		val connection = APIConnection("playlist").fields(ConnectPlaylist::class)
+		
+		val parent = VBox()
+		val stage = App.stage.createStage("Save as...", parent)
+		
+		var existing = false
+		
+		val nameField = TextField("").apply { promptText = "Enter the playlist's name" }
+		
+		
+		val connectTable = TableView<ConnectPlaylist>().apply {
+			val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
+			
+			columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
+			columns.addAll(TableColumn<ConnectPlaylist, String>("Name").apply {
+				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
+					ImmutableObservable(p.value.name)
+				}
+			}, TableColumn<ConnectPlaylist, String>("Size").apply {
+				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
+					ImmutableObservable(p.value.tracks.size.toString())
+				}
+			})
+			
+			items = playlists
+			
+			selectionModel.selectionMode = SelectionMode.SINGLE
+			
+			if (APIConnection.connectValidity.value != ConnectValidity.NOGOLD && APIConnection.connectValidity.value != ConnectValidity.GOLD){
+				placeholder = Label("Please connect using connect.sid in the downloader tab.")
+				
+			}else{
+				placeholder = Label("Loading...")
+				GlobalScope.async {
+					val results = connection.getPlaylists()
+					if (results != null && results.isNotEmpty())
+						playlists.addAll(results)
+					else
+						onFx {
+							placeholder = Label("No playlists were found on your account.")
+						}
+				}
+			}
+		}
+		
+		val buttons = HBox().apply {
+			addButton("Already existing playlist..."){}.apply{
+				onClick {
+					existing = !existing
+					
+					parent.children.removeAt(1)
+					if (existing){
+						text = "New playlist..."
+						parent.fill(connectTable, 1)
+					}else{
+						text = "Already existing playlist..."
+						parent.children.add(1, nameField)
+					}
+					stage.sizeToScene()
+				}
+			}
+			addButton("Save") {
+				if (existing){
+					val saveConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id)
+					saveConnection.editPlaylist(playlist)
+				}else{
+					val saveConnection = APIConnection("playlist")
+					saveConnection.createPlaylist(if (nameField.text.isNullOrEmpty()) "Unnamed playlist" else nameField.text, playlist)
+				}
+				stage.close()
+			}
+			addButton("Cancel") {
+				stage.close()
+			}
+		}
+		parent.add(Label("Total : ${playlist.size} tracks"))
+		parent.add(nameField)
+		parent.add(buttons)
+		stage.show()
 	}
 	
 	inline fun useSelectedTrack(action: (Track) -> Unit) {
