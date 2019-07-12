@@ -70,7 +70,7 @@ val jarFile
 
 githubRelease {
 	tagName(version.toString())
-	body(project.properties["m"]?.toString())
+	body(project.properties["m"]?.toString() ?: "")
 	releaseName("Dev $commitNumber" + project.properties["n"]?.let { " - $it" }.orEmpty())
 	
 	prerelease(isUnstable)

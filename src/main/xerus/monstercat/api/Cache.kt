@@ -54,7 +54,7 @@ object Cache: Refresher() {
 		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
 		val releaseResponse = APIConnection("catalog", "release").fields(Release::class)
-			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(2, 9))
+			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(4, 9))
 			.parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
 			?: run {
 				logger.info("Release refresh failed!")
