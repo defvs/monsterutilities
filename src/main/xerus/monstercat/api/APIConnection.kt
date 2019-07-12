@@ -96,7 +96,6 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			}
 			content = content.removeSuffix(", ")
 			content = "{ $content }"
-			logger.debug("JSON of POST request : $content")
 			entity = StringEntity(content)
 		}
 		put(request)
@@ -122,7 +121,6 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			content = content.removeSuffix(", ")
 			content = "{ $content }"
 			
-			logger.debug("JSON of PUT request : $content")
 			entity = StringEntity(content)
 		}
 		post(request)
