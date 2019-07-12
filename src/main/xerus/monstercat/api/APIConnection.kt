@@ -74,6 +74,60 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	fun getPlaylists()=
 		parseJSON(PlaylistResponse::class.java)?.results?.map { it.init() }
 	
+	fun editPlaylist(tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
+		val request = HttpPut(uri).apply {
+			setHeader("Accept", "application/json")
+			setHeader("Content-type", "application/json")
+			var content = ""
+			if (name != null)
+				content += "\"name\" : \"$name\", "
+			if (public != null)
+				content += "\"public\" : $public, "
+			if (deleted != null)
+				content += "\"deleted\" : $deleted, "
+			if (tracks != null) {
+				content += "\"tracks\": ["
+				tracks.forEach { track ->
+					content += "{\"trackId\":\"${track.id}\",\"releaseId\":\"${track.release.id}\"}"
+					if (track != tracks.last())
+						content += ","
+				}
+				content += "], "
+			}
+			content = content.removeSuffix(", ")
+			content = "{ $content }"
+			logger.debug("JSON of POST request : $content")
+			entity = StringEntity(content)
+		}
+		put(request)
+	}
+	
+	fun createPlaylist(name: String, tracks: List<Track>){
+		val request = HttpPost(uri).apply {
+			setHeader("Accept", "application/json")
+			setHeader("Content-type", "application/json")
+			
+			var content = ""
+			
+			content += "\"name\" : \"$name\", "
+			
+			content += "\"tracks\": ["
+			tracks.forEach { track ->
+				content += "{\"trackId\":\"${track.id}\",\"releaseId\":\"${track.release.id}\"}"
+				if (track != tracks.last())
+					content += ","
+			}
+			content += "], "
+			
+			content = content.removeSuffix(", ")
+			content = "{ $content }"
+			
+			logger.debug("JSON of PUT request : $content")
+			entity = StringEntity(content)
+		}
+		post(request)
+	}
+	
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
 		httpGet?.abort()
