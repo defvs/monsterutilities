@@ -9,7 +9,6 @@ import xerus.ktutil.javafx.applyTheme
 import xerus.ktutil.javafx.Themes
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
-import xerus.monstercat.api.response.Release
 import xerus.monstercat.tabs.FetchTab
 import xerus.monstercat.tabs.TabSettings
 import xerus.monstercat.tabs.availableColumns
@@ -24,7 +23,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
 	
-	val PLAYERARTPRIORITY = create("coverartPriorityList", TabSettings.PriorityLists.SGL_ALB_COL.priority) {
+	val PLAYERARTPRIORITY = create("coverartPriorityList", TabSettings.PriorityList.SGL_ALB_COL.priorities) {
 		it.removeSurrounding("[","]").split(", ")
 	}
 	

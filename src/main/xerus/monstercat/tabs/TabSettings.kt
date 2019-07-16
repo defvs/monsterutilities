@@ -85,17 +85,17 @@ class TabSettings: VTab() {
 		
 		val coverPriority = ComboBox(FXCollections.observableArrayList<String>())
 		onFx {
-			PriorityLists.values().forEach { priorities ->
-				coverPriority.items.add(PriorityLists.getString(priorities))
+			PriorityList.values().forEach { priorities ->
+				coverPriority.items.add(PriorityList.getString(priorities))
 				coverPriority.valueProperty().bindBidirectional(Settings.PLAYERARTPRIORITY, {
-					PriorityLists.findFromString(it).priority
+					PriorityList.findFromString(it).priorities
 				}, {
-					PriorityLists.getString(PriorityLists.findFromList(it))
+					PriorityList.getString(PriorityList.findFromList(it))
 				})
-				coverPriority.select(PriorityLists.getString(PriorityLists.findFromList(Settings.PLAYERARTPRIORITY.get())))
+				coverPriority.select(PriorityList.getString(PriorityList.findFromList(Settings.PLAYERARTPRIORITY.get())))
 			}
 		}
-		addLabeled("Player Coverart priority:", coverPriority)
+		addLabeled("Player Coverart priorities:", coverPriority)
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
@@ -241,31 +241,31 @@ class TabSettings: VTab() {
 		data class Feedback(val subject: String, val message: String)
 	}
 	
-	enum class PriorityLists(val priority: List<String>){
+	enum class PriorityList(val priorities: List<String>){
 		SGL_ALB_COL(listOf(SINGLE, ALBUM, MCOLLECTION, BESTOF, MIXES, PODCAST)),
 		ALB_SGL_COL(listOf(ALBUM, SINGLE, MCOLLECTION, BESTOF, MIXES, PODCAST)),
 		COL_SGL_ALB(listOf(MCOLLECTION, SINGLE, ALBUM, BESTOF, MIXES, PODCAST)),
 		COL_ALB_SGL(listOf(MCOLLECTION, ALBUM, SINGLE, BESTOF, MIXES, PODCAST));
 		
 		companion object {
-			fun findFromString(string: String): PriorityLists{
-				PriorityLists.values().forEach {
+			fun findFromString(string: String): PriorityList{
+				PriorityList.values().forEach {
 					if (string == getString(it))
 						return it
 				}
 				return SGL_ALB_COL
 			}
 			
-			fun findFromList(list: List<String>): PriorityLists{
-				PriorityLists.values().forEach {
-					if (list[0] == it.priority[0] && list[1] == it.priority[1])
+			fun findFromList(list: List<String>): PriorityList{
+				PriorityList.values().forEach {
+					if (list[0] == it.priorities[0] && list[1] == it.priorities[1])
 						return it
 				}
 				return SGL_ALB_COL
 			}
 			
-			fun getString(list: PriorityLists): String {
-				return list.priority.subList(0, 3).toString().removeSurrounding("[", "]").replace(", ", " > ")
+			fun getString(list: PriorityList): String {
+				return list.priorities.subList(0, 3).toString().removeSurrounding("[", "]").replace(", ", " > ")
 			}
 		}
 	}
