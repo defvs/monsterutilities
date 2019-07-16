@@ -83,17 +83,13 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
-		val coverPriority = ComboBox(FXCollections.observableArrayList<String>())
-		onFx {
-			PriorityList.values().forEach { priorities ->
-				coverPriority.items.add(PriorityList.getString(priorities))
-				coverPriority.valueProperty().bindBidirectional(Settings.PLAYERARTPRIORITY, {
-					PriorityList.findFromString(it).priorities
-				}, {
-					PriorityList.getString(PriorityList.findFromList(it))
-				})
-				coverPriority.select(PriorityList.getString(PriorityList.findFromList(Settings.PLAYERARTPRIORITY.get())))
+		val coverPriority = ComboBox(FXCollections.observableArrayList<PriorityList>(*PriorityList.values())).apply {
+			converter = object: StringConverter<PriorityList>() {
+				override fun toString(priorities: PriorityList) = PriorityList.getString(priorities)
+				override fun fromString(string: String) = PriorityList.findFromString(string)
 			}
+			valueProperty().bindBidirectional(Settings.PLAYERARTPRIORITY, {it.priorities}, {PriorityList.findFromList(it)})
+			select(PriorityList.findFromList(Settings.PLAYERARTPRIORITY.get()))
 		}
 		addLabeled("Player Coverart priorities:", coverPriority)
 		
