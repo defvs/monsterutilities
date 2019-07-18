@@ -103,7 +103,6 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 					load()
 			}
 		}
-		load()
 	}
 	
 	/** Asynchronously fetches the Releases and updates the View when done */

@@ -112,6 +112,7 @@ class TabDownloader: VTab() {
 	
 	private fun initialize() {
 		children.clear()
+		songView.load()
 		
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
@@ -241,11 +242,11 @@ class TabDownloader: VTab() {
 					songView.onReady {
 						if(selected) {
 							GlobalScope.launch {
-								songView.roots.forEach { it.value.isExpanded = false }
+								songView.roots.forEach { root -> root.value.isExpanded = false }
 								var removed = 0
-								songView.roots.forEach { _, value ->
-									value.internalChildren.removeIf {
-										val result = (it.value as Release).run {
+								songView.roots.forEach { (_, root) ->
+									root.internalChildren.removeIf { item ->
+										val result = (item.value as Release).run {
 											val folder = downloadFolder()
 											if(!folder.exists())
 												return@run false
@@ -256,12 +257,13 @@ class TabDownloader: VTab() {
 										}
 										if(result) {
 											removed++
-											logger.trace { "Excluded ${it.value}" }
+											songView.checkModel.clearCheck(item)
+											logger.trace { "Excluded ${item.value}" }
 										}
 										result
 									}
 								}
-								logger.debug("Removed $removed already downloaded Releases")
+								logger.debug("Removed $removed already downloaded Release(s)")
 							}
 						} else {
 							songView.load()
