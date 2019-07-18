@@ -23,11 +23,11 @@ import xerus.monstercat.api.Player
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
-val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
-private fun isColumnCentered(colName: String) = colName.containsAny("ID", "Date", "BPM", "Length", "Key", "Comp") || colName == "B"
+val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length").joinToString(multiSeparator)
+val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings").joinToString(multiSeparator)
+private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
 
-class TabCatalog : TableTab() {
+class TabCatalog: TableTab() {
 	
 	private val searchView = SearchView<List<String>>()
 	private val searchables = searchView.options
@@ -75,11 +75,16 @@ class TabCatalog : TableTab() {
 			try {
 				val notFound = ArraySet<String>()
 				val colValue = { list: List<String> ->
-					cols.find(colName)?.let { list.getOrNull(it) }.also {
-						if(it == null && notFound.add(colName)) {
-							logger.warn("Column $colName not found!")
+					cols.find(colName)
+						.also {
+							if(it == null && notFound.add(colName))
+								logger.warn("Column $colName not found!")
 						}
-					}
+						?.let { list.getOrNull(it) }
+						.also {
+							if(it == null && notFound.add(colName))
+								logger.debug("No value for $colName found in $list")
+						}
 				}
 				val col = when {
 					colName.contains("bpm", true) ->
