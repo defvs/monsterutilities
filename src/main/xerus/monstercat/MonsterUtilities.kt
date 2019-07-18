@@ -84,7 +84,6 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 				Settings.LASTVERSION.put(VERSION)
 			} else {
 				GlobalScope.launch {
-					Cache.clear()
 					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if(f.exists()) {
