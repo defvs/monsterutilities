@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 	logger.info("Version: $VERSION, Java version: ${SystemUtils.javaVersion}")
 	
 	logger.info("Initializing Google Sheets API Service")
-	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
+	Sheets.initService("MonsterUtilities")
 	
 	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
 	App.launch("MonsterUtilities $VERSION", Settings.THEME(), { stage ->

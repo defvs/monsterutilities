@@ -18,9 +18,9 @@ try {
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.40"
+	kotlin("jvm") version "1.3.41"
 	application
-	id("com.github.johnrengelman.shadow") version "5.0.0"
+	id("com.github.johnrengelman.shadow") version "5.1.0"
 	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
 }
@@ -57,12 +57,12 @@ dependencies {
 	
 	implementation("be.bluexin", "drpc4k", "0.9")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
-	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.28.0")
+	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.30.1")
 	
-	val junitVersion = "5.4.0"
+	val junitVersion = "5.5.0"
 	testImplementation("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
-	testImplementation("io.kotlintest", "kotlintest-runner-junit5", "3.3.2")
+	testImplementation("io.kotlintest", "kotlintest-runner-junit5", "3.3.3")
 }
 
 val jarFile
