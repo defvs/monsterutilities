@@ -1,7 +1,10 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
+import mu.KotlinLogging
 import xerus.ktutil.to
+
+private val logger = KotlinLogging.logger { }
 
 data class Release(
 	@Key("_id") override var id: String = "",
@@ -27,22 +30,22 @@ data class Release(
 		releaseDate = releaseDate.substring(0, 10)
 		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
 		
-		if(!isType(Type.MIXES, Type.PODCAST)) {
-			isCollection = true
-			type = when {
-				title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") -> Type.MCOLLECTION
-				title.contains("Best of") || title.endsWith("Anniversary") -> Type.BESTOF
-				type == "EP" || type == "Album" -> Type.ALBUM
-				else -> {
-					isCollection = false
-					type
-				}
+		if(!isType(Type.MIX, Type.PODCAST)) {
+			val typeValue = Type.values().find {
+				if(it.matcher?.invoke(this) == true || it.displayName == type)
+					return@find true
+				false
 			}
+			if(typeValue != null)
+				type = typeValue.displayName
+			else
+				logger.warn("Unknown type for ${this.debugString()}!")
+			isCollection = typeValue?.isCollection ?: true
 		}
 		return this
 	}
 	
-	fun isType(vararg types: String): Boolean = types.any { type.equals(it, true) }
+	fun isType(vararg types: Type): Boolean = types.any { type.equals(it.displayName, true) }
 	
 	override fun toString(): String =
 		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
@@ -50,13 +53,15 @@ data class Release(
 	fun debugString(): String =
 		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$renderedArtists', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
-	object Type {
-		val ALBUM = "Album"
-		val SINGLE = "Single"
-		val MIXES = "Mixes"
-		val PODCAST = "Podcast"
-		val MCOLLECTION = "Monstercat Collection"
-		val BESTOF = "Best of"
+	enum class Type(val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): CharSequence by displayName {
+		MCOLLECTION("Monstercat Collection", true,
+			{ title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") }),
+		BESTOF("Best of", true, { title.contains("Best of") || title.endsWith("Anniversary") }),
+		ALBUM("Album", true),
+		EP("EP", true),
+		MIX("Mix", false, { type == "Mixes" }),
+		SINGLE("Single", false),
+		PODCAST("Podcast", false);
 	}
 	
 }

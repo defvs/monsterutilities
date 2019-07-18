@@ -36,7 +36,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	val logger = KotlinLogging.logger { }
 	
 	val ready = SimpleObservable(false)
-	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
+	val roots = HashMap<CharSequence, FilterableTreeItem<MusicItem>>()
 	
 	private val checkCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
 		object: CheckBoxTreeCell<MusicItem>() {
@@ -186,12 +186,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	}
 	
 	@Suppress("UNCHECKED_CAST")
-	fun getItemsInCategory(category: String) =
+	fun getItemsInCategory(category: CharSequence) =
 		roots[category]!!.children as List<FilterableTreeItem<Release>>
 	
 }
 
 
-private class RootMusicItem(override var title: String, override var id: String = ""): MusicItem() {
+private data class RootMusicItem(override var title: String, override var id: String = ""): MusicItem() {
 	override fun toString() = title
 }

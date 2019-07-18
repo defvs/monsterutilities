@@ -25,8 +25,8 @@ fun Track.toFileName(inAlbum: Boolean) =
 
 fun Release.downloadFolder(): Path = basePath.resolve(when {
 	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
-	type == "Podcast" -> DOWNLOADDIRPODCAST()
-	type == "Mixes" -> DOWNLOADDIRMIXES()
+	isType(Release.Type.PODCAST) -> DOWNLOADDIRPODCAST()
+	isType(Release.Type.MIX) -> DOWNLOADDIRMIXES()
 	else -> DOWNLOADDIRSINGLE()
 })
 

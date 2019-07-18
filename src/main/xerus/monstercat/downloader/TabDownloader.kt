@@ -28,7 +28,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.LogTextArea
 import xerus.ktutil.javafx.ui.controls.SearchRow
 import xerus.ktutil.javafx.ui.controls.Searchable
-import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.javafx.ui.controls.Type as SearchType
 import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
@@ -47,6 +47,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
+import xerus.monstercat.api.response.Release.Type
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList(
@@ -64,7 +65,7 @@ class TabDownloader: VTab() {
 	private val noItemsSelected = SimpleObservable(true)
 	
 	private val searchField = TextField()
-	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
+	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", SearchType.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
 	
 	init {
 		FilterableTreeItem.autoLeaf = false
@@ -275,7 +276,7 @@ class TabDownloader: VTab() {
 		addRow(createButton("Smart select") {
 			songView.onReady {
 				GlobalScope.launch {
-					val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
+					val albums = arrayOf(Type.ALBUM, Type.EP).map { songView.roots[it] }.filterNotNull()
 					albums.forEach { it.isSelected = true }
 					@Suppress("UNCHECKED_CAST")
 					val selectedAlbums = albums.flatMap { it.children } as List<FilterableTreeItem<Release>>
@@ -291,21 +292,19 @@ class TabDownloader: VTab() {
 						false
 					}
 					logger.trace { "Filtered out Collections in Smart Select: $filtered" }
-					songView.getItemsInCategory(Release.Type.SINGLE).filter {
+					songView.getItemsInCategory(Type.SINGLE).filter {
 						val tracks = it.value.tracks
-						if(tracks.size == 1) {
-							// an actual single, check it directly
+						if(tracks.size == 1) { // an actual single, check it directly
 							val track = tracks.first()
 							if(!selectedTracks.contains(track)) {
 								it.isSelected = true
 								selectedTracks.add(track)
 							}
 							return@filter false
-						} else {
-							// has multiple tracks, check with collections
+						} else { // has multiple tracks, check with collections
 							return@filter true
 						}
-					}.plus(songView.getItemsInCategory(Release.Type.MCOLLECTION)).forEach {
+					}.plus(songView.getItemsInCategory(Type.MCOLLECTION)).forEach {
 						it.children.forEach {
 							@Suppress("UNCHECKED_CAST")
 							val tr = it as CheckBoxTreeItem<Track>
