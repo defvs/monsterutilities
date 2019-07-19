@@ -8,6 +8,7 @@ import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.scene.text.Text
+import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
@@ -348,7 +349,7 @@ class TabDownloader: VTab() {
 				show()
 			}
 		}, Button("Checking connection...").apply {
-			prefWidth = 200.0
+			prefWidth = 400.0
 			CONNECTSID.listen {
 				isDisable = true
 				text = "Verifying connect.sid..."
@@ -363,14 +364,21 @@ class TabDownloader: VTab() {
 	}
 	
 	private fun refreshDownloadButton(button: Button) {
-		updateDownloadButtonAction(button, false)
+		updateDownloadButtonAction(button, false, true)
 		button.isDisable = true
 		
 		var hasGold = false
 		var valid = false
+		var login = false
 		val text = when(APIConnection.connectValidity.value) {
 			ConnectValidity.NOCONNECTION -> "No connection"
-			ConnectValidity.NOUSER -> "Invalid connect.sid"
+			ConnectValidity.NOUSER -> {
+				login = true
+				if (CONNECTSID.value.isEmpty())
+					"Click to login to Monstercat..."
+				else
+					"Invalid connect.sid! Click to login to Monstercat..."
+			}
 			ConnectValidity.NOGOLD -> "No Gold subscription"
 			ConnectValidity.GOLD -> {
 				hasGold = true
@@ -389,18 +397,49 @@ class TabDownloader: VTab() {
 		
 		logger.trace("Setting download button text to $text")
 		button.text = text
-		button.isDisable = hasGold && !valid
-		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to re-check you connect.sid")
-		updateDownloadButtonAction(button, valid)
+		button.isDisable = (hasGold && !valid) || !login
+		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to connect using your Monstercat.com credentials")
+		updateDownloadButtonAction(button, valid, login)
+	}
+
+	private fun openLoginDialog(){
+		val parent = VBox()
+		val stage = App.stage.createStage("Login to Monstercat.com", parent)
+		val emailField = TextField("").apply { promptText = "Email address" }
+		val passwordField = PasswordField().apply { promptText = "Password" }
+		parent.children.addAll(emailField, passwordField,
+				HBox().apply {
+					addButton("Login") {
+						val login = APIConnection.login(emailField.text, passwordField.text)
+						logger.debug("Monstercat connection with ${emailField.text} - ${passwordField.text} returned $login")
+						if (login){
+							stage.close()
+						}else{
+							parent.children.add(parent.children.lastIndex - 1, Label("Wrong username/password"))
+							stage.sizeToScene()
+						}
+					}
+					addButton("Cancel") {
+						stage.close()
+					}
+				}
+		)
+		stage.apply {
+			initModality(Modality.WINDOW_MODAL)
+			show()
+		}
 	}
 	
-	private fun updateDownloadButtonAction(button: Button, valid: Boolean) {
-		if(valid) button.setOnAction { Downloader() }
-		else button.setOnAction {
-			button.isDisable = true
-			button.text = "Verifying connect.sid..."
-			logger.trace("Verifying connect.sid...")
-			APIConnection.checkConnectsid(CONNECTSID())
+	private fun updateDownloadButtonAction(button: Button, valid: Boolean, noConnection: Boolean) {
+		when {
+			valid -> button.setOnAction { Downloader() }
+			noConnection -> button.setOnAction { openLoginDialog() }
+			else -> button.setOnAction {
+				button.isDisable = true
+				button.text = "Verifying connect.sid..."
+				logger.trace("Verifying connect.sid...")
+				APIConnection.checkConnectsid(CONNECTSID())
+			}
 		}
 	}
 	

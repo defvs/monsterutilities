@@ -53,7 +53,7 @@ object Cache: Refresher() {
 		
 		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
-		val releaseResponse = APIConnection("catalog", "release").fields(Release::class)
+		val releaseResponse = APIConnection("api", "catalog", "release").fields(Release::class)
 			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(4, 9))
 			.parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
 			?: run {
@@ -62,7 +62,7 @@ object Cache: Refresher() {
 			}
 		val results = releaseResponse.results
 		
-		val releaseConnection = APIConnection("catalog", "release").fields(Release::class)
+		val releaseConnection = APIConnection("api", "catalog", "release").fields(Release::class)
 		when {
 			releaseResponse.total - releases.size > results.size || !releases.contains(results.last()) -> {
 				logger.info("Full Release refresh initiated")
@@ -104,7 +104,7 @@ object Cache: Refresher() {
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
-				val tracks = APIConnection("catalog", "release", release.id, "tracks").getTracks()
+				val tracks = APIConnection("api", "catalog", "release", release.id, "tracks").getTracks()
 				if(tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
 					failed++
