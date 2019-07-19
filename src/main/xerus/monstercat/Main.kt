@@ -62,7 +62,7 @@ fun main(args: Array<String>) {
 				?: null.apply { logger.warn("Resource $it not found!") }
 		})
 	}, {
-		Scene(MonsterUtilities(checkUpdate), 800.0, 700.0)
+		Scene(MonsterUtilities(checkUpdate).root, 800.0, 700.0)
 	})
 	globalThreadPool.shutdown()
 	logger.info("Main has shut down!")

@@ -5,7 +5,10 @@ import javafx.concurrent.Task
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
+import javafx.util.Duration
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -24,9 +27,9 @@ import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.Changelog
 import xerus.ktutil.javafx.ui.JFXMessageDisplay
+import xerus.ktutil.javafx.ui.SimpleTransition
 import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.to
-import xerus.monstercat.api.Cache
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -42,8 +45,31 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
-class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
+class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	private val logger = KotlinLogging.logger { }
+	
+	val container = VBox()
+	
+	val root = StackPane(Region().apply { opacity = Settings.BACKRGOUNDCOVEROPACITY() }, container).also { pane ->
+		Settings.BACKRGOUNDCOVEROPACITY.listen {
+			pane.children.first().opacity = it
+		}
+		Player.backgroundCover.listen { newBg ->
+			val oldRegion = pane.children.first()
+			val newRegion = Region().apply {
+				opacity = 0.0
+				background = newBg
+			}
+			pane.children.add(0, newRegion)
+			val opacity = Settings.BACKRGOUNDCOVEROPACITY()
+			SimpleTransition(pane, Duration.seconds(1.0), {
+				newRegion.opacity = opacity * it
+				oldRegion.opacity = opacity * (1 - it)
+			}, true, {
+				children.remove(oldRegion)
+			})
+		}
+	}
 	
 	val tabs: MutableList<BaseTab>
 	val tabPane: TabPane
@@ -105,8 +131,8 @@ class MonsterUtilities(checkForUpdate: Boolean): VBox(), JFXMessageDisplay {
 			}
 		}
 		
-		children.add(Player.box)
-		fill(tabPane)
+		container.children.add(Player.container)
+		container.fill(tabPane)
 		if(checkForUpdate)
 			checkForUpdate()
 		DiscordRPC.connect()
