@@ -86,22 +86,26 @@ class TabCatalog: TableTab() {
 								logger.debug("No value for $colName found in $list")
 						}
 				}
-				val col = when {
+				val col: TableColumn<List<String>, *> = when {
 					colName.contains("bpm", true) ->
-						SearchableColumn(colName, Type.INT, { colValue(it)?.toIntOrNull() }, colValue::invoke)
+						SearchableColumn.simple(colName, Type.INT)
+						{ colValue(it)?.substringBefore(' ')?.toIntOrNull() }
 					colName.contains("date", true) ->
-						SearchableColumn(colName, Type.DATE, converter@{ colValue(it)?.toLocalDate() }, colValue::invoke)
+						SearchableColumn.simple(colName, Type.DATE)
+						{ colValue(it)?.toLocalDate() }
 					colName.containsAny("time", "length") ->
-						SearchableColumn(colName, Type.LENGTH, converter@{
+						SearchableColumn.simple(colName, Type.LENGTH)
+						converter@{
 							colValue(it)?.split(":")?.map {
 								it.toIntOrNull() ?: return@converter null
-							}?.let { LocalTime.of(0, it[0], it[1]) }
-						}, colValue::invoke)
+							}?.let { LocalTime.of(it[0] / 60, it[0] % 60, it[1]) }
+						}
 					colName.contains("genre", true) ->
-						TableColumn<List<String>, String>(colName) { colValue(it.value) ?: "" }
-					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
+						TableColumn<List<String>, String>(colName)
+						{ colValue(it.value) ?: "" }
+					else -> SearchableColumn.simple(colName, Type.TEXT, colValue::invoke)
 				}
-				if(col is SearchableColumn<List<String>, *>)
+				if(col is SearchableColumn<List<String>, *, *>)
 					searchables.add(col)
 				if(isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"
