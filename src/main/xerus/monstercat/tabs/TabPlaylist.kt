@@ -41,9 +41,9 @@ class TabPlaylist : VTab() {
 
 		selectionModel.selectionMode = SelectionMode.SINGLE
 
-		fun removeFromPlaylist() = useSelectedIndex { Playlist.removeAt(it) }
-		fun playFromPlaylist() = useSelectedIndex { Player.playFromPlaylist(it) }
-		fun playNextPlaylist() = useSelectedTrack { Playlist.addNext(it) }
+		fun removeFromPlaylist() = Playlist.removeAt(selectedIndex)
+		fun playFromPlaylist() = Player.playFromPlaylist(selectedIndex)
+		fun playNextPlaylist() = Playlist.addNext(selectedTrack)
 
 		setOnMouseClicked { me ->
 			if (me.button == MouseButton.PRIMARY && me.clickCount == 2) {
@@ -80,11 +80,9 @@ class TabPlaylist : VTab() {
 	    fill(table)
 	}
 	
-	private inline fun useSelectedTrack(action: (Track) -> Unit) {
-		action(table.selectionModel.selectedItem)
-	}
-	private inline fun useSelectedIndex(action: (Int) -> Unit){
-		action(table.selectionModel.selectedIndex)
-	}
+	private val selectedTrack: Track
+		get() = table.selectionModel.selectedItem
+	private val selectedIndex: Int
+		get() = table.selectionModel.selectedIndex
 	
 }
