@@ -60,30 +60,28 @@ class TabCatalog : TableTab() {
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
+
+		fun playTracks(add: Boolean){
+			val selected = table.selectionModel.selectedItems ?: return
+			GlobalScope.launch {
+				if (!add)
+					Player.playTracks(getSongs(selected))
+				else
+					Playlist.addAll(getSongs(selected))
+			}
+		}
 		table.setOnMouseClicked { me ->
 			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
-				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
-				GlobalScope.launch {
-					Player.playTracks(getSongs(selected))
-				}
+				playTracks(false)
 			}else if(me.button == MouseButton.MIDDLE){
-				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
-				GlobalScope.launch {
-					Playlist.addAll(getSongs(selected))
-				}
+				playTracks(true)
 			}
 		}
 		table.setOnKeyPressed {
 			if (it.code == KeyCode.ENTER){
-				val selected = table.selectionModel.selectedItems
-				GlobalScope.launch {
-					Player.playTracks(getSongs(selected))
-				}
+				playTracks(false)
 			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
-				val selected = table.selectionModel.selectedItems
-				GlobalScope.launch {
-					Playlist.addAll(getSongs(selected))
-				}
+				playTracks(true)
 			}
 		}
 		
