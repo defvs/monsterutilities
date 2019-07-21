@@ -127,12 +127,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				}
 			}
 		}
-		contextMenu = ContextMenu(
-				menuPlay, menuAdd, menuAddNext,
-				SeparatorMenuItem(),
-				MenuItem("Expand all") { expandAll() },
-				MenuItem("Collapse all") { expandAll(false) }
-		)
+		contextMenu = ContextMenu(menuPlay, menuAdd, menuAddNext, SeparatorMenuItem(), MenuItem("Expand all") { expandAll() }, MenuItem("Collapse all") { expandAll(false) })
 		setOnContextMenuRequested {
 			val value = selectionModel.selectedItem.value
 			val enable = (value is Track || value is Release)
