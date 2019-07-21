@@ -1,6 +1,5 @@
 package xerus.monstercat.tabs
 
-import javafx.beans.Observable
 import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode

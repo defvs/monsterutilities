@@ -34,15 +34,13 @@ object Playlist {
 		logger.debug("Polled $it from History")
 	} ?: currentIndex.value?.let { get(it - 1) }
 	
-	fun getNext() : Track?{
-		return when {
-			shuffle -> nextSongRandom()
-			repeat && (nextSong() == null) -> tracks[0]
-			else -> nextSong()
-		}
+	fun getNext() = when {
+		shuffle -> nextSongRandom()
+		repeat && (nextSong() == null) -> tracks[0]
+		else -> nextSong()
 	}
 	
-	fun addNext(track: Track) = tracks.run {
+	fun addNext(track: Track) = tracks.apply {
 		remove(track)
 		add(currentIndex.value?.let { it + 1 } ?: 0, track)
 	}
