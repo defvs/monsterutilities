@@ -65,23 +65,15 @@ class TabPlaylist : VTab() {
 
 		placeholder = Label("Your playlist is empty.")
 
-		contextMenu = ContextMenu().apply {
-			items.addAll(
-				MenuItem("Play") {
-					playFromPlaylist()
-				},
-				MenuItem("Play Next") {
-					playNextPlaylist()
-				},
-				MenuItem("Remove") {
-					removeFromPlaylist()
-				},
-				MenuItem("Clear playlist") {
-					Playlist.clear()
-					Player.reset()
-				}
-			)
-		}
+		contextMenu = ContextMenu(
+			MenuItem("Play") { playFromPlaylist() },
+			MenuItem("Play Next") { playNextPlaylist() },
+			MenuItem("Remove") { removeFromPlaylist() },
+			MenuItem("Clear playlist") {
+				Playlist.clear()
+				Player.reset()
+			}
+		)
 	}
 
 	init {
