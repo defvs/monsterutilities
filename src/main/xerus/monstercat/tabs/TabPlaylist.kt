@@ -84,8 +84,6 @@ class TabPlaylist : VTab() {
 	}
 	
 	init {
-	    fill(table)
-	    
 		val buttons = HBox()
 		buttons.add(Label("From Monstercat.com :"))
 		buttons.addButton("Open..."){
@@ -96,6 +94,7 @@ class TabPlaylist : VTab() {
 		}
 		
 		add(buttons)
+		fill(table)
 	}
 	
 	private suspend fun loadPlaylist(apiConnection: APIConnection){
@@ -116,7 +115,7 @@ class TabPlaylist : VTab() {
 	}
 	
 	private fun openPlaylistDialog(){
-		val connection = APIConnection("playlist").fields(ConnectPlaylist::class)
+		val connection = APIConnection("api", "playlist").fields(ConnectPlaylist::class)
 		
 		val parent = VBox()
 		val stage = App.stage.createStage("Open playlist from Monstercat.com", parent)
@@ -143,7 +142,7 @@ class TabPlaylist : VTab() {
 				if (it.button == MouseButton.PRIMARY && it.clickCount == 2)
 					if (selectionModel.selectedItem != null) {
 						GlobalScope.async {
-							val apiConnection = APIConnection("playlist", selectionModel.selectedItem.id, "tracks")
+							val apiConnection = APIConnection("api", "playlist", selectionModel.selectedItem.id, "tracks")
 							loadPlaylist(apiConnection)
 							onFx { stage.close() }
 						}
@@ -179,7 +178,7 @@ class TabPlaylist : VTab() {
 					val playlistId = urlField.text.substringAfterLast("/")
 					if (playlistId.length == 24){
 						GlobalScope.async {
-							val apiConnection = APIConnection("playlist", playlistId, "tracks")
+							val apiConnection = APIConnection("api", "playlist", playlistId, "tracks")
 							try {
 								loadPlaylist(apiConnection)
 								onFx { stage.close() }
@@ -195,7 +194,7 @@ class TabPlaylist : VTab() {
 				}else {
 					if (connectTable.selectionModel.selectedItem != null) {
 						GlobalScope.async {
-							val apiConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id, "tracks")
+							val apiConnection = APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks")
 							loadPlaylist(apiConnection)
 							onFx { stage.close() }
 						}
@@ -230,7 +229,7 @@ class TabPlaylist : VTab() {
 	}
 	
 	private fun savePlaylistDialog(playlist: List<Track>){
-		val connection = APIConnection("playlist").fields(ConnectPlaylist::class)
+		val connection = APIConnection("api", "playlist").fields(ConnectPlaylist::class)
 		
 		val parent = VBox()
 		val stage = App.stage.createStage("Save as...", parent)
@@ -293,10 +292,10 @@ class TabPlaylist : VTab() {
 			}
 			addButton("Save") {
 				if (existing){
-					val saveConnection = APIConnection("playlist", connectTable.selectionModel.selectedItem.id)
+					val saveConnection = APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id)
 					saveConnection.editPlaylist(playlist)
 				}else{
-					val saveConnection = APIConnection("playlist")
+					val saveConnection = APIConnection("api", "playlist")
 					saveConnection.createPlaylist(if (nameField.text.isNullOrEmpty()) "Unnamed playlist" else nameField.text, playlist)
 				}
 				stage.close()
@@ -310,10 +309,7 @@ class TabPlaylist : VTab() {
 		parent.add(buttons)
 		stage.show()
 	}
-	
-	inline fun useSelectedTrack(action: (Track) -> Unit) {
-		action(table.selectionModel.selectedItem)
-	
+
 	private val selectedTrack: Track
 		get() = table.selectionModel.selectedItem
 	private val selectedIndex: Int

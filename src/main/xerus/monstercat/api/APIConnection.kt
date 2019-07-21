@@ -99,7 +99,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			content = "{ $content }"
 			entity = StringEntity(content)
 		}
-		put(request)
+		execute(request)
 	}
 	
 	fun createPlaylist(name: String, tracks: List<Track>){
@@ -124,7 +124,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			
 			entity = StringEntity(content)
 		}
-		post(request)
+		execute(request)
 	}
 	
 
@@ -139,18 +139,6 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
 		httpRequest = request
 		response = executeRequest(request, context)
-	}
-	
-	private var httpPost: HttpPost? = null
-	fun post(request : HttpPost) {
-		httpPost = request
-		response = execute(httpPost!!)
-	}
-	
-	private var httpPut: HttpPut? = null
-	fun put(request: HttpPut) {
-		httpPut = request
-		response = execute(httpPut!!)
 	}
 	
 	private var response: HttpResponse? = null
