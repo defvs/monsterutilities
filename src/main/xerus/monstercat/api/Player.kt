@@ -6,6 +6,7 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.control.Slider
 import javafx.scene.control.ToggleButton
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -195,10 +196,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
-		updateCover(null)
 		showText("Searching for \"$title\"...")
 		disposePlayer()
 		GlobalScope.launch {
+			updateCover(null)
 			val track = APIUtils.find(title, artists)
 			if(track == null) {
 				onFx { showBack("Track not found") }
@@ -231,9 +232,12 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	fun updateCover(coverUrl: String?) {
 		logger.debug("Updating cover: $coverUrl")
 		this.coverUrl = coverUrl
-		checkFx {
-			backgroundCover.value = coverUrl?.let {
-				Background(BackgroundImage(Covers.getCoverImage(coverUrl), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+		GlobalScope.launch {
+			val image : Image? = coverUrl?.let { Covers.getCoverImage(it) }
+			onFx {
+				backgroundCover.value = image?.let {
+					Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+				}
 			}
 		}
 	}

@@ -163,9 +163,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 			GlobalScope.launch(globalDispatcher) {
-				var image = Covers.getCoverImage(release.coverUrl, 16)
+				var image = Covers.getThumbnailImage(release.coverUrl, 16)
 				image.onError {
-					image = Covers.getCoverImage(release.coverUrl, 16, true)
+					image = Covers.getThumbnailImage(release.coverUrl, 16, true)
 					image.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
 				}
 				onFx {
