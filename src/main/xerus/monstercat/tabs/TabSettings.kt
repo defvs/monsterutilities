@@ -68,9 +68,12 @@ class TabSettings: VTab() {
 			}
 			valueProperty().bindBidirectional(Settings.THEME)
 		})
-		val slider = Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0)
-		Settings.GENRECOLORINTENSITY.dependOn(slider.valueProperty()) { it.toInt() }
-		addLabeled("Genre color intensity", slider)
+		addLabeled("Genre color intensity", Slider(0.0, 255.0, Settings.GENRECOLORINTENSITY().toDouble()).scrollable(15.0).also { slider ->
+			Settings.GENRECOLORINTENSITY.dependOn(slider.valueProperty()) { it.toInt() }
+		})
+		addLabeled("Background cover intensity", Slider(0.0, 0.6, Settings.BACKRGOUNDCOVEROPACITY()).scrollable(0.1).also { slider ->
+			Settings.BACKRGOUNDCOVEROPACITY.dependOn(slider.valueProperty()) { it.toDouble() }
+		})
 		
 		addLabeled("Player Seekbar scroll sensitivity", doubleSpinner(0.0, initial = Settings.PLAYERSCROLLSENSITIVITY()).apply {
 			Settings.PLAYERSCROLLSENSITIVITY.bind(valueProperty())

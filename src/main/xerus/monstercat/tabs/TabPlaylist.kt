@@ -22,14 +22,10 @@ import java.lang.Exception
 
 
 class TabPlaylist : VTab() {
-	var table = TableView<Track>().apply {
+	private var table = TableView<Track>().apply {
 		columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
-	}
-	
-	init {
-		table.items = Playlist.tracks
-		
-		table.columns.addAll(TableColumn<Track, String>("Artists").apply {
+		items = Playlist.tracks
+		columns.addAll(TableColumn<Track, String>("Artists").apply {
 			cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
 				ImmutableObservable(p.value.artistsTitle)
 			}
@@ -38,67 +34,58 @@ class TabPlaylist : VTab() {
 				ImmutableObservable(p.value.title)
 			}
 		})
-		
-		table.setRowFactory {
+
+		setRowFactory {
 			TableRow<Track>().apply {
-				Playlist.currentIndex.addListener { _, _, newValue ->
-					style = if (index == newValue) {
-						"-fx-background-color: #1f6601"
-					} else {
-						"-fx-background-color: transparent"
-					}
+				Playlist.currentIndex.listen {
+					style = "-fx-background-color: ${if (index == it) "#1f6601" else "transparent"}"
 				}
 				itemProperty().listen {
-					style = if (index == Playlist.currentIndex.value) {
-						"-fx-background-color: #1f6601"
-					} else {
-						"-fx-background-color: transparent"
-					}
+					style = "-fx-background-color: ${if (index == Playlist.currentIndex.value) "#1f6601" else "transparent"}"
 				}
 			}
 		}
-		
-		table.selectionModel.selectionMode = SelectionMode.SINGLE
-		
-		table.setOnMouseClicked { me ->
+
+		selectionModel.selectionMode = SelectionMode.SINGLE
+
+		fun removeFromPlaylist() = Playlist.removeAt(selectedIndex)
+		fun playFromPlaylist() = Player.playFromPlaylist(selectedIndex)
+		fun playNextPlaylist() = Playlist.addNext(selectedTrack)
+
+		setOnMouseClicked { me ->
 			if (me.button == MouseButton.PRIMARY && me.clickCount == 2) {
-				Player.playFromPlaylist(table.selectionModel.selectedIndex)
+				playFromPlaylist()
 			}
 			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
-				Playlist.removeAt(table.selectionModel.selectedIndex)
+				removeFromPlaylist()
 			}
 		}
-		
-		table.setOnKeyPressed { ke ->
+		setOnKeyPressed { ke ->
 			if (ke.code == KeyCode.DELETE){
-				Playlist.removeAt(table.selectionModel.selectedIndex)
+				removeFromPlaylist()
 			}else if (ke.code == KeyCode.ENTER){
-				Player.playFromPlaylist(table.selectionModel.selectedIndex)
+				playFromPlaylist()
 			}else if (ke.code == KeyCode.ADD || ke.code == KeyCode.PLUS){
-				useSelectedTrack { Playlist.addNext(it) }
+				playNextPlaylist()
 			}
 		}
-		
-		table.placeholder = Label("Your playlist is empty.")
-		
-		val rightClickMenu = ContextMenu()
-		rightClickMenu.items.addAll(
-				MenuItem("Play") {
-					Player.playFromPlaylist(table.selectionModel.selectedIndex)
-				},
-				MenuItem("Play Next") {
-					useSelectedTrack { Playlist.addNext(it) }
-				},
-				MenuItem("Remove") {
-					Playlist.removeAt(table.selectionModel.selectedIndex)
-				},
-				MenuItem("Clear playlist") {
-					Playlist.clear()
-					Player.reset()
-				}
+
+		placeholder = Label("Your playlist is empty.")
+
+		contextMenu = ContextMenu(
+			MenuItem("Play") { playFromPlaylist() },
+			MenuItem("Play Next") { playNextPlaylist() },
+			MenuItem("Remove") { removeFromPlaylist() },
+			MenuItem("Clear playlist") {
+				Playlist.clear()
+				Player.reset()
+			}
 		)
-		table.contextMenu = rightClickMenu
-		
+	}
+	
+	init {
+	    fill(table)
+	    
 		val buttons = HBox()
 		buttons.add(Label("From Monstercat.com :"))
 		buttons.addButton("Open..."){
@@ -109,7 +96,6 @@ class TabPlaylist : VTab() {
 		}
 		
 		add(buttons)
-		fill(table)
 	}
 	
 	private suspend fun loadPlaylist(apiConnection: APIConnection){
@@ -327,6 +313,10 @@ class TabPlaylist : VTab() {
 	
 	inline fun useSelectedTrack(action: (Track) -> Unit) {
 		action(table.selectionModel.selectedItem)
-	}
+	
+	private val selectedTrack: Track
+		get() = table.selectionModel.selectedItem
+	private val selectedIndex: Int
+		get() = table.selectionModel.selectedIndex
 	
 }

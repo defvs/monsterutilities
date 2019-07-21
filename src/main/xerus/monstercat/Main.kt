@@ -1,10 +1,12 @@
 package xerus.monstercat
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.services.sheets.v4.SheetsScopes
 import javafx.scene.Scene
 import javafx.scene.image.Image
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.SystemUtils
 import xerus.ktutil.getResource
@@ -30,7 +32,7 @@ val cacheDir: File
 
 lateinit var monsterUtilities: MonsterUtilities
 
-val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object : ThreadFactory {
+val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object: ThreadFactory {
 	private val poolNumber = AtomicInteger(1)
 	override fun newThread(r: Runnable) =
 		Thread(Thread.currentThread().threadGroup, r, "mu-worker-" + poolNumber.getAndIncrement())
@@ -51,7 +53,7 @@ fun main(args: Array<String>) {
 	logger.info("Version: $VERSION, Java version: ${SystemUtils.javaVersion}")
 	
 	logger.info("Initializing Google Sheets API Service")
-	Sheets.initService("MonsterUtilities", GoogleCredential().createScoped(listOf(SheetsScopes.SPREADSHEETS_READONLY)))
+	Sheets.initService("MonsterUtilities")
 	
 	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
 	App.launch("MonsterUtilities $VERSION", Settings.THEME(), { stage ->
@@ -60,7 +62,7 @@ fun main(args: Array<String>) {
 				?: null.apply { logger.warn("Resource $it not found!") }
 		})
 	}, {
-		Scene(MonsterUtilities(checkUpdate), 800.0, 700.0)
+		Scene(MonsterUtilities(checkUpdate).root, 800.0, 700.0)
 	})
 	globalThreadPool.shutdown()
 	logger.info("Main has shut down!")

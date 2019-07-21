@@ -28,11 +28,11 @@ import kotlin.math.absoluteValue
 import xerus.ktutil.javafx.MenuItem
 import xerus.monstercat.api.response.Track
 
-val defaultColumns = arrayOf("Genres", "Artists", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("ID", "Date", "B", "Genres", "Artists", "Track", "Comp", "Length", "BPM", "Key").joinToString(multiSeparator)
-private fun isColumnCentered(colName: String) = colName.containsAny("ID", "Date", "BPM", "Length", "Key", "Comp") || colName == "B"
+val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length").joinToString(multiSeparator)
+val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings").joinToString(multiSeparator)
+private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
 
-class TabCatalog : TableTab() {
+class TabCatalog: TableTab() {
 	
 	private val searchView = SearchView<List<String>>()
 	private val searchables = searchView.options
@@ -60,30 +60,28 @@ class TabCatalog : TableTab() {
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
+
+		fun playTracks(add: Boolean){
+			val selected = table.selectionModel.selectedItems ?: return
+			GlobalScope.launch {
+				if (!add)
+					Player.playTracks(getSongs(selected))
+				else
+					Playlist.addAll(getSongs(selected))
+			}
+		}
 		table.setOnMouseClicked { me ->
 			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
-				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
-				GlobalScope.launch {
-					Player.playTracks(getSongs(selected))
-				}
-			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
-				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
-				GlobalScope.launch {
-					Playlist.addAll(getSongs(selected))
-				}
+				playTracks(false)
+			}else if(me.button == MouseButton.MIDDLE){
+				playTracks(true)
 			}
 		}
 		table.setOnKeyPressed {
 			if (it.code == KeyCode.ENTER){
-				val selected = table.selectionModel.selectedItems
-				GlobalScope.launch {
-					Player.playTracks(getSongs(selected))
-				}
+				playTracks(false)
 			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
-				val selected = table.selectionModel.selectedItems
-				GlobalScope.launch {
-					Playlist.addAll(getSongs(selected))
-				}
+				playTracks(true)
 			}
 		}
 		
@@ -139,28 +137,37 @@ class TabCatalog : TableTab() {
 			try {
 				val notFound = ArraySet<String>()
 				val colValue = { list: List<String> ->
-					cols.find(colName)?.let { list.getOrNull(it) }.also {
-						if(it == null && notFound.add(colName)) {
-							logger.warn("Column $colName not found!")
+					cols.find(colName)
+						.also {
+							if(it == null && notFound.add(colName))
+								logger.warn("Column $colName not found!")
 						}
-					}
+						?.let { list.getOrNull(it) }
+						.also {
+							if(it == null && notFound.add(colName))
+								logger.debug("No value for $colName found in $list")
+						}
 				}
-				val col = when {
+				val col: TableColumn<List<String>, *> = when {
 					colName.contains("bpm", true) ->
-						SearchableColumn(colName, Type.INT, { colValue(it)?.toIntOrNull() }, colValue::invoke)
+						SearchableColumn.simple(colName, Type.INT)
+						{ colValue(it)?.substringBefore(' ')?.toIntOrNull() }
 					colName.contains("date", true) ->
-						SearchableColumn(colName, Type.DATE, converter@{ colValue(it)?.toLocalDate() }, colValue::invoke)
+						SearchableColumn.simple(colName, Type.DATE)
+						{ colValue(it)?.toLocalDate() }
 					colName.containsAny("time", "length") ->
-						SearchableColumn(colName, Type.LENGTH, converter@{
+						SearchableColumn.simple(colName, Type.LENGTH)
+						converter@{
 							colValue(it)?.split(":")?.map {
 								it.toIntOrNull() ?: return@converter null
-							}?.let { LocalTime.of(0, it[0], it[1]) }
-						}, colValue::invoke)
+							}?.let { LocalTime.of(it[0] / 60, it[0] % 60, it[1]) }
+						}
 					colName.contains("genre", true) ->
-						TableColumn<List<String>, String>(colName) { colValue(it.value) ?: "" }
-					else -> SearchableColumn(colName, Type.TEXT, colValue::invoke)
+						TableColumn<List<String>, String>(colName)
+						{ colValue(it.value) ?: "" }
+					else -> SearchableColumn.simple(colName, Type.TEXT, colValue::invoke)
 				}
-				if(col is SearchableColumn<List<String>, *>)
+				if(col is SearchableColumn<List<String>, *, *>)
 					searchables.add(col)
 				if(isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"

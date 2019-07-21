@@ -14,6 +14,7 @@ import mu.KotlinLogging
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
+import xerus.ktutil.javafx.onError
 import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.addOneTimeListener
@@ -32,7 +33,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	val logger = KotlinLogging.logger { }
 	
 	val ready = SimpleObservable(false)
-	val roots = HashMap<String, FilterableTreeItem<MusicItem>>()
+	val roots = HashMap<CharSequence, FilterableTreeItem<MusicItem>>()
 	
 	private val checkCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
 		object: CheckBoxTreeCell<MusicItem>() {
@@ -90,13 +91,11 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		
 		val menuPlay = MenuItem("Play") {
 			val selected = selectionModel.selectedItem ?: return@MenuItem
-			GlobalScope.launch {
-				Playlist.clear()
-				val value = selected.value
-				when(value) {
-					is Release -> Player.play(value)
-					is Track -> Player.playTrack(value)
-				}
+			Playlist.clear()
+			val value = selected.value
+			when(value) {
+				is Release -> Player.play(value)
+				is Track -> Player.playTrack(value)
 			}
 		}
 		val menuAdd = MenuItem("Add to playlist") {
@@ -127,12 +126,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				}
 			}
 		}
-		contextMenu = ContextMenu(
-				menuPlay, menuAdd, menuAddNext,
-				SeparatorMenuItem(),
-				MenuItem("Expand all") { expandAll() },
-				MenuItem("Collapse all") { expandAll(false) }
-		)
+		contextMenu = ContextMenu(menuPlay, menuAdd, menuAddNext, SeparatorMenuItem(), MenuItem("Expand all") { expandAll() }, MenuItem("Collapse all") { expandAll(false) })
 		setOnContextMenuRequested {
 			val value = selectionModel.selectedItem.value
 			val enable = (value is Track || value is Release)
@@ -146,7 +140,6 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 					load()
 			}
 		}
-		load()
 	}
 	
 	/** Asynchronously fetches the Releases and updates the View when done */
@@ -207,10 +200,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			}
 			GlobalScope.launch(globalDispatcher) {
 				var image = Covers.getCoverImage(release.coverUrl, 16)
-				if(image.exception != null) {
+				image.onError {
 					image = Covers.getCoverImage(release.coverUrl, 16, true)
-					if(image.exception != null)
-						logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", image.exception)
+					image.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
 				}
 				onFx {
 					treeItem.graphic = ImageView(image)
@@ -230,12 +222,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	}
 	
 	@Suppress("UNCHECKED_CAST")
-	fun getItemsInCategory(category: String) =
+	fun getItemsInCategory(category: CharSequence) =
 		roots[category]!!.children as List<FilterableTreeItem<Release>>
 	
 }
 
 
-private class RootMusicItem(override var title: String, override var id: String = ""): MusicItem() {
+private data class RootMusicItem(override var title: String, override var id: String = ""): MusicItem() {
 	override fun toString() = title
 }

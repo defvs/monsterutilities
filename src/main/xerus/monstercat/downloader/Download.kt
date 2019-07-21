@@ -25,8 +25,8 @@ fun Track.toFileName(inAlbum: Boolean) =
 
 fun Release.downloadFolder(): Path = basePath.resolve(when {
 	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
-	type == "Podcast" -> DOWNLOADDIRPODCAST()
-	type == "Mixes" -> DOWNLOADDIRMIXES()
+	isType(Release.Type.PODCAST) -> DOWNLOADDIRPODCAST()
+	isType(Release.Type.MIX) -> DOWNLOADDIRMIXES()
 	else -> DOWNLOADDIRSINGLE()
 })
 
@@ -80,7 +80,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 	private var totalProgress = 0
 	
 	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
-		val connection = APIConnection("release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
+		val connection = APIConnection("api", "release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
 		val entity = connection.getResponse().entity
 		val contentLength = entity.contentLength
 		if(contentLength == 0L)

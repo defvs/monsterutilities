@@ -41,7 +41,7 @@ object Covers {
 	 * @param size the size of the cover to be fetched from the api, with all powers of 2 being available.
 	 *             By default null, which results in the biggest size possible, usually between 2k and 8k. */
 	fun fetchCover(coverUrl: String, size: Int? = null): HttpEntity =
-		APIConnection.execute(HttpGet(getCoverUrl(coverUrl, size))).entity
+		APIConnection.executeRequest(HttpGet(getCoverUrl(coverUrl, size))).entity
 	
 	/** Attaches a parameter to the [coverUrl] for the requested [size] */
 	private fun getCoverUrl(coverUrl: String, size: Int? = null) =
