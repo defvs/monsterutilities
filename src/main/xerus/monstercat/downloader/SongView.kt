@@ -90,13 +90,11 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		
 		val menuPlay = MenuItem("Play") {
 			val selected = selectionModel.selectedItem ?: return@MenuItem
-			GlobalScope.launch {
-				Playlist.clear()
-				val value = selected.value
-				when(value) {
-					is Release -> Player.play(value)
-					is Track -> Player.playTrack(value)
-				}
+			Playlist.clear()
+			val value = selected.value
+			when(value) {
+				is Release -> Player.play(value)
+				is Track -> Player.playTrack(value)
 			}
 		}
 		val menuAdd = MenuItem("Add to playlist") {
