@@ -66,7 +66,7 @@ class TabCatalog : TableTab() {
 				GlobalScope.launch {
 					Player.playTracks(getSongs(selected))
 				}
-			}else if(me.clickCount == 1 && me.button == MouseButton.MIDDLE){
+			}else if(me.button == MouseButton.MIDDLE){
 				val selected = table.selectionModel.selectedItems ?: return@setOnMouseClicked
 				GlobalScope.launch {
 					Playlist.addAll(getSongs(selected))
