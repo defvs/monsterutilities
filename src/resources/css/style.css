@@ -77,3 +77,9 @@ SearchView {
 #player {
 	-fx-spacing: 0;
 }
+
+/* TODO makes the navigation bar transparent.
+    Not quite sure what to make of this, since I still need to indicate selected state somehow.
+.tab {
+	-fx-background-color: transparent !important;
+}*/

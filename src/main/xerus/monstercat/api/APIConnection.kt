@@ -9,8 +9,9 @@ import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.*
+import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -39,7 +40,7 @@ private val logger = KotlinLogging.logger { }
 /** eases query creation to the Monstercat API */
 class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	
-	private val path: String = "/api/" + path.joinToString("/")
+	private val path: String = "/" + path.joinToString("/")
 	val uri: URI
 		get() = URI("https", "connect.monstercat.com", path, getQuery(), null)
 	
@@ -73,24 +74,24 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
-	
+
+	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
-		httpGet?.abort()
+		httpRequest?.abort()
 	}
 	
 	// Direct Requesting
-	
-	private var httpGet: HttpGet? = null
-	fun execute() {
-		httpGet = HttpGet(uri)
-		response = execute(httpGet!!)
+
+	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
+		httpRequest = request
+		response = executeRequest(request, context)
 	}
 	
 	private var response: HttpResponse? = null
 	fun getResponse(): HttpResponse {
 		if(response == null)
-			execute()
+			execute(HttpGet(uri))
 		return response!!
 	}
 	
@@ -118,9 +119,9 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			CONNECTSID.listen { updateConnectsid(it) }
 		}
 		
-		fun execute(httpGet: HttpGet): CloseableHttpResponse {
-			logger.trace { "Connecting to ${httpGet.uri}" }
-			return httpClient.execute(httpGet)
+		fun executeRequest(request: HttpUriRequest, context: HttpClientContext? = null): CloseableHttpResponse {
+			logger.trace { "Connecting to ${request.uri}" }
+			return httpClient.execute(request, context)
 		}
 		
 		private fun updateConnectsid(connectsid: String) {
@@ -187,7 +188,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		}
 		
 		private fun getConnectValidity(connectsid: String): ConnectResult {
-			val session = APIConnection("self", "session").parseJSON(Session::class.java)
+			val session = APIConnection("api", "self", "session").parseJSON(Session::class.java)
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION
 				session.user == null -> ConnectValidity.NOUSER
@@ -198,6 +199,26 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 				else -> ConnectValidity.NOGOLD
 			}
 			return ConnectResult(connectsid, validity, session)
+		}
+		
+		fun login(username: String, password: String): Boolean {
+			val connection = APIConnection("v2", "signin")
+			val context = HttpClientContext()
+			connection.execute(HttpPost(connection.uri).apply {
+				setHeader("Accept", "application/json")
+				setHeader("Content-type", "application/json")
+				entity = StringEntity("""{"email":"$username","password":"$password"}""")
+			}, context)
+
+			val code = connection.response?.statusLine?.statusCode
+			logger.trace("Login API (POST) returned response code $code")
+			if (code !in 200..206) return false
+			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
+			return true
+		}
+		
+		fun logout() {
+			CONNECTSID.clear()
 		}
 		
 		data class ConnectResult(val connectsid: String, val validity: ConnectValidity, val session: Session?)

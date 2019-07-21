@@ -7,10 +7,11 @@ open class ListResponse<T> {
 	lateinit var results: ArrayList<T>
 	@Key
 	var total: Int = 0
+	
+	override fun toString() = "${this.javaClass.simpleName}($total elements): $results"
 }
 
-class ReleaseResponse : ListResponse<Release>()
-class TrackResponse : ListResponse<Track>()
+class ReleaseResponse: ListResponse<Release>()
+class TrackResponse: ListResponse<Track>()
 
-class ReleaseList : ArrayList<Release>()
-class TrackList : ArrayList<Track>()
+class ReleaseList: ArrayList<Release>()

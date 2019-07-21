@@ -8,6 +8,7 @@ import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.scene.text.Text
+import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.StringConverter
@@ -28,7 +29,7 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.LogTextArea
 import xerus.ktutil.javafx.ui.controls.SearchRow
 import xerus.ktutil.javafx.ui.controls.Searchable
-import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.javafx.ui.controls.Type as SearchType
 import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
@@ -47,6 +48,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
+import xerus.monstercat.api.response.Release.Type
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList(
@@ -64,7 +66,7 @@ class TabDownloader: VTab() {
 	private val noItemsSelected = SimpleObservable(true)
 	
 	private val searchField = TextField()
-	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", Type.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
+	private val releaseSearch = SearchRow(Searchable<Release, LocalDate>("Releases", SearchType.DATE) { it.releaseDate.substring(0, 10).toLocalDate() })
 	
 	init {
 		FilterableTreeItem.autoLeaf = false
@@ -112,6 +114,7 @@ class TabDownloader: VTab() {
 	
 	private fun initialize() {
 		children.clear()
+		songView.load()
 		
 		// Download directory
 		val chooser = FileChooser(App.stage, DOWNLOADDIR().toFile(), null, "Download directory")
@@ -241,11 +244,11 @@ class TabDownloader: VTab() {
 					songView.onReady {
 						if(selected) {
 							GlobalScope.launch {
-								songView.roots.forEach { it.value.isExpanded = false }
+								songView.roots.forEach { root -> root.value.isExpanded = false }
 								var removed = 0
-								songView.roots.forEach { _, value ->
-									value.internalChildren.removeIf {
-										val result = (it.value as Release).run {
+								songView.roots.forEach { (_, root) ->
+									root.internalChildren.removeIf { item ->
+										val result = (item.value as Release).run {
 											val folder = downloadFolder()
 											if(!folder.exists())
 												return@run false
@@ -256,12 +259,13 @@ class TabDownloader: VTab() {
 										}
 										if(result) {
 											removed++
-											logger.trace { "Excluded ${it.value}" }
+											songView.checkModel.clearCheck(item)
+											logger.trace { "Excluded ${item.value}" }
 										}
 										result
 									}
 								}
-								logger.debug("Removed $removed already downloaded Releases")
+								logger.debug("Removed $removed already downloaded Release(s)")
 							}
 						} else {
 							songView.load()
@@ -273,7 +277,7 @@ class TabDownloader: VTab() {
 		addRow(createButton("Smart select") {
 			songView.onReady {
 				GlobalScope.launch {
-					val albums = arrayOf(songView.roots["Album"], songView.roots["EP"]).filterNotNull()
+					val albums = arrayOf(Type.ALBUM, Type.EP).map { songView.roots[it] }.filterNotNull()
 					albums.forEach { it.isSelected = true }
 					@Suppress("UNCHECKED_CAST")
 					val selectedAlbums = albums.flatMap { it.children } as List<FilterableTreeItem<Release>>
@@ -289,21 +293,19 @@ class TabDownloader: VTab() {
 						false
 					}
 					logger.trace { "Filtered out Collections in Smart Select: $filtered" }
-					songView.getItemsInCategory(Release.Type.SINGLE).filter {
+					songView.getItemsInCategory(Type.SINGLE).filter {
 						val tracks = it.value.tracks
-						if(tracks.size == 1) {
-							// an actual single, check it directly
+						if(tracks.size == 1) { // an actual single, check it directly
 							val track = tracks.first()
 							if(!selectedTracks.contains(track)) {
 								it.isSelected = true
 								selectedTracks.add(track)
 							}
 							return@filter false
-						} else {
-							// has multiple tracks, check with collections
+						} else { // has multiple tracks, check with collections
 							return@filter true
 						}
-					}.plus(songView.getItemsInCategory(Release.Type.MCOLLECTION)).forEach {
+					}.plus(songView.getItemsInCategory(Type.MCOLLECTION)).forEach {
 						it.children.forEach {
 							@Suppress("UNCHECKED_CAST")
 							val tr = it as CheckBoxTreeItem<Track>
@@ -347,7 +349,7 @@ class TabDownloader: VTab() {
 				show()
 			}
 		}, Button("Checking connection...").apply {
-			prefWidth = 200.0
+			prefWidth = 400.0
 			CONNECTSID.listen {
 				isDisable = true
 				text = "Verifying connect.sid..."
@@ -362,14 +364,21 @@ class TabDownloader: VTab() {
 	}
 	
 	private fun refreshDownloadButton(button: Button) {
-		updateDownloadButtonAction(button, false)
+		updateDownloadButtonAction(button, false, true)
 		button.isDisable = true
 		
 		var hasGold = false
 		var valid = false
+		var login = false
 		val text = when(APIConnection.connectValidity.value) {
 			ConnectValidity.NOCONNECTION -> "No connection"
-			ConnectValidity.NOUSER -> "Invalid connect.sid"
+			ConnectValidity.NOUSER -> {
+				login = true
+				if (CONNECTSID.value.isEmpty())
+					"Click to login to Monstercat..."
+				else
+					"Invalid connect.sid! Click to login to Monstercat..."
+			}
 			ConnectValidity.NOGOLD -> "No Gold subscription"
 			ConnectValidity.GOLD -> {
 				hasGold = true
@@ -388,18 +397,49 @@ class TabDownloader: VTab() {
 		
 		logger.trace("Setting download button text to $text")
 		button.text = text
-		button.isDisable = hasGold && !valid
-		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to re-check you connect.sid")
-		updateDownloadButtonAction(button, valid)
+		button.isDisable = (hasGold && !valid) || !login
+		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to connect using your Monstercat.com credentials")
+		updateDownloadButtonAction(button, valid, login)
+	}
+
+	private fun openLoginDialog(){
+		val parent = VBox()
+		val stage = App.stage.createStage("Login to Monstercat.com", parent)
+		val emailField = TextField("").apply { promptText = "Email address" }
+		val passwordField = PasswordField().apply { promptText = "Password" }
+		parent.children.addAll(emailField, passwordField,
+				HBox().apply {
+					addButton("Login") {
+						val login = APIConnection.login(emailField.text, passwordField.text)
+						logger.debug("Monstercat connection with ${emailField.text} - ${passwordField.text} returned $login")
+						if (login){
+							stage.close()
+						}else{
+							parent.children.add(parent.children.lastIndex - 1, Label("Wrong username/password"))
+							stage.sizeToScene()
+						}
+					}
+					addButton("Cancel") {
+						stage.close()
+					}
+				}
+		)
+		stage.apply {
+			initModality(Modality.WINDOW_MODAL)
+			show()
+		}
 	}
 	
-	private fun updateDownloadButtonAction(button: Button, valid: Boolean) {
-		if(valid) button.setOnAction { Downloader() }
-		else button.setOnAction {
-			button.isDisable = true
-			button.text = "Verifying connect.sid..."
-			logger.trace("Verifying connect.sid...")
-			APIConnection.checkConnectsid(CONNECTSID())
+	private fun updateDownloadButtonAction(button: Button, valid: Boolean, noConnection: Boolean) {
+		when {
+			valid -> button.setOnAction { Downloader() }
+			noConnection -> button.setOnAction { openLoginDialog() }
+			else -> button.setOnAction {
+				button.isDisable = true
+				button.text = "Verifying connect.sid..."
+				logger.trace("Verifying connect.sid...")
+				APIConnection.checkConnectsid(CONNECTSID())
+			}
 		}
 	}
 	

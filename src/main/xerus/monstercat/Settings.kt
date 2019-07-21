@@ -29,7 +29,9 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	
 	val LASTCATALOGCOLUMNS = create("catalogLastColumns", availableColumns)
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
+	
 	val GENRECOLORINTENSITY = create("genrecolors", 80)
+	val BACKRGOUNDCOVEROPACITY = create("backgroundCoverOpacity", 0.3)
 	
 	val THEME = create("theme", Themes.BLACK)
 	
@@ -68,7 +70,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 			}
 		})
 		
-		THEME.listen { monsterUtilities.scene.applyTheme(it) }
+		THEME.listen { monsterUtilities.root.scene.applyTheme(it) }
 	}
 	
 }
