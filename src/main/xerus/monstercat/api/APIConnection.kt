@@ -81,15 +81,15 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			setHeader("Content-type", "application/json")
 			var content = ""
 			if (name != null)
-				content += "\"name\" : \"$name\", "
+				content += """"name" : "$name", """
 			if (public != null)
-				content += "\"public\" : $public, "
+				content += """"public" : $public, """
 			if (deleted != null)
-				content += "\"deleted\" : $deleted, "
+				content += """"deleted" : $deleted, """
 			if (tracks != null) {
-				content += "\"tracks\": ["
+				content += """"tracks": ["""
 				tracks.forEach { track ->
-					content += "{\"trackId\":\"${track.id}\",\"releaseId\":\"${track.release.id}\"}"
+					content += """{"trackId":"${track.id}","releaseId":"${track.release.id}"}"""
 					if (track != tracks.last())
 						content += ","
 				}
@@ -102,18 +102,20 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		execute(request)
 	}
 	
-	fun createPlaylist(name: String, tracks: List<Track>){
+	fun createPlaylist(name: String, tracks: List<Track>, public: Boolean? = false){
 		val request = HttpPost(uri).apply {
 			setHeader("Accept", "application/json")
 			setHeader("Content-type", "application/json")
 			
 			var content = ""
 			
-			content += "\"name\" : \"$name\", "
+			content += """"name" : "$name", """
+
+			content += """"public" : "$public", """
 			
-			content += "\"tracks\": ["
+			content += """"tracks": ["""
 			tracks.forEach { track ->
-				content += "{\"trackId\":\"${track.id}\",\"releaseId\":\"${track.release.id}\"}"
+				content += """{"trackId":"${track.id}","releaseId":"${track.release.id}"}"""
 				if (track != tracks.last())
 					content += ","
 			}
