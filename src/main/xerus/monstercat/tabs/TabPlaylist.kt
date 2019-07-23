@@ -243,8 +243,8 @@ class TabPlaylist : VTab() {
 					}
 				}
 			})
-			contextMenu = ContextMenu(publicMenuItem, MenuItem("Save into") { replace(); updatePlaylists() }, MenuItem("Rename playlist") { rename(); updatePlaylists() }, MenuItem("Delete playlist") { delete(); updatePlaylists() })
-			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem.public }
+			contextMenu = ContextMenu(publicMenuItem, SeparatorMenuItem(), MenuItem("Save into") { replace(); updatePlaylists() }, MenuItem("Rename playlist") { rename(); updatePlaylists() }, MenuItem("Delete playlist") { delete(); updatePlaylists() })
+			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false }
 
 			updatePlaylists()
 		}
