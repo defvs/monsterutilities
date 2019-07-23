@@ -123,7 +123,7 @@ class TabPlaylist : VTab() {
 		}
 		fun loadUrl(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
-			val subStage = App.stage.createStage("Load from URL", subParent)
+			val subStage = stage.createStage("Load from URL", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "URL" }
 			subParent.add(textField)
@@ -166,7 +166,7 @@ class TabPlaylist : VTab() {
 		}
 		fun new(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
-			val subStage = App.stage.createStage("New Playlist", subParent)
+			val subStage = stage.createStage("New Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "Name" }
 			val publicTick = CheckBox("Public")
@@ -183,7 +183,7 @@ class TabPlaylist : VTab() {
 		}
 		fun rename(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
-			val subStage = App.stage.createStage("New Playlist", subParent)
+			val subStage = stage.createStage("Rename Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "Name" }
 			subParent.add(textField)
