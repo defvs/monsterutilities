@@ -76,7 +76,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		parseJSON(PlaylistResponse::class.java)?.results?.map { it.init() }
 	
 	fun editPlaylist(tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
-		val request = HttpPut(uri).apply {
+		val request = HttpPatch(uri).apply {
 			setHeader("Accept", "application/json")
 			setHeader("Content-type", "application/json")
 			var content = ""
