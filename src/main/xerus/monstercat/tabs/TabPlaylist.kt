@@ -113,14 +113,15 @@ class TabPlaylist : VTab() {
 		val connectTable = TableView<ConnectPlaylist>()
 
 		// Common playlist functions
-		fun load() {
+		fun load(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
 				GlobalScope.async {
 					loadPlaylist(APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks"))
+					onFx { runAfter.invoke() }
 				}
 			}
 		}
-		fun loadUrl() {
+		fun loadUrl(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
 			val subStage = App.stage.createStage("Load from URL", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
@@ -132,7 +133,7 @@ class TabPlaylist : VTab() {
 					GlobalScope.async {
 						try {
 							loadPlaylist(APIConnection("api", "playlist", playlistId, "tracks"))
-							onFx { subStage.close() }
+							onFx { subStage.close(); runAfter.invoke() }
 						}catch (e: Exception){
 							onFx {
 								monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlist were found at ${textField.text}.")
@@ -147,21 +148,23 @@ class TabPlaylist : VTab() {
 			})
 			subStage.show()
 		}
-		fun replace() {
+		fun replace(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
 				GlobalScope.async {
 					APIConnection("v2", "playlist", connectTable.selectionModel.selectedItem.id).editPlaylist(Playlist.tracks)
+					onFx { runAfter.invoke() }
 				}
 			}
 		}
-		fun delete() {
+		fun delete(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
 				GlobalScope.async {
 					APIConnection("v2", "playlist", connectTable.selectionModel.selectedItem.id).editPlaylist(deleted = true)
+					onFx { runAfter.invoke() }
 				}
 			}
 		}
-		fun new() {
+		fun new(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
 			val subStage = App.stage.createStage("New Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
@@ -171,14 +174,14 @@ class TabPlaylist : VTab() {
 			subParent.addRow(createButton("Create"){
 				GlobalScope.async {
 					APIConnection("api", "playlist").createPlaylist(textField.text.let { if (it.isBlank()) "New Playlist" else it }, Playlist.tracks, publicTick.isSelected)
-					onFx { subStage.close() }
+					onFx { subStage.close(); runAfter.invoke() }
 				}
 			}, createButton("Cancel"){
 				subStage.close()
 			})
 			subStage.show()
 		}
-		fun rename() {
+		fun rename(runAfter: () -> Unit = {}) {
 			val subParent = VBox()
 			val subStage = App.stage.createStage("New Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
@@ -188,7 +191,7 @@ class TabPlaylist : VTab() {
 				if (connectTable.selectionModel.selectedItem != null) {
 					GlobalScope.async {
 						APIConnection("v2", "playlist", connectTable.selectionModel.selectedItem.id).editPlaylist(name = textField.text.let { if (it.isBlank()) "Unnamed" else it })
-						onFx { subStage.close(); }
+						onFx { subStage.close(); runAfter.invoke() }
 					}
 				}
 			}, createButton("Cancel"){
@@ -243,14 +246,14 @@ class TabPlaylist : VTab() {
 					}
 				}
 			})
-			contextMenu = ContextMenu(publicMenuItem, SeparatorMenuItem(), MenuItem("Save into") { replace(); updatePlaylists() }, MenuItem("Rename playlist") { rename(); updatePlaylists() }, MenuItem("Delete playlist") { delete(); updatePlaylists() })
+			contextMenu = ContextMenu(publicMenuItem, SeparatorMenuItem(), MenuItem("Save into") { replace { updatePlaylists() }; }, MenuItem("Rename playlist") { rename { updatePlaylists() } }, MenuItem("Delete playlist") { delete { updatePlaylists() } })
 			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false }
 
 			updatePlaylists()
 		}
 
 		parent.add(Label("Tip : You can right-click a playlist to edit it without the window closing each time !"))
-		parent.addRow(createButton("Load"){ load(); stage.close() }, createButton("From URL..."){ loadUrl(); stage.close() }, createButton("Save into selected"){ replace(); stage.close() }, createButton("Save as new..."){ new(); stage.close() })
+		parent.addRow(createButton("Load"){ load(); stage.close() }, createButton("From URL..."){ loadUrl { stage.close() } }, createButton("Save into selected"){ replace { stage.close() } }, createButton("Save as new..."){ new { stage.close() } })
 		parent.fill(connectTable, 0)
 		stage.show()
 	}
