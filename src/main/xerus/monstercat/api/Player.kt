@@ -94,9 +94,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			if (Playlist.tracks.size < 2){
 				add(closeButton)
 			}else{
-				add(buttonWithId("skip") { playNext() }).apply {
-					tooltip = Tooltip("Skip")
-				}
+				add(buttonWithId("skip") { playNext() }).tooltip("Skip")
 				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
 					playNext()
 				}
@@ -176,13 +174,13 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	
 	private val pauseButton = ToggleButton().id("play-pause")
 			.onClick { if (isSelected) player?.pause() else player?.play() }
-			.apply { tooltip = Tooltip("Pause / Play") }
+			.tooltip("Pause / Play")
 	private val stopButton = Button().id("stop")
 			.onClick {
 				reset()
 				Playlist.clear()
 			}
-			.apply { tooltip = Tooltip("Stop playing") }
+			.tooltip("Stop playing")
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
 			.scrollable(0.05)
 			.apply {
@@ -192,10 +190,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 	private val shuffleButton = ToggleButton().id("shuffle")
 			.onClick { Playlist.shuffle = isSelected }
-			.apply { tooltip = Tooltip("Shuffle") }
+			.tooltip("Shuffle")
 	private val repeatButton = ToggleButton().id("repeat")
 			.onClick { Playlist.repeat = isSelected }
-			.apply { tooltip = Tooltip("Repeat all") }
+			.tooltip("Repeat all")
 	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
@@ -207,12 +205,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 			add(pauseButton.apply { isSelected = false })
 			add(stopButton)
-			add(buttonWithId("skipback") { playPrev() }).apply {
-				tooltip = Tooltip("Previous")
-			}
-			add(buttonWithId("skip") { playNext() }).apply {
-				tooltip = Tooltip("Next")
-			}
+			add(buttonWithId("skipback") { playPrev() }).tooltip("Previous")
+			add(buttonWithId("skip") { playNext() }).tooltip("Next")
 			add(shuffleButton.apply { isSelected = Playlist.shuffle })
 			add(repeatButton.apply { isSelected = Playlist.repeat })
 			add(volumeSlider)
