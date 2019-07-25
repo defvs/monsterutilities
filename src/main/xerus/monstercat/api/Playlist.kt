@@ -40,14 +40,12 @@ object Playlist {
 		else -> nextSong()
 	}
 	
-	fun addNext(track: Track) = tracks.apply {
-		remove(track)
-		add(currentIndex.value?.let { it + 1 } ?: 0, track)
+	fun addNext(track: Track) {
+		tracks.apply { remove(track); add(currentIndex.value?.let { it + 1 } ?: 0, track) }
 	}
 	
-	fun add(track: Track): Boolean = tracks.run {
-		remove(track)
-		return add(track)
+	fun add(track: Track) {
+		tracks.apply { remove(track); add(track) }
 	}
 	
 	fun removeAt(index: Int?) {
