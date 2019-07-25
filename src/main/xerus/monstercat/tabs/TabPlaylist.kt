@@ -1,13 +1,11 @@
 package xerus.monstercat.tabs
 
-import javafx.beans.value.ObservableValue
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
-import javafx.util.Callback
 import xerus.ktutil.javafx.MenuItem
+import xerus.ktutil.javafx.TableColumn
 import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
@@ -18,15 +16,8 @@ class TabPlaylist : VTab() {
 	private var table = TableView<Track>().apply {
 		columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
 		items = Playlist.tracks
-		columns.addAll(TableColumn<Track, String>("Artists").apply {
-			cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
-				ImmutableObservable(p.value.artistsTitle)
-			}
-		}, TableColumn<Track, String>("Title").apply {
-			cellValueFactory = Callback<TableColumn.CellDataFeatures<Track, String>, ObservableValue<String>> { p ->
-				ImmutableObservable(p.value.title)
-			}
-		})
+		columns.addAll(TableColumn<Track, String>("Artists") { it.value.artistsTitle },
+				TableColumn<Track, String>("Title") { it.value.title })
 
 		setRowFactory {
 			TableRow<Track>().apply {
