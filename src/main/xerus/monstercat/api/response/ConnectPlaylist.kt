@@ -6,8 +6,9 @@ data class ConnectPlaylist(
 		@Key("_id") var id: String = "",
 		@Key var name: String = "",
 		@Key var public: Boolean = false,
-		
-		@Key var tracks: ArrayList<Track> = arrayListOf()
+		@Key var deleted: Boolean = false,
+
+		@Key var tracks: List<Track> = arrayListOf()
 ) {
 	fun init(): ConnectPlaylist {
 		name = name.trim()

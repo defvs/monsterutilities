@@ -1,23 +1,19 @@
 package xerus.monstercat.tabs
 
 import javafx.beans.value.ObservableValue
-import javafx.collections.FXCollections
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
-import javafx.scene.layout.VBox
-import javafx.stage.Modality
 import javafx.util.Callback
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.MenuItem
+import xerus.ktutil.javafx.addButton
+import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.ui.App
-import xerus.monstercat.api.*
-import xerus.monstercat.api.response.ConnectPlaylist
+import xerus.monstercat.api.Player
+import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.PlaylistManager
 import xerus.monstercat.api.response.Track
-import xerus.monstercat.monsterUtilities
 
 
 class TabPlaylist : VTab() {

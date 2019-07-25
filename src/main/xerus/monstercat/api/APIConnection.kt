@@ -19,6 +19,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
+import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Sheets
@@ -74,61 +75,6 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	
 	fun getPlaylists()=
 		parseJSON(PlaylistResponse::class.java)?.results?.map { it.init() }
-	
-	fun editPlaylist(tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
-		val request = HttpPatch(uri).apply {
-			setHeader("Accept", "application/json")
-			setHeader("Content-type", "application/json")
-			var content = ""
-			if (name != null)
-				content += """"name" : "$name", """
-			if (public != null)
-				content += """"public" : $public, """
-			if (deleted != null)
-				content += """"deleted" : $deleted, """
-			if (tracks != null) {
-				content += """"tracks": ["""
-				tracks.forEach { track ->
-					content += """{"trackId":"${track.id}","releaseId":"${track.release.id}"}"""
-					if (track != tracks.last())
-						content += ","
-				}
-				content += "], "
-			}
-			content = content.removeSuffix(", ")
-			content = "{ $content }"
-			entity = StringEntity(content)
-		}
-		execute(request)
-	}
-	
-	fun createPlaylist(name: String, tracks: List<Track>, public: Boolean? = false){
-		val request = HttpPost(uri).apply {
-			setHeader("Accept", "application/json")
-			setHeader("Content-type", "application/json")
-			
-			var content = ""
-			
-			content += """"name" : "$name", """
-
-			content += """"public" : "$public", """
-			
-			content += """"tracks": ["""
-			tracks.forEach { track ->
-				content += """{"trackId":"${track.id}","releaseId":"${track.release.id}"}"""
-				if (track != tracks.last())
-					content += ","
-			}
-			content += "], "
-			
-			content = content.removeSuffix(", ")
-			content = "{ $content }"
-			
-			entity = StringEntity(content)
-		}
-		execute(request)
-	}
-	
 
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
@@ -139,6 +85,8 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	// Direct Requesting
 
 	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
+		request.setHeader("Accept", "application/json")
+		request.setHeader("Content-type", "application/json")
 		httpRequest = request
 		response = executeRequest(request, context)
 	}
@@ -274,6 +222,35 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		
 		fun logout() {
 			CONNECTSID.clear()
+		}
+
+		private fun convertTracklist(tracks: List<Track>) = tracks.map { HashMap<String, String>().apply { this["trackId"] = it.id; this["releaseId"] = it.release.id } }
+
+		fun editPlaylist(id: String, tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
+			val json = HashMap<String, Any>()
+			tracks.ifNotNull { json["tracks"] = convertTracklist(it) }
+			name.ifNotNull { json["name"] = it }
+			public.ifNotNull { json["public"] = it }
+			deleted.ifNotNull { json["deleted"] = it }
+			val connection = APIConnection("v2", "playlist", id)
+			val request = HttpPatch(connection.uri).apply {
+				val content = Sheets.JSON_FACTORY.toString(json)
+				entity = StringEntity(content)
+			}
+			connection.execute(request)
+		}
+
+		fun createPlaylist(name: String, tracks: List<Track>, public: Boolean = false){
+			val connection = APIConnection("api", "playlist")
+			val request = HttpPost(connection.uri).apply {
+				val json = HashMap<String, Any>()
+				json["name"] = name
+				json["public"] = public
+				json["tracks"] = convertTracklist(tracks)
+				val content = Sheets.JSON_FACTORY.toString(json)
+				entity = StringEntity(content)
+			}
+			connection.execute(request)
 		}
 		
 		data class ConnectResult(val connectsid: String, val validity: ConnectValidity, val session: Session?)
