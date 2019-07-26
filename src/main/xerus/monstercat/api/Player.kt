@@ -14,6 +14,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
@@ -237,10 +238,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playFromPlaylist(index: Int){
-		val track = Playlist[index]
-		if (track != null) {
-			playTrack(track)
-		}
+		Playlist[index].ifNotNull { playTrack(it) }
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
@@ -257,20 +255,11 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playNext(){
-		val next = Playlist.getNext()
-		if (next == null){
-			reset()
-		}else{
-			playTrack(next)
-			
-		}
+		Playlist.getNext()?.let { playTrack(it) } ?: reset()
 	}
 	
 	fun playPrev(){
-		val prev = Playlist.getPrev()
-		if (prev != null){
-			playTrack(prev)
-		}
+		Playlist.getPrev().ifNotNull { playTrack(it) }
 	}
 	
 	fun updateCover(coverUrl: String?) {
