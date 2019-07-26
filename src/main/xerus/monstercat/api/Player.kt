@@ -173,14 +173,14 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause")
-			.onClick { if (isSelected) player?.pause() else player?.play() }
 			.tooltip("Pause / Play")
+			.onClick { if (isSelected) player?.pause() else player?.play() }
 	private val stopButton = Button().id("stop")
+			.tooltip("Stop playing")
 			.onClick {
 				reset()
 				Playlist.clear()
 			}
-			.tooltip("Stop playing")
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
 			.scrollable(0.05)
 			.apply {
@@ -189,12 +189,18 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				tooltip = Tooltip("Volume")
 			}
 	private val shuffleButton = ToggleButton().id("shuffle")
-			.onClick { Playlist.shuffle = isSelected }
 			.tooltip("Shuffle")
+			.onClick { Playlist.shuffle = isSelected }
+			.apply { isSelected = Playlist.shuffle }
 	private val repeatButton = ToggleButton().id("repeat")
-			.onClick { Playlist.repeat = isSelected }
 			.tooltip("Repeat all")
-	
+			.onClick { Playlist.repeat = isSelected }
+			.apply { isSelected = Playlist.repeat }
+	private val skipbackButton = buttonWithId("skipback") { playPrev() }
+			.tooltip("Previous")
+	private val skipButton = buttonWithId("skip") { playNext() }
+			.tooltip("Next")
+
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
 		onFx {
@@ -203,13 +209,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
 				children.add(1, Region().setSize(4.0))
 			}
-			add(pauseButton.apply { isSelected = false })
-			add(stopButton)
-			add(buttonWithId("skipback") { playPrev() }).tooltip("Previous")
-			add(buttonWithId("skip") { playNext() }).tooltip("Next")
-			add(shuffleButton.apply { isSelected = Playlist.shuffle })
-			add(repeatButton.apply { isSelected = Playlist.repeat })
-			add(volumeSlider)
+			children.addAll(pauseButton.apply { isSelected = false }, stopButton, skipbackButton, skipButton, shuffleButton, repeatButton, volumeSlider)
 			fill(pos = 0)
 			fill()
 			add(closeButton)
