@@ -51,8 +51,7 @@ object Playlist {
 	}
 	
 	fun removeAt(index: Int?) {
-		if (index != null) tracks.removeAt(index)
-		else tracks.removeAt(tracks.size - 1)
+		tracks.removeAt(index ?: tracks.size - 1)
 	}
 	
 	fun clear(){
