@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import mu.KotlinLogging
@@ -7,7 +8,6 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
 import xerus.monstercat.api.response.Track
 import java.util.*
-import kotlin.collections.ArrayList
 
 object Playlist {
 	val logger = KotlinLogging.logger { }
@@ -19,9 +19,9 @@ object Playlist {
 			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
 		}, Player.activeTrack, tracks)
 	}
-	
-	var repeat = false
-	var shuffle = false
+
+	val repeat = SimpleBooleanProperty(false)
+	val shuffle = SimpleBooleanProperty(false)
 	
 	operator fun get(index: Int): Track? = tracks.getOrNull(index)
 	
@@ -35,8 +35,8 @@ object Playlist {
 	} ?: currentIndex.value?.let { get(it - 1) }
 	
 	fun getNext() = when {
-		shuffle -> nextSongRandom()
-		repeat && (nextSong() == null) -> tracks[0]
+		shuffle.value -> nextSongRandom()
+		repeat.value && (nextSong() == null) -> tracks[0]
 		else -> nextSong()
 	}
 	
@@ -74,7 +74,7 @@ object Playlist {
 		return when {
 			cur == null -> tracks.firstOrNull()
 			cur + 1 < tracks.size -> tracks[cur + 1]
-			repeat -> tracks.firstOrNull()
+			repeat.value -> tracks.firstOrNull()
 			else -> return null
 		}
 	}

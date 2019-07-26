@@ -191,12 +191,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 	private val shuffleButton = ToggleButton().id("shuffle")
 			.tooltip("Shuffle")
-			.onClick { Playlist.shuffle = isSelected }
-			.apply { isSelected = Playlist.shuffle }
+			.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
 	private val repeatButton = ToggleButton().id("repeat")
 			.tooltip("Repeat all")
-			.onClick { Playlist.repeat = isSelected }
-			.apply { isSelected = Playlist.repeat }
+			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
 	private val skipbackButton = buttonWithId("skipback") { playPrev() }
 			.tooltip("Previous")
 	private val skipButton = buttonWithId("skip") { playNext() }
