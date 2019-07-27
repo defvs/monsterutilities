@@ -16,6 +16,8 @@ open class Track: MusicItem() {
 	@Key
 	override var title: String = ""
 	@Key
+	var version: String = ""
+	@Key
 	var albums: List<Album> = emptyList()
 	@Key("artistRelationships")
 	var artists: List<ArtistRel> = emptyList()
@@ -55,7 +57,7 @@ open class Track: MusicItem() {
 		
 		artistsTitle = formatArtists(artistsTitle)
 		artistsSplit = artistsTitle.splitArtists()
-		splitTitle = "$artistsTitle $title".splitTitleTrimmed()
+		splitTitle = "$artistsTitle $title $version".splitTitleTrimmed()
 		
 		title.splitTitle().forEachIndexed { index, s ->
 			when {
@@ -74,7 +76,11 @@ open class Track: MusicItem() {
 		return super.toString(template, *additionalFields)
 	}
 	
-	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
+	override fun toString(): String = when {
+		artistsTitle.isEmpty() -> "%2\$s"
+		version.isEmpty() -> "%s - %s"
+		else -> "%s - %s (%s)"
+	}.format(artistsTitle, title, version)
 	
 	override fun equals(other: Any?): Boolean =
 		this === other || (other is Track && id == other.id)
