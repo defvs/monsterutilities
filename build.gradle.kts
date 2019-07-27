@@ -4,6 +4,7 @@ import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.IOException
 import java.util.*
+import com.install4j.gradle.Install4jTask
 
 val isUnstable = properties["release"] == null
 var commitNumber: String = ""
@@ -23,6 +24,15 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "5.1.0"
 	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
+	id("com.install4j.gradle") version "8.0"
+}
+
+install4j {
+	if (hasProperty("install4jDir")) {
+		(property("install4jDir") as String?)?.let {
+			installDir = file(it)
+		}
+	}
 }
 
 // source directories
@@ -129,6 +139,29 @@ tasks {
 	val release by creating {
 		dependsOn(websiteRelease, githubRelease)
 		group = MAIN
+	}
+	
+	val buildInstaller by creating(Install4jTask::class) {
+		dependsOn(shadowJar)
+		group = MAIN
+		
+		var path : File? = null
+		doFirst {
+			path = file(jarFile).copyTo(file("build/install4j/$jarFile"), true)
+			if (path?.exists() == false) {
+				println("Couldn't create temporary install4j file '${path?.path}'")
+			}
+		}
+		
+		doLast {
+			if (path?.delete() == false) {
+				println("Cannot delete temporary install4j file '${path?.path}'")
+			}
+		}
+		
+		projectFile = file("MonsterUtilities.install4j")
+		this.release = version.toString()
+		destination = "build/install4j/"
 	}
 	
 	withType<KotlinCompile> {
