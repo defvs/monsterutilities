@@ -1,10 +1,10 @@
 import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.install4j.gradle.Install4jTask
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.IOException
 import java.util.*
-import com.install4j.gradle.Install4jTask
 
 val isUnstable = properties["release"] == null
 var commitNumber: String = ""
@@ -25,14 +25,6 @@ plugins {
 	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
 	id("com.install4j.gradle") version "8.0"
-}
-
-install4j {
-	if (hasProperty("install4jDir")) {
-		(property("install4jDir") as String?)?.let {
-			installDir = file(it)
-		}
-	}
 }
 
 // source directories
@@ -90,6 +82,11 @@ githubRelease {
 	token(project.properties["github.token"]?.toString())
 }
 
+install4j {
+	(properties["install4j.installDir"] as String?)?.let { installDir = file(it) }
+	(properties["install4j.license"] as String?)?.let { license = it }
+}
+
 val MAIN = "_main"
 tasks {
 	
@@ -145,23 +142,18 @@ tasks {
 		dependsOn(shadowJar)
 		group = MAIN
 		
-		var path : File? = null
-		doFirst {
-			path = file(jarFile).copyTo(file("build/install4j/$jarFile"), true)
-			if (path?.exists() == false) {
-				println("Couldn't create temporary install4j file '${path?.path}'")
-			}
-		}
-		
-		doLast {
-			if (path?.delete() == false) {
-				println("Cannot delete temporary install4j file '${path?.path}'")
-			}
-		}
-		
 		projectFile = file("MonsterUtilities.install4j")
-		this.release = version.toString()
 		destination = "build/install4j/"
+		this.release = version.toString()
+		
+		lateinit var jarTemp: File
+		doFirst {
+			jarTemp = file(jarFile).copyTo(file("build/install4j/$jarFile"), true)
+		}
+		doLast {
+			if(!jarTemp.delete())
+				println("Couldn't delete temporary install4j file '${jarTemp.path}'")
+		}
 	}
 	
 	withType<KotlinCompile> {
