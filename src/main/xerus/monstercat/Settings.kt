@@ -5,6 +5,7 @@ import javafx.beans.value.ObservableValue
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
 import mu.KotlinLogging
+import xerus.ktutil.helpers.Named
 import xerus.ktutil.javafx.applyTheme
 import xerus.ktutil.javafx.Themes
 import xerus.ktutil.javafx.properties.listen
@@ -17,32 +18,37 @@ import java.io.File
 object Settings : SettingsNode("xerus/monsterutilities") {
 	private val logger = KotlinLogging.logger { }
 	
+	// Player settings
 	val PLAYERVOLUME = create("playerVolume", 0.4)
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
 	
-	val ENABLECACHE = create("cacheEnabled", true)
-	
+	// Theme and base app settings
+	val THEME = create("theme", Themes.BLACK)
 	val STARTUPTAB = create("tabStartup", "Previous")
 	val LASTTAB = create("tabLast")
 	
+	// Catalog tab settings
 	val LASTCATALOGCOLUMNS = create("catalogLastColumns", availableColumns)
 	val VISIBLECATALOGCOLUMNS = create("catalogVisibleColumns", defaultColumns)
 	
 	val GENRECOLORINTENSITY = create("genrecolors", 80)
 	val BACKRGOUNDCOVEROPACITY = create("backgroundCoverOpacity", 0.3)
 	
-	val THEME = create("theme", Themes.BLACK)
-	
+	// Update mechanism
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")
 	val DELETE = create("versionDelete", File(""))
-	
 	val AUTOUPDATE = create("updateAutomatic", true)
 	val UNSTABLE = create("updateUnstable", false)
 	
+	// Downloader settings
 	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities-%version%.jar")
+	
+	// Connection and API settings
+	val CONNECTIONSPEED = create("connectionSpeed", ConnectionSpeed.ADSL)
+	val ENABLECACHE = create("cacheEnabled", true)
 	
 	init {
 		ENABLECACHE.listen { selected ->
@@ -72,5 +78,21 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 		
 		THEME.listen { monsterUtilities.root.scene.applyTheme(it) }
 	}
-	
+
+	// ENUMs
+	enum class ConnectionSpeed(val maxConnections: Int, override val displayName: String) : Named {
+		DIALUP(5, "Dial-up (100 kb/s)"),
+		ADSL(30, "ADSL / 3G (10 Mb/s)"),
+		CABLE(150, "Cable / 4G (100 Mb/s)"),
+		FIBER(300, "Fiber (300+ Mb/s)");
+
+		override fun toString(): String = displayName
+
+		companion object {
+			fun findFromValue(maxConnections: Int) =
+					ConnectionSpeed.values().find { it.maxConnections == maxConnections } ?: ADSL
+
+			fun findFromString(string: String) = ConnectionSpeed.values().find { it.toString() == string } ?: ADSL
+		}
+	}
 }
