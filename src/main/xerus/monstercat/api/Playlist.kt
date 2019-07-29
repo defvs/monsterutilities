@@ -244,13 +244,12 @@ object PlaylistManager {
 			columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
 			columns.addAll(TableColumn<ConnectPlaylist, String>("Name") { it.value.name },
 					TableColumn<ConnectPlaylist, String>("Size") { it.value.tracks.size.toString() })
-
 			items = playlists
+			updatePlaylists()
 
 			selectionModel.selectionMode = SelectionMode.SINGLE
-
 			setOnMouseClicked { if (it.button == MouseButton.PRIMARY && it.clickCount == 2) load() }
-
+			
 			val publicMenuItem = CheckMenuItem("Public", {
 				if (connectTable.selectionModel.selectedItem != null) {
 					GlobalScope.async {
@@ -261,8 +260,6 @@ object PlaylistManager {
 			})
 			contextMenu = ContextMenu(publicMenuItem, SeparatorMenuItem(), MenuItem("Save into") { replace { updatePlaylists() }; }, MenuItem("Rename playlist") { rename { updatePlaylists() } }, MenuItem("Delete playlist") { delete { updatePlaylists() } })
 			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false }
-
-			updatePlaylists()
 		}
 
 		parent.add(Label("Tip : You can right-click a playlist to edit it without the window closing each time !"))
