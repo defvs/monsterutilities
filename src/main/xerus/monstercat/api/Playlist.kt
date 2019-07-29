@@ -157,7 +157,7 @@ object PlaylistManager {
 							onFx { subStage.close(); runAfter.invoke() }
 						}catch (e: Exception){
 							onFx {
-								monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlist were found at ${textField.text}.")
+								monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlists were found at ${textField.text}.")
 							}
 						}
 					}
