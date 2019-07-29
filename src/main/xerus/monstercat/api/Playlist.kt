@@ -1,6 +1,5 @@
 package xerus.monstercat.api
 
-import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.scene.control.*
@@ -8,13 +7,10 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.VBox
 import javafx.scene.media.MediaPlayer
 import javafx.stage.Modality
-import javafx.util.Callback
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
 import xerus.ktutil.javafx.ui.App
@@ -23,9 +19,9 @@ import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
 import java.util.*
 
+private val logger = KotlinLogging.logger {}
+
 object Playlist {
-	val logger = KotlinLogging.logger { }
-	
 	val tracks: ObservableList<Track> = FXCollections.observableArrayList()
 	val history = ArrayDeque<Track>()
 	val currentIndex = SimpleObservable<Int?>(null).apply {
@@ -108,13 +104,13 @@ object PlaylistManager {
 	suspend fun loadPlaylist(apiConnection: APIConnection){
 		val tracks = apiConnection.getTracks()
 		tracks?.forEachIndexed { index, track ->
-			val found = Cache.getTracks().find {
-				it.id == track.id
-			}
+			val found = Cache.getTracks().find { it.id == track.id }
 			if (found != null)
 				tracks[index] = found
-			else
+			else {
 				tracks.removeAt(index)
+				logger.error("Skipped track ${track.artistsTitle} - ${track.title} with id ${track.id}: Not found in the cache.")
+			}
 		}
 		if (tracks != null && tracks.isNotEmpty()) {
 			if (Player.player?.status != MediaPlayer.Status.DISPOSED)
