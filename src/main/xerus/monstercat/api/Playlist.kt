@@ -11,6 +11,7 @@ import javafx.stage.Modality
 import javafx.util.Callback
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ImmutableObservable
@@ -136,7 +137,7 @@ object PlaylistManager {
 		// Common playlist functions
 		fun load(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.async {
+				GlobalScope.launch {
 					loadPlaylist(APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks"))
 					onFx { runAfter.invoke() }
 				}
@@ -151,7 +152,7 @@ object PlaylistManager {
 			subParent.addRow(createButton("Load"){
 				val playlistId = textField.text.substringAfterLast("/")
 				if (playlistId.length == 24){
-					GlobalScope.async {
+					GlobalScope.launch {
 						try {
 							loadPlaylist(APIConnection("api", "playlist", playlistId, "tracks"))
 							onFx { subStage.close(); runAfter.invoke() }
@@ -171,7 +172,7 @@ object PlaylistManager {
 		}
 		fun replace(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.async {
+				GlobalScope.launch {
 					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, tracks = Playlist.tracks)
 					onFx { runAfter.invoke() }
 				}
@@ -179,7 +180,7 @@ object PlaylistManager {
 		}
 		fun delete(runAfter: () -> Unit = {}) {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.async {
+				GlobalScope.launch {
 					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, deleted = true)
 					onFx { runAfter.invoke() }
 				}
@@ -193,7 +194,7 @@ object PlaylistManager {
 			val publicTick = CheckBox("Public")
 			subParent.children.addAll(textField, publicTick)
 			subParent.addRow(createButton("Create"){
-				GlobalScope.async {
+				GlobalScope.launch {
 					APIConnection.createPlaylist(textField.text.let { if (it.isBlank()) "New Playlist" else it }, Playlist.tracks, publicTick.isSelected)
 					onFx { subStage.close(); runAfter.invoke() }
 				}
@@ -210,7 +211,7 @@ object PlaylistManager {
 			subParent.add(textField)
 			subParent.addRow(createButton("Rename"){
 				if (connectTable.selectionModel.selectedItem != null) {
-					GlobalScope.async {
+					GlobalScope.launch {
 						APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, name = textField.text.let { if (it.isBlank()) "Unnamed" else it })
 						onFx { subStage.close(); runAfter.invoke() }
 					}
@@ -228,7 +229,7 @@ object PlaylistManager {
 				connectTable.placeholder = Label("Please connect using connect.sid in the downloader tab.")
 			}else{
 				connectTable.placeholder = Label("Loading...")
-				GlobalScope.async {
+				GlobalScope.launch {
 					val results = connection.getPlaylists()
 					if (results != null && results.isNotEmpty())
 						playlists.addAll(results)
@@ -252,7 +253,7 @@ object PlaylistManager {
 			
 			val publicMenuItem = CheckMenuItem("Public", {
 				if (connectTable.selectionModel.selectedItem != null) {
-					GlobalScope.async {
+					GlobalScope.launch {
 						APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, public = it)
 						onFx { updatePlaylists() }
 					}
