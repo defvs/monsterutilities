@@ -241,17 +241,9 @@ object PlaylistManager {
 		}
 
 		connectTable.apply {
-
 			columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY
-			columns.addAll(TableColumn<ConnectPlaylist, String>("Name").apply {
-				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
-					ImmutableObservable(p.value.name)
-				}
-			}, TableColumn<ConnectPlaylist, String>("Size").apply {
-				cellValueFactory = Callback<TableColumn.CellDataFeatures<ConnectPlaylist, String>, ObservableValue<String>> { p ->
-					ImmutableObservable(p.value.tracks.size.toString())
-				}
-			})
+			columns.addAll(TableColumn<ConnectPlaylist, String>("Name") { it.value.name },
+					TableColumn<ConnectPlaylist, String>("Size") { it.value.tracks.size.toString() })
 
 			items = playlists
 
