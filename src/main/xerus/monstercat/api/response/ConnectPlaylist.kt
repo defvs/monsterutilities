@@ -9,10 +9,4 @@ data class ConnectPlaylist(
 		@Key var deleted: Boolean = false,
 
 		@Key var tracks: List<Track> = arrayListOf()
-) {
-	fun init(): ConnectPlaylist {
-		name = name.trim()
-		return this
-	}
-	
-}
+)

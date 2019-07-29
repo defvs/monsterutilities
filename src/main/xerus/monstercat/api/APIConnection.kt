@@ -74,7 +74,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 		parseJSON(TrackResponse::class.java)?.results
 	
 	fun getPlaylists()=
-		parseJSON(PlaylistResponse::class.java)?.results?.map { it.init() }
+		parseJSON(PlaylistResponse::class.java)?.results
 
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
