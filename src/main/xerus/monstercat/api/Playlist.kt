@@ -35,9 +35,9 @@ object Playlist {
 	} ?: currentIndex.value?.let { get(it - 1) }
 	
 	fun getNext() = when {
-		shuffle.value -> nextSongRandom()
-		repeat.value && (nextSong() == null) -> tracks[0]
-		else -> nextSong()
+		shuffle.value -> getNextTrackRandom()
+		repeat.value && (getNextTrack() == null) -> tracks[0]
+		else -> getNextTrack()
 	}
 	
 	fun addNext(track: Track) {
@@ -64,11 +64,11 @@ object Playlist {
 		tracks.setAll(playlist)
 	}
 	
-	fun nextSongRandom(): Track {
+	fun getNextTrackRandom(): Track {
 		val index = (Math.random() * tracks.size).toInt()
-		return if(index == currentIndex.value && tracks.size > 1) nextSongRandom() else tracks[index]
+		return if(index == currentIndex.value && tracks.size > 1) getNextTrackRandom() else tracks[index]
 	}
-	fun nextSong(): Track? {
+	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
 		return when {
 			cur == null -> tracks.firstOrNull()
