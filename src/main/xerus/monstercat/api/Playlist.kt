@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.scene.control.*
@@ -29,9 +30,9 @@ object Playlist {
 			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
 		}, Player.activeTrack, tracks)
 	}
-	
-	var repeat = false
-	var shuffle = false
+
+	val repeat = SimpleBooleanProperty(false)
+	val shuffle = SimpleBooleanProperty(false)
 	
 	operator fun get(index: Int): Track? = tracks.getOrNull(index)
 	
@@ -45,26 +46,25 @@ object Playlist {
 	} ?: currentIndex.value?.let { get(it - 1) }
 	
 	fun getNext() = when {
-		shuffle -> nextSongRandom()
-		repeat && (nextSong() == null) -> tracks[0]
-		else -> nextSong()
+		shuffle.value -> getNextTrackRandom()
+		repeat.value && (getNextTrack() == null) -> tracks[0]
+		else -> getNextTrack()
 	}
 	
-	fun addNext(track: Track) = tracks.apply {
-		remove(track)
-		add(currentIndex.value?.let { it + 1 } ?: 0, track)
+	fun addNext(track: Track) {
+		tracks.remove(track)
+		tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
 	}
 	
-	fun add(track: Track): Boolean = tracks.run {
-		remove(track)
-		return add(track)
+	fun add(track: Track) {
+		tracks.remove(track)
+		tracks.add(track)
 	}
 	
 	fun addAll(tracks: ArrayList<Track>) = this.tracks.addAll(tracks)
 	
 	fun removeAt(index: Int?) {
-		if (index != null) tracks.removeAt(index)
-		else tracks.removeAt(tracks.size - 1)
+		tracks.removeAt(index ?: tracks.size - 1)
 	}
 	
 	fun clear(){
@@ -77,26 +77,26 @@ object Playlist {
 		tracks.setAll(playlist)
 	}
 	
-	fun nextSongRandom(): Track {
+	fun getNextTrackRandom(): Track {
 		val index = (Math.random() * tracks.size).toInt()
-		return if(index == currentIndex.value && tracks.size > 1) nextSongRandom() else tracks[index]
+		return if(index == currentIndex.value && tracks.size > 1) getNextTrackRandom() else tracks[index]
 	}
-	fun nextSong(): Track? {
+	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
 		return when {
 			cur == null -> tracks.firstOrNull()
 			cur + 1 < tracks.size -> tracks[cur + 1]
-			repeat -> tracks.firstOrNull()
+			repeat.value -> tracks.firstOrNull()
 			else -> return null
 		}
 	}
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
-		if (asNext) tracks.reverse()
-		tracks.forEach { track ->
-			if (asNext) addNext(track)
-			else add(track)
-		}
+		tracks.removeAll(tracks)
+		if (asNext)
+			tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, tracks)
+		else
+			tracks.addAll(tracks)
 	}
 }
 

@@ -14,6 +14,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.dependOn
@@ -94,9 +95,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			if (Playlist.tracks.size < 2){
 				add(closeButton)
 			}else{
-				add(buttonWithId("skip") { playNext() }).apply {
-					tooltip = Tooltip("Skip")
-				}
+				add(buttonWithId("skip") { playNext() }).tooltip("Skip")
 				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
 					playNext()
 				}
@@ -175,14 +174,14 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause")
+			.tooltip("Pause / Play")
 			.onClick { if (isSelected) player?.pause() else player?.play() }
-			.apply { tooltip = Tooltip("Pause / Play") }
 	private val stopButton = Button().id("stop")
+			.tooltip("Stop playing")
 			.onClick {
 				reset()
 				Playlist.clear()
 			}
-			.apply { tooltip = Tooltip("Stop playing") }
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
 			.scrollable(0.05)
 			.apply {
@@ -191,12 +190,31 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				tooltip = Tooltip("Volume")
 			}
 	private val shuffleButton = ToggleButton().id("shuffle")
-			.onClick { Playlist.shuffle = isSelected }
-			.apply { tooltip = Tooltip("Shuffle") }
+			.tooltip("Shuffle")
+			.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
 	private val repeatButton = ToggleButton().id("repeat")
-			.onClick { Playlist.repeat = isSelected }
-			.apply { tooltip = Tooltip("Repeat all") }
-	
+			.tooltip("Repeat all")
+			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
+	private val skipbackButton = buttonWithId("skipback") { playPrev() }
+			.tooltip("Previous")
+			.apply { Playlist.currentIndex.addListener { _, _, newValue ->
+				val disable = (newValue == 0)
+				isDisable = disable
+				isVisible = !disable
+			} }
+	private val skipButton = buttonWithId("skip") { playNext() }
+			.tooltip("Next")
+			.apply {
+				fun disable(index: Int? = Playlist.currentIndex.value, repeat: Boolean? = Playlist.repeat.value, random: Boolean? = Playlist.shuffle.value) {
+					val disable = index == Playlist.tracks.lastIndex && repeat == false && random == false
+					isDisable = disable
+					isVisible = !disable
+				}
+				Playlist.currentIndex.addListener { _, _, newValue -> disable(index = newValue) }
+				Playlist.repeat.addListener { _, _, newValue -> disable(repeat = newValue)}
+				Playlist.shuffle.addListener { _, _, newValue -> disable(random = newValue)}
+			}
+
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
 		onFx {
@@ -205,17 +223,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
 				children.add(1, Region().setSize(4.0))
 			}
-			add(pauseButton.apply { isSelected = false })
-			add(stopButton)
-			add(buttonWithId("skipback") { playPrev() }).apply {
-				tooltip = Tooltip("Previous")
-			}
-			add(buttonWithId("skip") { playNext() }).apply {
-				tooltip = Tooltip("Next")
-			}
-			add(shuffleButton.apply { isSelected = Playlist.shuffle })
-			add(repeatButton.apply { isSelected = Playlist.repeat })
-			add(volumeSlider)
+			children.addAll(pauseButton.apply { isSelected = false }, stopButton, skipbackButton, skipButton, shuffleButton, repeatButton, volumeSlider)
 			fill(pos = 0)
 			fill()
 			add(closeButton)
@@ -243,10 +251,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playFromPlaylist(index: Int){
-		val track = Playlist[index]
-		if (track != null) {
-			playTrack(track)
-		}
+		Playlist[index].ifNotNull { playTrack(it) }
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
@@ -263,20 +268,11 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playNext(){
-		val next = Playlist.getNext()
-		if (next == null){
-			reset()
-		}else{
-			playTrack(next)
-			
-		}
+		Playlist.getNext()?.let { playTrack(it) } ?: reset()
 	}
 	
 	fun playPrev(){
-		val prev = Playlist.getPrev()
-		if (prev != null){
-			playTrack(prev)
-		}
+		Playlist.getPrev().ifNotNull { playTrack(it) }
 	}
 	
 	fun updateCover(coverUrl: String?) {
