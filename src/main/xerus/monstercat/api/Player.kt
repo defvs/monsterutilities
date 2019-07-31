@@ -177,7 +177,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		onFx {
 			showText(text)
 			if(coverUrl != null) {
-				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
+				children.add(0, ImageView(Covers.getThumbnailImage(coverUrl!!, 24)))
 				children.add(1, Region().setSize(4.0))
 			}
 			add(pauseButton.apply { isSelected = false })
@@ -197,9 +197,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
 		showText("Searching for \"$title\"...")
+		updateCover(null)
 		disposePlayer()
 		GlobalScope.launch {
-			updateCover(null)
 			val track = APIUtils.find(title, artists)
 			if(track == null) {
 				onFx { showBack("Track not found") }
@@ -233,7 +233,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		logger.debug("Updating cover: $coverUrl")
 		this.coverUrl = coverUrl
 		GlobalScope.launch {
-			val image : Image? = coverUrl?.let { Covers.getCoverImage(it) }
+			val image: Image? = coverUrl?.let { Covers.getThumbnailImage(it) }
 			onFx {
 				backgroundCover.value = image?.let {
 					Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
