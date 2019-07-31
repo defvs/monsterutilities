@@ -260,7 +260,7 @@ object PlaylistManager {
 		}
 
 		parent.add(Label("Tip : You can right-click a playlist to edit it without the window closing each time !"))
-		parent.addRow(createButton("Load"){ load(); stage.close() }, createButton("From URL..."){ loadUrl { stage.close() } }, createButton("Save into selected"){ replace { stage.close() } }, createButton("Save as new..."){ new { stage.close() } })
+		parent.addRow(createButton("Load"){ load { stage.close() } }, createButton("From URL..."){ loadUrl { stage.close() } }, createButton("Save into selected"){ replace { stage.close() } }, createButton("Save as new..."){ new { stage.close() } })
 		parent.fill(connectTable, 0)
 		stage.show()
 	}
