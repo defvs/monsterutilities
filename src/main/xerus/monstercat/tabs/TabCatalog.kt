@@ -16,15 +16,14 @@ import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
 import xerus.ktutil.javafx.ui.controls.Type
-import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Player
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
-val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings").joinToString(multiSeparator)
+val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length")
+val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings")
 private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
 
 class TabCatalog: TableTab() {
