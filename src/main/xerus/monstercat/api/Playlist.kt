@@ -8,9 +8,10 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.VBox
 import javafx.scene.media.MediaPlayer
 import javafx.stage.Modality
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import mu.KotlinLogging
+import xerus.ktutil.ifNotNull
+import xerus.ktutil.ifNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
@@ -131,91 +132,108 @@ object PlaylistManager {
 		val connectTable = TableView<ConnectPlaylist>()
 
 		// Common playlist functions
-		fun load(runAfter: () -> Unit = {}) {
+		fun load(): Job? {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.launch {
+				return GlobalScope.launch {
 					loadPlaylist(APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks"))
-					onFx { runAfter.invoke() }
 				}
 			}
+			return null
 		}
-		fun loadUrl(runAfter: () -> Unit = {}) {
+		fun loadUrl(): Job {
 			val subParent = VBox()
 			val subStage = stage.createStage("Load from URL", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "URL" }
 			subParent.add(textField)
-			subParent.addRow(createButton("Load"){
-				val playlistId = textField.text.substringAfterLast("/")
-				if (playlistId.length == 24){
-					GlobalScope.launch {
-						try {
-							loadPlaylist(APIConnection("api", "playlist", playlistId, "tracks"))
-							onFx { subStage.close(); runAfter.invoke() }
-						}catch (e: Exception){
-							onFx {
-								monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlists were found at ${textField.text}.")
-							}
-						}
+			
+			var playlistId: String? = null
+			val job = GlobalScope.launch(start = CoroutineStart.LAZY) {
+				try {
+					loadPlaylist(APIConnection("api", "playlist", playlistId!!, "tracks"))
+					onFx { subStage.close() }
+				}catch (e: Exception){ // FIXME : This breaks everything; if we get in the catch, the error message will show, but job.invokeOnComplete will still work and everything will be closed.
+					onFx {
+						monsterUtilities.showAlert(Alert.AlertType.WARNING, "No playlist found", content = "No playlists were found at ${textField.text}.")
 					}
+					this.cancel()
+				}
+			}
+			
+			subParent.addRow(createButton("Load"){
+				playlistId = textField.text.substringAfterLast("/")
+				if (playlistId!!.length == 24){
+					job.start()
 				}else{
 					monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist URL invalid", content = "${textField.text} is not a valid URL.")
 				}
 			}, createButton("Cancel"){
 				subStage.close()
+				job.cancel()
 			})
 			subStage.show()
+			return job
 		}
-		fun replace(runAfter: () -> Unit = {}) {
+		fun replace(): Job? {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.launch {
+				return GlobalScope.launch {
 					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, tracks = Playlist.tracks)
-					onFx { runAfter.invoke() }
 				}
 			}
+			return null
 		}
-		fun delete(runAfter: () -> Unit = {}) {
+		fun delete(): Job? {
 			if (connectTable.selectionModel.selectedItem != null) {
-				GlobalScope.launch {
+				return GlobalScope.launch {
 					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, deleted = true)
-					onFx { runAfter.invoke() }
 				}
 			}
+			return null
 		}
-		fun new(runAfter: () -> Unit = {}) {
+		fun new(): Job {
 			val subParent = VBox()
 			val subStage = stage.createStage("New Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "Name" }
 			val publicTick = CheckBox("Public")
 			subParent.children.addAll(textField, publicTick)
+			
+			val job = GlobalScope.launch(start = CoroutineStart.LAZY) {
+				APIConnection.createPlaylist(textField.text.let { if (it.isBlank()) "New Playlist" else it }, Playlist.tracks, publicTick.isSelected)
+				onFx { subStage.close() }
+			}
+			
 			subParent.addRow(createButton("Create"){
-				GlobalScope.launch {
-					APIConnection.createPlaylist(textField.text.let { if (it.isBlank()) "New Playlist" else it }, Playlist.tracks, publicTick.isSelected)
-					onFx { subStage.close(); runAfter.invoke() }
-				}
+				job.start()
 			}, createButton("Cancel"){
 				subStage.close()
+				job.cancel()
 			})
 			subStage.show()
+			return job
 		}
-		fun rename(runAfter: () -> Unit = {}) {
+		fun rename(): Job {
 			val subParent = VBox()
 			val subStage = stage.createStage("Rename Playlist", subParent)
 			subStage.initModality(Modality.WINDOW_MODAL)
 			val textField = TextField().apply { promptText = "Name" }
 			subParent.add(textField)
+			
+			val job = GlobalScope.launch(start = CoroutineStart.LAZY) {
+				APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, name = textField.text.let { if (it.isBlank()) "Unnamed" else it })
+				onFx { subStage.close() }
+			}
+			
 			subParent.addRow(createButton("Rename"){
 				if (connectTable.selectionModel.selectedItem != null) {
-					GlobalScope.launch {
-						APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, name = textField.text.let { if (it.isBlank()) "Unnamed" else it })
-						onFx { subStage.close(); runAfter.invoke() }
-					}
+					job.start()
 				}
 			}, createButton("Cancel"){
 				subStage.close()
+				job.cancel()
 			})
 			subStage.show()
+			return job
 		}
 
 		val playlists = FXCollections.observableArrayList<ConnectPlaylist>()
@@ -255,12 +273,21 @@ object PlaylistManager {
 					}
 				}
 			})
-			contextMenu = ContextMenu(publicMenuItem, SeparatorMenuItem(), MenuItem("Save into") { replace { updatePlaylists() }; }, MenuItem("Rename playlist") { rename { updatePlaylists() } }, MenuItem("Delete playlist") { delete { updatePlaylists() } })
+			contextMenu = ContextMenu(
+					publicMenuItem,
+					SeparatorMenuItem(),
+					MenuItem("Save into") { replace()?.invokeOnCompletion { onFx { updatePlaylists() } } },
+					MenuItem("Rename playlist") { rename().invokeOnCompletion { it.ifNull { onFx { updatePlaylists() } } } },
+					MenuItem("Delete playlist") { delete()?.invokeOnCompletion { onFx { updatePlaylists() } } })
 			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false }
 		}
 
 		parent.add(Label("Tip : You can right-click a playlist to edit it without the window closing each time !"))
-		parent.addRow(createButton("Load"){ load { stage.close() } }, createButton("From URL..."){ loadUrl { stage.close() } }, createButton("Save into selected"){ replace { stage.close() } }, createButton("Save as new..."){ new { stage.close() } })
+		parent.addRow(
+				createButton("Load"){ load()?.invokeOnCompletion { onFx { stage.close() } } },
+				createButton("From URL..."){ loadUrl().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } },
+				createButton("Save into selected"){ replace()?.invokeOnCompletion { onFx { stage.close() } } },
+				createButton("Save as new..."){ new().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } })
 		parent.fill(connectTable, 0)
 		stage.show()
 	}
