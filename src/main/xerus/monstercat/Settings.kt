@@ -87,12 +87,5 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 		FIBER(300, "Fiber (300+ Mb/s)");
 
 		override fun toString(): String = displayName
-
-		companion object {
-			fun findFromValue(maxConnections: Int) =
-					ConnectionSpeed.values().find { it.maxConnections == maxConnections } ?: ADSL
-
-			fun findFromString(string: String) = ConnectionSpeed.values().find { it.toString() == string } ?: ADSL
-		}
 	}
 }
