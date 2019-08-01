@@ -132,14 +132,7 @@ object PlaylistManager {
 		val connectTable = TableView<ConnectPlaylist>()
 
 		// Common playlist functions
-		fun load(): Job? {
-			if (connectTable.selectionModel.selectedItem != null) {
-				return GlobalScope.launch {
-					loadPlaylist(APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks"))
-				}
-			}
-			return null
-		}
+		fun load() = GlobalScope.launch { loadPlaylist(APIConnection("api", "playlist", connectTable.selectionModel.selectedItem.id, "tracks")) }
 		fun loadUrl(): Job {
 			val subParent = VBox()
 			val subStage = stage.createStage("Load from URL", subParent)
@@ -164,6 +157,10 @@ object PlaylistManager {
 				playlistId = textField.text.substringAfterLast("/")
 				if (playlistId!!.length == 24){
 					job.start()
+					(it.source as Button).let { button ->
+						button.isDisable = true
+						button.text = "Loading..."
+					}
 				}else{
 					monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist URL invalid", content = "${textField.text} is not a valid URL.")
 				}
@@ -174,22 +171,8 @@ object PlaylistManager {
 			subStage.show()
 			return job
 		}
-		fun replace(): Job? {
-			if (connectTable.selectionModel.selectedItem != null) {
-				return GlobalScope.launch {
-					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, tracks = Playlist.tracks)
-				}
-			}
-			return null
-		}
-		fun delete(): Job? {
-			if (connectTable.selectionModel.selectedItem != null) {
-				return GlobalScope.launch {
-					APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, deleted = true)
-				}
-			}
-			return null
-		}
+		fun replace() = GlobalScope.launch { APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, tracks = Playlist.tracks) }
+		fun delete() = GlobalScope.launch { APIConnection.editPlaylist(connectTable.selectionModel.selectedItem.id, deleted = true) }
 		fun new(): Job {
 			val subParent = VBox()
 			val subStage = stage.createStage("New Playlist", subParent)
@@ -205,6 +188,10 @@ object PlaylistManager {
 			
 			subParent.addRow(createButton("Create"){
 				job.start()
+				(it.source as Button).let { button ->
+					button.isDisable = true
+					button.text = "Loading..."
+				}
 			}, createButton("Cancel"){
 				subStage.close()
 				job.cancel()
@@ -225,8 +212,10 @@ object PlaylistManager {
 			}
 			
 			subParent.addRow(createButton("Rename"){
-				if (connectTable.selectionModel.selectedItem != null) {
-					job.start()
+				job.start()
+				(it.source as Button).let { button ->
+					button.isDisable = true
+					button.text = "Loading..."
 				}
 			}, createButton("Cancel"){
 				subStage.close()
@@ -274,20 +263,38 @@ object PlaylistManager {
 				}
 			})
 			contextMenu = ContextMenu(
-					publicMenuItem,
-					SeparatorMenuItem(),
-					MenuItem("Save into") { replace()?.invokeOnCompletion { onFx { updatePlaylists() } } },
-					MenuItem("Rename playlist") { rename().invokeOnCompletion { it.ifNull { onFx { updatePlaylists() } } } },
-					MenuItem("Delete playlist") { delete()?.invokeOnCompletion { onFx { updatePlaylists() } } })
-			contextMenu.setOnShown { publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false }
+				publicMenuItem,
+				SeparatorMenuItem(),
+				MenuItem("Save into") { replace().invokeOnCompletion { onFx { updatePlaylists() } } },
+				MenuItem("Rename playlist") { rename().invokeOnCompletion { it.ifNull { onFx { updatePlaylists() } } } },
+				MenuItem("Delete playlist") { delete().invokeOnCompletion { onFx { updatePlaylists() } } })
+			contextMenu.setOnShown {
+				contextMenu.items.forEach { it.isDisable = connectTable.selectionModel.selectedItem == null }
+				publicMenuItem.isSelected = selectionModel.selectedItem?.public ?: false
+			}
 		}
 
 		parent.add(Label("Tip : You can right-click a playlist to edit it without the window closing each time !"))
 		parent.addRow(
-				createButton("Load"){ load()?.invokeOnCompletion { onFx { stage.close() } } },
-				createButton("From URL..."){ loadUrl().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } },
-				createButton("Save into selected"){ replace()?.invokeOnCompletion { onFx { stage.close() } } },
-				createButton("Save as new..."){ new().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } })
+			createButton("Load"){
+				connectTable.selectionModel.selectedItem ?: return@createButton
+				load().invokeOnCompletion { onFx { stage.close() } }
+				(it.source as Button).let { button ->
+					button.parent.isDisable = true
+					button.text = "Loading..."
+				}
+			},
+			createButton("From URL..."){ loadUrl().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } },
+			createButton("Save into selected"){
+				connectTable.selectionModel.selectedItem ?: return@createButton
+				replace().invokeOnCompletion { onFx { stage.close() } }
+				(it.source as Button).let { button ->
+					button.parent.isDisable = true
+					button.text = "Loading..."
+				}
+			},
+			createButton("Save as new..."){ new().invokeOnCompletion { it.ifNull { onFx { stage.close() } } } },
+			createButton("Cancel"){ stage.close() })
 		parent.fill(connectTable, 0)
 		stage.show()
 	}
