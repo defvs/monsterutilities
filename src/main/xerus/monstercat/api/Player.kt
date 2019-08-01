@@ -213,7 +213,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
-		updateCover(release.coverUrl)
 		playTracks(release.tracks, 0)
 	}
 	
@@ -230,6 +229,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun updateCover(coverUrl: String?) {
+		if(coverUrl == this.coverUrl)
+			return
 		logger.debug("Updating cover: $coverUrl")
 		this.coverUrl = coverUrl
 		GlobalScope.launch {
