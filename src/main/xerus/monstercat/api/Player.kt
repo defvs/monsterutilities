@@ -197,22 +197,20 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
 	private val skipbackButton = buttonWithId("skipback") { playPrev() }
 			.tooltip("Previous")
-			.apply { Playlist.currentIndex.addListener { _, _, newValue ->
-				val disable = (newValue == 0)
-				isDisable = disable
-				isVisible = !disable
+			.apply { Playlist.currentIndex.listen { listener ->
+				isDisable = listener == 0
+				isVisible = listener != 0
 			} }
 	private val skipButton = buttonWithId("skip") { playNext() }
 			.tooltip("Next")
 			.apply {
-				fun disable(index: Int? = Playlist.currentIndex.value, repeat: Boolean? = Playlist.repeat.value, random: Boolean? = Playlist.shuffle.value) {
-					val disable = index == Playlist.tracks.lastIndex && repeat == false && random == false
+				fun disable(disable: Boolean) {
 					isDisable = disable
 					isVisible = !disable
 				}
-				Playlist.currentIndex.addListener { _, _, newValue -> disable(index = newValue) }
-				Playlist.repeat.addListener { _, _, newValue -> disable(repeat = newValue)}
-				Playlist.shuffle.addListener { _, _, newValue -> disable(random = newValue)}
+				Playlist.currentIndex.listen { listener -> disable(listener == Playlist.tracks.lastIndex) }
+				Playlist.repeat.listen { listener -> disable(!listener)}
+				Playlist.shuffle.listen { listener -> disable(!listener)}
 			}
 
 	private var coverUrl: String? = null
