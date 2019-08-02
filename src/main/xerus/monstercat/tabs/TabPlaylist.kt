@@ -39,13 +39,13 @@ class TabPlaylist : VTab() {
 			}
 		}
 		contextMenu = ContextMenu(
-				MenuItem("Play") { playFromPlaylist() },
-				MenuItem("Play Next") { playNextPlaylist() },
-				MenuItem("Remove") { removeFromPlaylist() },
-				MenuItem("Clear playlist") {
-					Playlist.clear()
-					Player.reset()
-				}
+			MenuItem("Play") { playFromPlaylist() },
+			MenuItem("Play Next") { playNextPlaylist() },
+			MenuItem("Remove") { removeFromPlaylist() },
+			MenuItem("Clear playlist") {
+				Playlist.clear()
+				Player.reset()
+			}
 		)
 
 		// Columns and rows
