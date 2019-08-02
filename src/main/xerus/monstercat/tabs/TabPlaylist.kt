@@ -25,20 +25,17 @@ class TabPlaylist : VTab() {
 		fun playNextPlaylist() = Playlist.addNext(selectedTrack)
 
 		setOnMouseClicked { me ->
-			if (me.button == MouseButton.PRIMARY && me.clickCount == 2) {
-				playFromPlaylist()
-			}
-			if (me.button == MouseButton.MIDDLE && me.clickCount == 1) {
-				removeFromPlaylist()
+			when {
+				me.button == MouseButton.PRIMARY && me.clickCount == 2 -> playFromPlaylist()
+				me.button == MouseButton.MIDDLE && me.clickCount == 1 -> removeFromPlaylist()
 			}
 		}
 		setOnKeyPressed { ke ->
-			if (ke.code == KeyCode.DELETE){
-				removeFromPlaylist()
-			}else if (ke.code == KeyCode.ENTER){
-				playFromPlaylist()
-			}else if (ke.code == KeyCode.ADD || ke.code == KeyCode.PLUS){
-				playNextPlaylist()
+			when(ke.code) {
+				KeyCode.DELETE -> removeFromPlaylist()
+				KeyCode.ENTER -> playFromPlaylist()
+				KeyCode.ADD, KeyCode.PLUS -> playNextPlaylist()
+				else -> return@setOnKeyPressed
 			}
 		}
 		contextMenu = ContextMenu(

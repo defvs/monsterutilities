@@ -71,17 +71,16 @@ class TabCatalog: TableTab() {
 			}
 		}
 		table.setOnMouseClicked { me ->
-			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
-				playTracks(false)
-			}else if(me.button == MouseButton.MIDDLE){
-				playTracks(true)
+			when {
+				me.clickCount == 2 && me.button == MouseButton.PRIMARY -> playTracks(false)
+				me.button == MouseButton.MIDDLE -> playTracks(true)
 			}
 		}
-		table.setOnKeyPressed {
-			if (it.code == KeyCode.ENTER){
-				playTracks(false)
-			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
-				playTracks(true)
+		table.setOnKeyPressed { ke ->
+			when (ke.code) {
+				KeyCode.ENTER -> playTracks(false)
+				KeyCode.PLUS, KeyCode.ADD -> playTracks(true)
+				else -> return@setOnKeyPressed
 			}
 		}
 		
