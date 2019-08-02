@@ -397,7 +397,7 @@ class TabDownloader: VTab() {
 		
 		logger.trace("Setting download button text to $text")
 		button.text = text
-		button.isDisable = (hasGold && !valid) || !login
+		button.isDisable = (hasGold && !valid)
 		button.tooltip = Tooltip(if(hasGold) "Click to start downloading the selected Tracks" else "Click to connect using your Monstercat.com credentials")
 		updateDownloadButtonAction(button, valid, login)
 	}
