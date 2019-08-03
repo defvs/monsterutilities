@@ -14,6 +14,7 @@ import xerus.monstercat.tabs.FetchTab
 import xerus.monstercat.tabs.availableColumns
 import xerus.monstercat.tabs.defaultColumns
 import java.io.File
+import java.nio.file.Paths
 
 object Settings : SettingsNode("xerus/monsterutilities") {
 	private val logger = KotlinLogging.logger { }
@@ -23,6 +24,8 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
+	val EXPORTCURRENTTITLE = create("exportPlayerTitle", false)
+	val EXPORTDIR = create("playerExportDir", Paths.get("player_current_title.txt"))
 	
 	// Theme and base app settings
 	val THEME = create("theme", Themes.BLACK)
