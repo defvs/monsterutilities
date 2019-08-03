@@ -6,6 +6,7 @@ import javafx.scene.control.*
 import javafx.scene.input.Clipboard
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
@@ -86,9 +87,10 @@ class TabSettings: VTab() {
 		val exportFileChooser = FileChooser(App.stage, Settings.EXPORTDIR().toFile(), "", "export file").apply { selectedFile.listen { Settings.EXPORTDIR.set(it.toPath()) } }
 		addRow(
 			CheckBox("Export current title").bind(Settings.EXPORTCURRENTTITLE),
-			exportFileChooser.button().allowExpand(vertical = false)
-				.apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE()},
-			exportFileChooser.textField()
+			HBox(
+				exportFileChooser.button().allowExpand(vertical = false),
+				exportFileChooser.textField()
+			).apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE() }
 		)
 
 		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
