@@ -100,7 +100,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
-		if (Settings.EXPORTCURRENTTITLE()) Settings.EXPORTDIR().toFile().apply { createNewFile() }.write(0, "")
+		if (Settings.EXPORTCURRENTTITLE() && Settings.EXPORTDIR().toFile().isFile) Settings.EXPORTDIR().toFile().apply { createNewFile() }.write(0, "")
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -143,7 +143,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			play()
 			setOnReady {
 				label.text = "Now Playing: $track"
-				if (Settings.EXPORTCURRENTTITLE()) Settings.EXPORTDIR().toFile().apply { createNewFile() }.write(0, "$track")
+				if (Settings.EXPORTCURRENTTITLE() && Settings.EXPORTDIR().toString().isNotEmpty()) Settings.EXPORTDIR().toFile().apply { createNewFile() }.write(0, "$track")
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
