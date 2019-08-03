@@ -27,6 +27,7 @@ import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.*
 import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
@@ -80,6 +81,14 @@ class TabSettings: VTab() {
 			@Suppress("UNCHECKED_CAST")
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
+		
+		// Export chooser
+		val exportFileChooser = FileChooser(App.stage, Settings.EXPORTDIR().toFile(), "", "export file").apply { selectedFile.listen { Settings.EXPORTDIR.set(it.toPath()) } }
+		addRow(
+			CheckBox("Export current title").bind(Settings.EXPORTCURRENTTITLE),
+			exportFileChooser.button().allowExpand(vertical = false)
+				.apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE()}
+		)
 
 		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
 		addLabeled("Internet Bandwidth", connectionSpeed)
