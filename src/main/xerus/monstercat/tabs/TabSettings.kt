@@ -87,7 +87,8 @@ class TabSettings: VTab() {
 		addRow(
 			CheckBox("Export current title").bind(Settings.EXPORTCURRENTTITLE),
 			exportFileChooser.button().allowExpand(vertical = false)
-				.apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE()}
+				.apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE()},
+			exportFileChooser.textField()
 		)
 
 		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
