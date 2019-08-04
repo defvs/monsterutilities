@@ -248,8 +248,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	fun playFromPlaylist(index: Int){
-		Playlist[index].ifNotNull { playTrack(it) }
+	fun playFromPlaylist(index: Int) {
+		Playlist[index]?.let { playTrack(it) } ?: reset()
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
