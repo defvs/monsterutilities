@@ -83,6 +83,8 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
+		add(CheckBox("Enable Streamer Mode (skips copyright-unsafe tracks in the player)").bind(Settings.SKIPUNLICENSABLE))
+		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
 			addRow(createButton("Open Cache directory") {
