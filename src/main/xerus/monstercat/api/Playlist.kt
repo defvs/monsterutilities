@@ -6,6 +6,8 @@ import javafx.collections.ObservableList
 import mu.KotlinLogging
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
+import xerus.monstercat.Settings
+import xerus.monstercat.Settings.SKIPUNLICENSABLE
 import xerus.monstercat.api.response.Track
 import java.util.*
 
@@ -42,12 +44,14 @@ object Playlist {
 	
 	fun addNext(track: Track) {
 		tracks.remove(track)
-		tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
+		if (track.licensable && SKIPUNLICENSABLE())
+			tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
 	}
 	
 	fun add(track: Track) {
 		tracks.remove(track)
-		tracks.add(track)
+		if (track.licensable && SKIPUNLICENSABLE())
+			tracks.add(track)
 	}
 	
 	fun removeAt(index: Int?) {
@@ -61,8 +65,10 @@ object Playlist {
 	
 	fun setTracks(playlist: Collection<Track>) {
 		history.clear()
-		tracks.setAll(playlist)
+		tracks.setAll(if (SKIPUNLICENSABLE()) removeUnsafe(playlist) else playlist)
 	}
+	
+	private fun removeUnsafe(tracks: Collection<Track>) = tracks.filter { it.licensable }
 	
 	fun getNextTrackRandom(): Track {
 		val index = (Math.random() * tracks.size).toInt()
@@ -80,9 +86,10 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
+		val checkedTracks = if (SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
 		if (asNext)
-			this.tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, tracks)
+			this.tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, checkedTracks)
 		else
-			this.tracks.addAll(tracks)
+			this.tracks.addAll(checkedTracks)
 	}
 }
