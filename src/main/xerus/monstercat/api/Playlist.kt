@@ -81,7 +81,7 @@ object Playlist {
 		tracks.setAll(checkedTracks)
 	}
 	
-	private fun removeUnsafe(tracks: Collection<Track>) = tracks.filter { it.licensable }
+	private fun removeUnsafe(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
 	
 	fun getNextTrackRandom(): Track {
 		val index = (Math.random() * tracks.size).toInt()
