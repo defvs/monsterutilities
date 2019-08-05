@@ -32,7 +32,9 @@ import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
+import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.Cache
+import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.cacheDir
 import xerus.monstercat.dataDir
 import xerus.monstercat.downloader.DownloaderSettings
@@ -83,7 +85,12 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
-		add(CheckBox("Enable Streamer Mode (skips copyright-unsafe tracks in the player)").bind(Settings.SKIPUNLICENSABLE))
+		add(CheckBox("Enable Streamer Mode (skips copyright-unsafe tracks in the player)").bind(Settings.SKIPUNLICENSABLE)).apply {
+			APIConnection.connectValidity.listen { validity ->
+				isDisable = validity != ConnectValidity.GOLD
+				if (validity != ConnectValidity.GOLD) isSelected = false
+			}
+		}
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
