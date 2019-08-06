@@ -88,7 +88,7 @@ class TabSettings: VTab() {
 		add(CheckBox("Enable Streamer Mode (skips copyright-unsafe tracks in the player)").bind(Settings.SKIPUNLICENSABLE)).apply {
 			APIConnection.connectValidity.listen { validity ->
 				isDisable = validity != ConnectValidity.GOLD
-				if (validity != ConnectValidity.GOLD) isSelected = false
+				if(validity != ConnectValidity.GOLD) isSelected = false
 			}
 		}
 		

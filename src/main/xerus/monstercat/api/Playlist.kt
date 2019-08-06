@@ -8,8 +8,6 @@ import mu.KotlinLogging
 import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
-import xerus.ktutil.javafx.ui.App
-import xerus.monstercat.Settings
 import xerus.monstercat.Settings.SKIPUNLICENSABLE
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
@@ -47,22 +45,24 @@ object Playlist {
 	}
 	
 	private fun showUnsafeAlert(track: Track? = null) {
-		onFx { monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist", "Unlicensable tracks !",
-			"Skipped adding ${track ?: "tracks"} according to your settings.") }
+		onFx {
+			monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist", "Unlicensable tracks !",
+				"Skipped adding ${track ?: "tracks"} according to your settings.")
+		}
 	}
 	
 	fun addNext(track: Track) {
 		tracks.remove(track)
-		if (track.licensable && SKIPUNLICENSABLE())
+		if(track.licensable && SKIPUNLICENSABLE())
 			tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
-		else if (SKIPUNLICENSABLE()) showUnsafeAlert(track)
+		else if(SKIPUNLICENSABLE()) showUnsafeAlert(track)
 	}
 	
 	fun add(track: Track) {
 		tracks.remove(track)
-		if (track.licensable && SKIPUNLICENSABLE())
+		if(track.licensable && SKIPUNLICENSABLE())
 			tracks.add(track)
-		else if (SKIPUNLICENSABLE()) showUnsafeAlert(track)
+		else if(SKIPUNLICENSABLE()) showUnsafeAlert(track)
 	}
 	
 	fun removeAt(index: Int?) {
@@ -76,8 +76,8 @@ object Playlist {
 	
 	fun setTracks(playlist: Collection<Track>) {
 		history.clear()
-		val checkedTracks = if (SKIPUNLICENSABLE()) removeUnsafe(playlist) else playlist
-		if (checkedTracks.isEmpty()) showUnsafeAlert()
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(playlist) else playlist
+		if(checkedTracks.isEmpty()) showUnsafeAlert()
 		tracks.setAll(checkedTracks)
 	}
 	
@@ -101,8 +101,8 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		val checkedTracks = if (SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
-		if (checkedTracks.isEmpty()) showUnsafeAlert()
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
+		if(checkedTracks.isEmpty()) showUnsafeAlert()
 		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, checkedTracks)
 	}
 }
