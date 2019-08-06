@@ -9,7 +9,10 @@ import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.*
+import org.apache.http.client.methods.CloseableHttpResponse
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.BasicCookieStore
@@ -38,7 +41,7 @@ import kotlin.reflect.KClass
 private val logger = KotlinLogging.logger { }
 
 /** eases query creation to the Monstercat API */
-class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
+class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	private val path: String = "/" + path.joinToString("/")
 	val uri: URI
@@ -74,7 +77,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
-
+	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
@@ -82,7 +85,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	}
 	
 	// Direct Requesting
-
+	
 	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
 		httpRequest = request
 		response = executeRequest(request, context)
@@ -209,10 +212,10 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 				setHeader("Content-type", "application/json")
 				entity = StringEntity("""{"email":"$username","password":"$password"}""")
 			}, context)
-
+			
 			val code = connection.response?.statusLine?.statusCode
 			logger.trace("Login API (POST) returned response code $code")
-			if (code !in 200..206) return false
+			if(code !in 200..206) return false
 			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
 			return true
 		}

@@ -19,7 +19,7 @@ object Playlist {
 			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
 		}, Player.activeTrack, tracks)
 	}
-
+	
 	val repeat = SimpleBooleanProperty(false)
 	val shuffle = SimpleBooleanProperty(false)
 	
@@ -54,7 +54,7 @@ object Playlist {
 		tracks.removeAt(index ?: tracks.size - 1)
 	}
 	
-	fun clear(){
+	fun clear() {
 		history.clear()
 		tracks.clear()
 	}
@@ -65,9 +65,11 @@ object Playlist {
 	}
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * (tracks.size - 1)).toInt().let { if (it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size } ?: 0
+		val index = (Math.random() * (tracks.size - 1)).toInt().let { if(it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size }
+			?: 0
 		return tracks[index]
 	}
+	
 	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
 		return when {
@@ -80,7 +82,7 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		if (asNext)
+		if(asNext)
 			this.tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, tracks)
 		else
 			this.tracks.addAll(tracks)

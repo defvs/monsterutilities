@@ -94,9 +94,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
-			if (Playlist.tracks.size < 2){
+			if(Playlist.tracks.size < 2) {
 				add(closeButton)
-			}else{
+			} else {
 				add(buttonWithId("skip") { playNext() }).tooltip("Skip")
 				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
 					playNext()
@@ -176,37 +176,38 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause")
-			.tooltip("Pause / Play")
-			.onClick { if (isSelected) player?.pause() else player?.play() }
+		.tooltip("Pause / Play")
+		.onClick { if(isSelected) player?.pause() else player?.play() }
 	private val stopButton = Button().id("stop")
-			.tooltip("Stop playing")
-			.onClick {
-				reset()
-				Playlist.clear()
-			}
+		.tooltip("Stop playing")
+		.onClick {
+			reset()
+			Playlist.clear()
+		}
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
-			.scrollable(0.05)
-			.apply {
-				prefWidth = 100.0
-				valueProperty().listen { updateVolume() }
-				tooltip = Tooltip("Volume")
-			}
+		.scrollable(0.05)
+		.apply {
+			prefWidth = 100.0
+			valueProperty().listen { updateVolume() }
+			tooltip = Tooltip("Volume")
+		}
 	private val shuffleButton = ToggleButton().id("shuffle")
-			.tooltip("Shuffle")
-			.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
+		.tooltip("Shuffle")
+		.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
 	private val repeatButton = ToggleButton().id("repeat")
-			.tooltip("Repeat all")
-			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
+		.tooltip("Repeat all")
+		.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
 	private val skipbackButton = buttonWithId("skipback") { playPrev() }
-			.tooltip("Previous")
-			.apply { Playlist.currentIndex.listen { value -> isVisible = value != 0 } }
+		.tooltip("Previous")
+		.apply { Playlist.currentIndex.listen { value -> isVisible = value != 0 } }
 	private val skipButton = buttonWithId("skip") { playNext() }
-			.tooltip("Next")
-			.apply {
-				arrayOf<Observable>(Playlist.currentIndex, Playlist.repeat, Playlist.shuffle).addListener {
-					isVisible = Playlist.currentIndex.value != Playlist.tracks.lastIndex || Playlist.repeat.value || Playlist.shuffle.value }
+		.tooltip("Next")
+		.apply {
+			arrayOf<Observable>(Playlist.currentIndex, Playlist.repeat, Playlist.shuffle).addListener {
+				isVisible = Playlist.currentIndex.value != Playlist.tracks.lastIndex || Playlist.repeat.value || Playlist.shuffle.value
 			}
-
+		}
+	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
 		onFx {
@@ -242,7 +243,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	fun playFromPlaylist(index: Int){
+	fun playFromPlaylist(index: Int) {
 		Playlist[index].ifNotNull { playTrack(it) }
 	}
 	
@@ -258,11 +259,11 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		playFromPlaylist(index)
 	}
 	
-	fun playNext(){
+	fun playNext() {
 		Playlist.getNext()?.let { playTrack(it) } ?: reset()
 	}
 	
-	fun playPrev(){
+	fun playPrev() {
 		Playlist.getPrev().ifNotNull { playTrack(it) }
 	}
 	
