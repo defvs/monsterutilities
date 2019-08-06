@@ -15,7 +15,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.addListener
@@ -264,7 +263,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playPrev() {
-		Playlist.getPrev().ifNotNull { playTrack(it) }
+		Playlist.getPrev()?.let { playTrack(it) }
 	}
 	
 	fun updateCover(coverUrl: String?) {
