@@ -10,8 +10,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import xerus.ktutil.collections.ArraySet
 import xerus.ktutil.containsAny
-import xerus.ktutil.javafx.*
+import xerus.ktutil.javafx.MenuItem
+import xerus.ktutil.javafx.TableColumn
+import xerus.ktutil.javafx.fill
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.javafx.textWidth
 import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
@@ -22,11 +26,9 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.APIUtils
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
-import xerus.monstercat.monsterUtilities
+import xerus.monstercat.api.response.Track
 import java.time.LocalTime
 import kotlin.math.absoluteValue
-import xerus.ktutil.javafx.MenuItem
-import xerus.monstercat.api.response.Track
 
 val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length").joinToString(multiSeparator)
 val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings").joinToString(multiSeparator)
@@ -60,28 +62,27 @@ class TabCatalog: TableTab() {
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
-
-		fun playTracks(add: Boolean){
+		
+		fun playTracks(add: Boolean) {
 			val selected = table.selectionModel.selectedItems ?: return
 			GlobalScope.launch {
-				if (!add)
+				if(!add)
 					Player.playTracks(getSongs(selected))
 				else
 					Playlist.addAll(getSongs(selected))
 			}
 		}
 		table.setOnMouseClicked { me ->
-			if(me.clickCount == 2 && me.button == MouseButton.PRIMARY) {
-				playTracks(false)
-			}else if(me.button == MouseButton.MIDDLE){
-				playTracks(true)
+			when {
+				me.clickCount == 2 && me.button == MouseButton.PRIMARY -> playTracks(false)
+				me.button == MouseButton.MIDDLE -> playTracks(true)
 			}
 		}
-		table.setOnKeyPressed {
-			if (it.code == KeyCode.ENTER){
-				playTracks(false)
-			}else if(it.code == KeyCode.PLUS || it.code == KeyCode.ADD){
-				playTracks(true)
+		table.setOnKeyPressed { ke ->
+			when(ke.code) {
+				KeyCode.ENTER -> playTracks(false)
+				KeyCode.PLUS, KeyCode.ADD -> playTracks(true)
+				else -> return@setOnKeyPressed
 			}
 		}
 		
@@ -89,28 +90,28 @@ class TabCatalog: TableTab() {
 		
 		val rightClickMenu = ContextMenu()
 		rightClickMenu.items.addAll(
-				MenuItem("Play") {
-					val selected = table.selectionModel.selectedItems
-					GlobalScope.launch {
-						Player.playTracks(getSongs(selected))
-					}
-				},
-				MenuItem("Add to playlist") {
-					val selected = table.selectionModel.selectedItems
-					GlobalScope.launch {
-						Playlist.addAll(getSongs(selected))
-					}
-				},
-				MenuItem("Play next") {
-					val selected = table.selectionModel.selectedItems
-					GlobalScope.launch {
-						Playlist.addAll(getSongs(selected), true)
-					}
-				},
-				SeparatorMenuItem(),
-				MenuItem("Select All") {
-					table.selectionModel.selectAll()
+			MenuItem("Play") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Player.playTracks(getSongs(selected))
 				}
+			},
+			MenuItem("Add to playlist") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Playlist.addAll(getSongs(selected))
+				}
+			},
+			MenuItem("Play next") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Playlist.addAll(getSongs(selected), true)
+				}
+			},
+			SeparatorMenuItem(),
+			MenuItem("Select All") {
+				table.selectionModel.selectAll()
+			}
 		)
 		table.contextMenu = rightClickMenu
 	}
@@ -119,7 +120,7 @@ class TabCatalog: TableTab() {
 		val tracklist = arrayListOf<Track>()
 		songList.forEach { item ->
 			val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-			if (track != null) tracklist.add(track)
+			if(track != null) tracklist.add(track)
 			else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 		}
 		return tracklist

@@ -82,26 +82,24 @@ object Playlist {
 	}
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * tracks.size).toInt()
-		return if(index == currentIndex.value && tracks.size > 1) getNextTrackRandom() else tracks[index]
+		val index = (Math.random() * (tracks.size - 1)).toInt().let { if(it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size }
+			?: 0
+		return tracks[index]
 	}
 	
 	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
 		return when {
 			cur == null -> tracks.firstOrNull()
-			cur + 1 < tracks.size -> tracks[cur + 1]
+			cur < tracks.lastIndex -> tracks[cur + 1]
 			repeat.value -> tracks.firstOrNull()
 			else -> return null
 		}
 	}
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
-		tracks.removeAll(tracks)
-		if(asNext)
-			tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, tracks)
-		else
-			tracks.addAll(tracks)
+		this.tracks.removeAll(tracks)
+		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, tracks)
 	}
 }
 

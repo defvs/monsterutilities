@@ -1,5 +1,6 @@
 package xerus.monstercat.api
 
+import javafx.beans.Observable
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -17,6 +18,7 @@ import mu.KotlinLogging
 import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.addListener
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
@@ -92,9 +94,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
-			if (Playlist.tracks.size < 2){
+			if(Playlist.tracks.size < 2) {
 				add(closeButton)
-			}else{
+			} else {
 				add(buttonWithId("skip") { playNext() }).tooltip("Skip")
 				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
 					playNext()
@@ -174,47 +176,38 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val pauseButton = ToggleButton().id("play-pause")
-			.tooltip("Pause / Play")
-			.onClick { if (isSelected) player?.pause() else player?.play() }
+		.tooltip("Pause / Play")
+		.onClick { if(isSelected) player?.pause() else player?.play() }
 	private val stopButton = Button().id("stop")
-			.tooltip("Stop playing")
-			.onClick {
-				reset()
-				Playlist.clear()
-			}
+		.tooltip("Stop playing")
+		.onClick {
+			reset()
+			Playlist.clear()
+		}
 	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
-			.scrollable(0.05)
-			.apply {
-				prefWidth = 100.0
-				valueProperty().listen { updateVolume() }
-				tooltip = Tooltip("Volume")
-			}
+		.scrollable(0.05)
+		.apply {
+			prefWidth = 100.0
+			valueProperty().listen { updateVolume() }
+			tooltip = Tooltip("Volume")
+		}
 	private val shuffleButton = ToggleButton().id("shuffle")
-			.tooltip("Shuffle")
-			.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
+		.tooltip("Shuffle")
+		.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
 	private val repeatButton = ToggleButton().id("repeat")
-			.tooltip("Repeat all")
-			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
+		.tooltip("Repeat all")
+		.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
 	private val skipbackButton = buttonWithId("skipback") { playPrev() }
-			.tooltip("Previous")
-			.apply { Playlist.currentIndex.addListener { _, _, newValue ->
-				val disable = (newValue == 0)
-				isDisable = disable
-				isVisible = !disable
-			} }
+		.tooltip("Previous")
+		.apply { Playlist.currentIndex.listen { value -> isVisible = value != 0 } }
 	private val skipButton = buttonWithId("skip") { playNext() }
-			.tooltip("Next")
-			.apply {
-				fun disable(index: Int? = Playlist.currentIndex.value, repeat: Boolean? = Playlist.repeat.value, random: Boolean? = Playlist.shuffle.value) {
-					val disable = index == Playlist.tracks.lastIndex && repeat == false && random == false
-					isDisable = disable
-					isVisible = !disable
-				}
-				Playlist.currentIndex.addListener { _, _, newValue -> disable(index = newValue) }
-				Playlist.repeat.addListener { _, _, newValue -> disable(repeat = newValue)}
-				Playlist.shuffle.addListener { _, _, newValue -> disable(random = newValue)}
+		.tooltip("Next")
+		.apply {
+			arrayOf<Observable>(Playlist.currentIndex, Playlist.repeat, Playlist.shuffle).addListener {
+				isVisible = Playlist.currentIndex.value != Playlist.tracks.lastIndex || Playlist.repeat.value || Playlist.shuffle.value
 			}
-
+		}
+	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
 		onFx {
@@ -250,14 +243,13 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	fun playFromPlaylist(index: Int){
+	fun playFromPlaylist(index: Int) {
 		Playlist[index].ifNotNull { playTrack(it) }
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
 	fun play(release: Release) {
 		checkFx { showText("Searching for $release") }
-		updateCover(release.coverUrl)
 		playTracks(release.tracks, 0)
 	}
 	
@@ -267,11 +259,11 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		playFromPlaylist(index)
 	}
 	
-	fun playNext(){
+	fun playNext() {
 		Playlist.getNext()?.let { playTrack(it) } ?: reset()
 	}
 	
-	fun playPrev(){
+	fun playPrev() {
 		Playlist.getPrev().ifNotNull { playTrack(it) }
 	}
 	
