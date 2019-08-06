@@ -72,7 +72,7 @@ object Playlist {
 		val cur = currentIndex.value
 		return when {
 			cur == null -> tracks.firstOrNull()
-			cur + 1 < tracks.size -> tracks[cur + 1]
+			cur < tracks.lastIndex -> tracks[cur + 1]
 			repeat.value -> tracks.firstOrNull()
 			else -> return null
 		}
