@@ -1,7 +1,6 @@
 package xerus.monstercat.api
 
 import javafx.beans.Observable
-import javafx.beans.value.ObservableValue
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -200,18 +199,12 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
 	private val skipbackButton = buttonWithId("skipback") { playPrev() }
 			.tooltip("Previous")
-			.apply { Playlist.currentIndex.listen { value ->
-				isDisable = value == 0
-				isVisible = value != 0
-			} }
+			.apply { Playlist.currentIndex.listen { value -> isVisible = value != 0 } }
 	private val skipButton = buttonWithId("skip") { playNext() }
 			.tooltip("Next")
 			.apply {
 				arrayOf<Observable>(Playlist.currentIndex, Playlist.repeat, Playlist.shuffle).addListener {
-					val disabled = Playlist.currentIndex.value == Playlist.tracks.lastIndex && !Playlist.repeat.value && !Playlist.shuffle.value
-					isDisable = disabled
-					isVisible = !disabled
-				}
+					isVisible = Playlist.currentIndex.value != Playlist.tracks.lastIndex || Playlist.repeat.value || Playlist.shuffle.value }
 			}
 
 	private var coverUrl: String? = null
