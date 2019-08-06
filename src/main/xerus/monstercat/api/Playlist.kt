@@ -25,7 +25,7 @@ object Playlist {
 			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
 		}, Player.activeTrack, tracks)
 	}
-
+	
 	val repeat = SimpleBooleanProperty(false)
 	val shuffle = SimpleBooleanProperty(false)
 	
@@ -69,7 +69,7 @@ object Playlist {
 		tracks.removeAt(index ?: tracks.size - 1)
 	}
 	
-	fun clear(){
+	fun clear() {
 		history.clear()
 		tracks.clear()
 	}
@@ -84,14 +84,16 @@ object Playlist {
 	private fun removeUnsafe(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * tracks.size).toInt()
-		return if(index == currentIndex.value && tracks.size > 1) getNextTrackRandom() else tracks[index]
+		val index = (Math.random() * (tracks.size - 1)).toInt().let { if(it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size }
+			?: 0
+		return tracks[index]
 	}
+	
 	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
 		return when {
 			cur == null -> tracks.firstOrNull()
-			cur + 1 < tracks.size -> tracks[cur + 1]
+			cur < tracks.lastIndex -> tracks[cur + 1]
 			repeat.value -> tracks.firstOrNull()
 			else -> return null
 		}
@@ -101,9 +103,6 @@ object Playlist {
 		this.tracks.removeAll(tracks)
 		val checkedTracks = if (SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
 		if (checkedTracks.isEmpty()) showUnsafeAlert()
-		if (asNext)
-			this.tracks.addAll(currentIndex.value?.let { it + 1 } ?: 0, checkedTracks)
-		else
-			this.tracks.addAll(checkedTracks)
+		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, checkedTracks)
 	}
 }
