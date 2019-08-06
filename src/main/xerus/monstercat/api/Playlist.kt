@@ -82,6 +82,6 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, tracks)
+		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex.coerceAtLeast(0), tracks)
 	}
 }
