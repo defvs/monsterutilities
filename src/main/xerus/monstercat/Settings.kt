@@ -24,8 +24,7 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
-	val EXPORTCURRENTTITLE = create("exportPlayerTitle", false)
-	val EXPORTDIR = create("playerExportDir", Paths.get("player_current_title.txt"))
+	val PLAYEREXPORTFILE = create("playerExportFile", Paths.get(""))
 	
 	// Theme and base app settings
 	val THEME = create("theme", Themes.BLACK)

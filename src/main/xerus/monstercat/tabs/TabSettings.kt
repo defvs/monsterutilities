@@ -6,7 +6,6 @@ import javafx.scene.control.*
 import javafx.scene.input.Clipboard
 import javafx.scene.input.DataFormat
 import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
@@ -26,7 +25,10 @@ import org.controlsfx.validation.ValidationSupport
 import org.controlsfx.validation.Validator
 import xerus.ktutil.byteCountString
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.*
+import xerus.ktutil.javafx.properties.ImmutableObservable
+import xerus.ktutil.javafx.properties.ImmutableObservableList
+import xerus.ktutil.javafx.properties.dependOn
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.createAlert
@@ -84,15 +86,9 @@ class TabSettings: VTab() {
 		})
 		
 		// Export chooser
-		val exportFileChooser = FileChooser(App.stage, Settings.EXPORTDIR().toFile(), "", "export file").apply { selectedFile.listen { Settings.EXPORTDIR.set(it.toPath()) } }
-		addRow(
-			CheckBox("Export current title").bind(Settings.EXPORTCURRENTTITLE),
-			HBox(
-				exportFileChooser.button().allowExpand(vertical = false),
-				exportFileChooser.textField()
-			).apply { Settings.EXPORTCURRENTTITLE.listen { newValue -> isDisable = !newValue }; isDisable = !Settings.EXPORTCURRENTTITLE() }
-		)
-
+		val exportFileChooser = FileChooser(App.stage, Settings.PLAYEREXPORTFILE().toFile(), "", "export file").apply { selectedFile.listen { Settings.PLAYEREXPORTFILE.set(it.toPath()) } }
+		addRow(Label("Export currently played track :"), exportFileChooser.button().allowExpand(vertical = false), exportFileChooser.textField())
+		
 		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
 		addLabeled("Internet Bandwidth", connectionSpeed)
 		
