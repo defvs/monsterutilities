@@ -65,8 +65,8 @@ object Playlist {
 	}
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * tracks.size).toInt()
-		return if(index == currentIndex.value && tracks.size > 1) getNextTrackRandom() else tracks[index]
+		val index = (Math.random() * (tracks.size - 1)).toInt().let { if (it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size } ?: 0
+		return tracks[index]
 	}
 	fun getNextTrack(): Track? {
 		val cur = currentIndex.value
