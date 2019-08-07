@@ -17,7 +17,7 @@ cache:
     - $HOME/.gradle/wrapper/
 
 script:
-  - ./gradlew build
+  - ./gradlew check --stacktrace --no-daemon
 
 deploy:
   provider: releases
