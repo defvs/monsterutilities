@@ -94,12 +94,14 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 				monsterUtilities.showError(e, "Couldn't create ${tabClass.java.simpleName}!")
 			}
 		}
-		addTab(TabCatalog::class)
-		addTab(TabPlaylist::class)
-		addTab(TabGenres::class)
-		addTab(TabDownloader::class)
-		addTab(TabSound::class)
-		addTab(TabSettings::class)
+		listOf(
+			TabCatalog::class,
+			TabGenres::class,
+			TabDownloader::class,
+			TabSound::class,
+			TabPlaylist::class,
+			TabSettings::class
+		).forEach { addTab(it) }
 		if(VERSION != Settings.LASTVERSION.get()) {
 			if(Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
