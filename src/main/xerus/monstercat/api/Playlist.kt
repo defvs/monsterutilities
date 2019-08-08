@@ -8,6 +8,8 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
 import xerus.monstercat.api.response.Track
 import java.util.*
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 object Playlist {
 	val logger = KotlinLogging.logger { }
@@ -65,8 +67,9 @@ object Playlist {
 	}
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * (tracks.size - 1)).toInt().let { if(it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size }
-			?: 0
+		val index = Random.nextInt(0..tracks.lastIndex)
+			.let { if(it >= currentIndex.value!!) it + 1 else it }
+			.takeUnless { it >= tracks.size } ?: 0
 		return tracks[index]
 	}
 	
