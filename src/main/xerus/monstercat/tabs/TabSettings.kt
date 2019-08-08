@@ -85,7 +85,7 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		
-		add(CheckBox("Enable Streamer Mode (skips copyright-unsafe tracks in the player)").bind(Settings.SKIPUNLICENSABLE)).apply {
+		add(CheckBox("Enable Streamer Mode (skips unlicensable tracks in the player)").bind(Settings.SKIPUNLICENSABLE)).apply {
 			APIConnection.connectValidity.listen { validity ->
 				isDisable = validity != ConnectValidity.GOLD
 				if(validity != ConnectValidity.GOLD) isSelected = false
