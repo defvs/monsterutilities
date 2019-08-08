@@ -16,7 +16,7 @@ object Playlist {
 	val history = ArrayDeque<Track>()
 	val currentIndex = SimpleObservable<Int?>(null).apply {
 		bindSoft({
-			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
+			tracks.indexOf(Player.activeTrack.value).takeUnless { it == -1 }
 		}, Player.activeTrack, tracks)
 	}
 	
