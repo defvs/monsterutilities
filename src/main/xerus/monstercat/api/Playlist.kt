@@ -44,7 +44,7 @@ object Playlist {
 		else -> getNextTrack()
 	}
 	
-	private fun showUnsafeAlert(track: Track? = null) {
+	private fun showUnlicensableAlert(track: Track? = null) {
 		onFx {
 			monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist", "Unlicensable tracks !",
 				"Skipped adding ${track ?: "tracks"} according to your settings.")
@@ -53,16 +53,16 @@ object Playlist {
 	
 	fun addNext(track: Track) {
 		tracks.remove(track)
-		if(track.licensable && SKIPUNLICENSABLE())
+		if(track.licensable || !SKIPUNLICENSABLE())
 			tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
-		else if(SKIPUNLICENSABLE()) showUnsafeAlert(track)
+		else showUnlicensableAlert(track)
 	}
 	
 	fun add(track: Track) {
 		tracks.remove(track)
-		if(track.licensable && SKIPUNLICENSABLE())
+		if(track.licensable || !SKIPUNLICENSABLE())
 			tracks.add(track)
-		else if(SKIPUNLICENSABLE()) showUnsafeAlert(track)
+		else showUnlicensableAlert(track)
 	}
 	
 	fun removeAt(index: Int?) {
@@ -77,7 +77,7 @@ object Playlist {
 	fun setTracks(playlist: Collection<Track>) {
 		history.clear()
 		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(playlist) else playlist
-		if(checkedTracks.isEmpty()) showUnsafeAlert()
+		if(checkedTracks.isEmpty()) showUnlicensableAlert()
 		tracks.setAll(checkedTracks)
 	}
 	
@@ -102,7 +102,7 @@ object Playlist {
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
 		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
-		if(checkedTracks.isEmpty()) showUnsafeAlert()
+		if(checkedTracks.isEmpty()) showUnlicensableAlert()
 		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, checkedTracks)
 	}
 }
