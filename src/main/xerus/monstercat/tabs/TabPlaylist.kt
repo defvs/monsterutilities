@@ -5,8 +5,11 @@ import javafx.scene.control.Label
 import javafx.scene.control.SelectionMode
 import javafx.scene.control.TableRow
 import javafx.scene.control.TableView
+import javafx.scene.input.ClipboardContent
+import javafx.scene.input.DataFormat
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
+import javafx.scene.input.TransferMode
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.TableColumn
 import xerus.ktutil.javafx.fill
@@ -64,6 +67,36 @@ class TabPlaylist: VTab() {
 				}
 				itemProperty().listen {
 					style = "-fx-background-color: ${if(index == Playlist.currentIndex.value) "#1f6601" else "transparent"}"
+				}
+				
+				val serializedFormat = DataFormat.lookupMimeType("application/x-java-serialized-object") ?: DataFormat("application/x-java-serialized-object")
+				
+				setOnDragDetected {
+					if(!isEmpty) {
+						val dragboard = startDragAndDrop(TransferMode.MOVE)
+						dragboard.dragView = snapshot(null, null)
+						dragboard.setContent(ClipboardContent().apply { put(serializedFormat, index) })
+						it.consume()
+					}
+				}
+				
+				setOnDragOver {
+					(it.dragboard.getContent(serializedFormat) as Int?)?.let { oldIndex ->
+						if(index != oldIndex) {
+							it.acceptTransferModes(*TransferMode.COPY_OR_MOVE)
+							it.consume()
+						}
+					}
+				}
+				
+				setOnDragDropped {
+					(it.dragboard.getContent(serializedFormat) as Int?)?.let { oldIndex ->
+						val newIndex = if(isEmpty) Playlist.tracks.size else index
+						Playlist.tracks.add(newIndex, Playlist.tracks.removeAt(oldIndex))
+						this.tableView.selectionModel.select(newIndex)
+						it.isDropCompleted = true
+						it.consume()
+					}
 				}
 			}
 		}
