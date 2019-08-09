@@ -89,8 +89,6 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	// Direct Requesting
 	
 	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
-		request.setHeader("Accept", "application/json")
-		request.setHeader("Content-type", "application/json")
 		httpRequest = request
 		response = executeRequest(request, context)
 	}
