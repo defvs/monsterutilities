@@ -1,6 +1,5 @@
 package xerus.monstercat.tabs
 
-import javafx.application.Platform
 import javafx.geometry.Orientation
 import javafx.scene.control.CheckBox
 import javafx.scene.control.Label
@@ -8,42 +7,47 @@ import javafx.scene.control.Slider
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.scene.media.EqualizerBand
-import xerus.ktutil.javafx.add
-import xerus.ktutil.javafx.bind
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.listen
-import xerus.ktutil.javafx.scrollable
 import xerus.monstercat.Settings
+import xerus.monstercat.Settings.EQUALIZERBANDS
 import xerus.monstercat.api.Player
 
 class TabSound : VTab() {
-	var hint: Label? = null
-	val eqBox = HBox()
+	private val hint: Label = Label("Play a song to display the controls")
+	private val eqBox = HBox()
 	var eqModel: MutableList<Double> = mutableListOf()
 	
 	init {
-		add(CheckBox("Enable Equalizer").bind(Settings.ENABLEEQUALIZER))
-		Player.activePlayer.listen { Platform.runLater(::updateEQBox) }
-		
-		hint = Label("Play a song to display the controls").run(::add)
-		add(eqBox)
+		addRow(CheckBox("Enable Equalizer").bind(Settings.ENABLEEQUALIZER), createButton("Reset") { resetEQ() })
+		Player.activePlayer.listen { onFx(::updateEQBox) }
+		children.addAll(hint, eqBox)
+	}
+	
+	fun resetEQ() {
+		EQUALIZERBANDS.clear()
+		updateEQBox()
 	}
 	
 	private fun updateEQBox() {
 		eqBox.children.clear()
 		Player.player?.audioEqualizer?.let { eq ->
 			// Remove hint once equalizer has been initialized
-			hint?.let(children::remove)
-			hint = null
+			children.remove(hint)
 			
 			// Sync view with equalizer model
+			eqModel = if(EQUALIZERBANDS.get().isNotEmpty()) EQUALIZERBANDS.all.map { it.toDouble() }.toMutableList() else MutableList(eq.bands.size) { 0.0 }
 			eq.enabledProperty().bind(Settings.ENABLEEQUALIZER)
-			for ((i, band) in eq.bands.withIndex()) {
-				while (eqModel.size <= i)
-					eqModel.add(band.gain)
-				val index: Int = i
-				eqBox.children.add(createEQBandView(band, eqModel[index]) { eqModel[index] = it })
+			eq.bands.forEachIndexed { index, band ->
+				eqBox.children.add(createEQBandView(band, eqModel[index]) {
+					eqModel[index] = it
+					EQUALIZERBANDS.putMulti(*eqModel.map { it.toString() }.toTypedArray())
+				})
 			}
-		} ?: Settings.ENABLEEQUALIZER.unbind()
+		} ?: run {
+			Settings.ENABLEEQUALIZER.unbind()
+			add(hint)
+		}
 	}
 	
 	private fun createEQBandView(band: EqualizerBand, value: Double, listener: (Double) -> Unit): VBox {

@@ -22,7 +22,10 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERVOLUME = create("playerVolume", 0.4)
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
+	
+	// Equalizer
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
+	val EQUALIZERBANDS = create("equalizerBands")
 	
 	// Theme and base app settings
 	val THEME = create("theme", Themes.BLACK)
