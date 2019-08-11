@@ -53,6 +53,8 @@ object Playlist {
 		}
 	}
 	
+	private fun removeUnlicensable(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
+	
 	fun addNext(track: Track) {
 		tracks.remove(track)
 		if(track.licensable || !SKIPUNLICENSABLE())
@@ -78,12 +80,10 @@ object Playlist {
 	
 	fun setTracks(playlist: Collection<Track>) {
 		history.clear()
-		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(playlist) else playlist
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnlicensable(playlist) else playlist
 		if(checkedTracks.isEmpty()) showUnlicensableAlert()
 		tracks.setAll(checkedTracks)
 	}
-	
-	private fun removeUnsafe(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
 	
 	fun getNextTrackRandom(): Track {
 		val index = Random.nextInt(0..tracks.lastIndex)
@@ -104,7 +104,7 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnsafe(tracks) else tracks
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnlicensable(tracks) else tracks
 		if(checkedTracks.isEmpty()) showUnlicensableAlert()
 		this.tracks.addAll(if(asNext) currentIndex.value?.plus(1) ?: 0 else this.tracks.lastIndex.coerceAtLeast(0), checkedTracks)
 	}
