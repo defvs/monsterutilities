@@ -55,6 +55,16 @@ object Covers {
 		return coverFile.inputStream()
 	}
 	
+	fun getCachedCover(coverUrl: String, cachedSize: Int, imageSize: Int): Image? {
+		val coverFile = coverCacheFile(coverUrl, cachedSize)
+		return try {
+			val imageStream = coverFile.inputStream()
+			createImage(imageStream, imageSize)
+		} catch(e: Exception) {
+			null
+		}
+	}
+	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
 	 * @param coverUrl the base url to fetch the cover
 	 * @param size the size of the cover to be fetched from the api, with all powers of 2 being available.
