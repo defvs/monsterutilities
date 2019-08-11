@@ -14,6 +14,7 @@ data class Release(
 	@Key var renderedArtists: String = "",
 	@Key override var title: String = "",
 	@Key var coverUrl: String = "",
+	@Key("inEarlyAccess") var earlyAccess: Boolean = false,
 	@Key var downloadable: Boolean = false): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
