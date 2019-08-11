@@ -2,6 +2,7 @@ package xerus.monstercat.tabs
 
 import javafx.scene.control.Control
 import javafx.scene.layout.Pane
+import javafx.scene.layout.StackPane
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
 import org.controlsfx.validation.decoration.GraphicValidationDecoration
@@ -20,6 +21,14 @@ interface BaseTab {
 }
 
 abstract class VTab : VBox(), BaseTab {
+	protected val logger = KotlinLogging.logger(javaClass.name)
+	
+	init {
+		styleClass.add("vtab")
+	}
+}
+
+abstract class StackTab : StackPane(), BaseTab {
 	protected val logger = KotlinLogging.logger(javaClass.name)
 	
 	init {
