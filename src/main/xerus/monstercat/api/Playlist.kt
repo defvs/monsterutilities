@@ -46,6 +46,9 @@ object Playlist {
 		else -> getNextTrack()
 	}
 	
+	/** Displays an warning dialog, telling the user about the unlicensable status of the [Track] (s) he's trying to add.
+	 * @param track : Can be null if unknown, [Track.toString] (Artist - Title) will be shown to the user if given.
+	 */
 	private fun showUnlicensableAlert(track: Track? = null) {
 		onFx {
 			monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist", "Unlicensable tracks !",
@@ -53,6 +56,10 @@ object Playlist {
 		}
 	}
 	
+	/** Removes unlicensable [Track]s (including mixes and podcasts, which are recognizable by their [Track.artistsTitle] being "Monstercat")
+	 * @param tracks : [Collection] of [Track]s from which should be deducted tracks which are not [Track.licensable].
+	 * @return : The received [tracks] with unlicensable tracks removed. Warning, can end up being empty !
+	 */
 	private fun removeUnlicensable(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
 	
 	fun addNext(track: Track) {
