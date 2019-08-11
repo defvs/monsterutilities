@@ -85,7 +85,7 @@ class TabSettings: VTab() {
 		
 		add(CheckBox("Enable Streamer Mode (hover to read more)").bind(Settings.SKIPUNLICENSABLE))
 			.tooltip("Unlicensable tracks are not safe for Content Creators, they might get claimed\n" +
-				"Skipped when adding them to the player and disables them in the downloader view")
+				"Enabling this option skips them when adding them to the player and disables them in the downloader view")
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
