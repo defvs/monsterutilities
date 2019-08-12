@@ -29,7 +29,7 @@ object Covers {
 	fun getCoverImage(coverUrl: String, size: Int = 1024, invalidate: Boolean = false): Image =
 		getCover(coverUrl, 1024, invalidate).use { createImage(it, size) }
 	
-	private fun createImage(content: InputStream, size: Number) =
+	fun createImage(content: InputStream, size: Number) =
 		Image(content, size.toDouble(), size.toDouble(), false, false)
 	
 	/**

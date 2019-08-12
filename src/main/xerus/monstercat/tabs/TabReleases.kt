@@ -1,19 +1,16 @@
 package xerus.monstercat.tabs
 
 import javafx.animation.FadeTransition
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.FXCollections
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
 import javafx.scene.Group
-import javafx.scene.control.Label
-import javafx.scene.control.ListCell
-import javafx.scene.control.ListView
-import javafx.scene.control.Separator
-import javafx.scene.control.Tooltip
+import javafx.scene.control.*
 import javafx.scene.effect.GaussianBlur
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.util.Duration
@@ -23,6 +20,7 @@ import org.controlsfx.control.GridCell
 import org.controlsfx.control.GridView
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.addListener
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.nullIfEmpty
 import xerus.monstercat.api.Cache
@@ -56,18 +54,44 @@ class TabReleases: StackTab() {
 		monsterUtilities.window.widthProperty().listen { setCellSize() }
 	}
 	
+	private val blurLowRes = SimpleBooleanProperty(false)
+	
 	init {
 		gridView.items = releases
 		GlobalScope.launch {
 			val releases = Cache.getReleases()
 			onFx { this@TabReleases.releases.setAll(releases) }
 		}
-		val colEditor = Group(HBox(0.0,
-			createButton("-") { cols.value = (cols.value - 1).coerceAtLeast(2) },
-			createButton("+") { cols.value = (cols.value + 1).coerceAtMost(4) }))
-		add(gridView)
-		add(colEditor)
-		setAlignment(colEditor, Pos.BOTTOM_LEFT)
+		val colEditor = Group(
+			HBox(0.0,
+				createButton("-") { cols.value = (cols.value - 1).coerceAtLeast(2) },
+				createButton("+") { cols.value = (cols.value + 1).coerceAtMost(4) },
+				CheckBox("Blur low-res").bind(blurLowRes).tooltip("May affect performance while loading covers, but looks less pixelated")
+			).apply {
+				background = Background(BackgroundFill(Color(0.0, 0.0, 0.0, 0.7), CornerRadii(8.0), Insets.EMPTY))
+				padding = Insets(8.0)
+			}
+		)
+		
+		val placeholder = Group(HBox(ImageView(Image("img/loading-16.gif")), Label("Loading Releases...")))
+		add(placeholder)
+		setAlignment(placeholder, Pos.CENTER)
+		
+		releases.listen {
+			onFx {
+				if(!it.isNullOrEmpty()) {
+					add(gridView)
+					add(colEditor)
+					setAlignment(colEditor, Pos.BOTTOM_LEFT)
+					children.remove(placeholder)
+				} else {
+					children.removeAll(gridView, colEditor)
+					add(placeholder)
+					setAlignment(placeholder, Pos.CENTER)
+				}
+			}
+		}
+		
 	}
 	
 	private fun showRelease(release: Release) {
@@ -80,7 +104,7 @@ class TabReleases: StackTab() {
 			ImageView(Covers.getThumbnailImage(release.coverUrl, 256)).apply {
 				effect = GaussianBlur(10.0)
 				GlobalScope.launch {
-					val cover = Covers.getCoverImage(release.coverUrl, 256)
+					val cover = Covers.getCover(release.coverUrl, 256).use { Covers.createImage(it, 256) }
 					onFx { image = cover; effect = null }
 				}
 			},
@@ -92,10 +116,10 @@ class TabReleases: StackTab() {
 				?: "Various Artists").apply { style += "-fx-font-size: 24px;" },
 			HBox(Label(release.releaseDate), Label("${release.tracks.size} tracks")).apply { style += "-fx-font-size: 16px;" },
 			HBox(
-				buttonWithId("play") { Player.play(release) }.styleClass("releaseButton"),
-				buttonWithId("add") { /* TODO : Playlist add when merged */ }.styleClass("releaseButton"),
-				buttonWithId("download") { /* TODO : Tick in Downloader tab */ }.styleClass("releaseButton")
-			).apply { fill(pos = 0) }
+				buttonWithId("play") { Player.play(release) },
+				buttonWithId("add") { /* TODO : Playlist add when merged */ }, // TODO : Add icon
+				buttonWithId("save") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO : Save icon
+			).id("controls").apply { fill(pos = 0) }
 		).apply { fill(pos = 3) })
 		
 		parent.style += "-fx-background-color: -fx-background;"
@@ -108,23 +132,13 @@ class TabReleases: StackTab() {
 				toValue = 0.0
 				setOnFinished { children.remove(parent) }
 			}.play()
-		}
+		}.apply { isCancelButton = true }
 		
 		FadeTransition(Duration(300.0), parent).apply {
 			fromValue = 0.0
 			toValue = 1.0
 		}.play()
 		add(parent).toFront()
-		
-		setOnKeyPressed {
-			if(it.code == KeyCode.ESCAPE) {
-				FadeTransition(Duration(300.0), parent).apply {
-					fromValue = 1.0
-					toValue = 0.0
-					setOnFinished { children.remove(parent) }
-				}.play()
-			}
-		}
 	}
 	
 	class ReleaseGridCell(private val context: TabReleases): GridCell<Release>() {
@@ -133,9 +147,14 @@ class TabReleases: StackTab() {
 			if(empty || item == null) {
 				graphic = null
 			} else {
-				val coverImage = Covers.getCachedCover(item.coverUrl, 1024, 256)
-					?: Covers.getThumbnailImage(item.coverUrl, 256)
+				val lowRes = SimpleBooleanProperty(true)
+				val coverImage = Covers.getThumbnailImage(item.coverUrl, 256)
 				val cover = ImageView(coverImage)
+				GlobalScope.launch {
+					val image = Covers.getCover(item.coverUrl, 256).use { Covers.createImage(it, 256) }
+					lowRes.value = false
+					onFx { cover.image = image }
+				}
 				
 				cover.fitHeight = context.cellSize
 				cover.fitWidth = context.cellSize
@@ -143,10 +162,15 @@ class TabReleases: StackTab() {
 					cover.fitHeight = context.cellSize
 					cover.fitWidth = context.cellSize
 				}
-				cover.effect = GaussianBlur(5.0)
+				
+				cover.effect = if(context.blurLowRes.value && lowRes.value) GaussianBlur(5.0) else null
+				arrayOf(context.blurLowRes, lowRes).addListener {
+					cover.effect = if(context.blurLowRes.value && lowRes.value) GaussianBlur(5.0) else null
+				}
+				
 				graphic = StackPane(cover,
 					Label(item.toString()).apply {
-						background = Background(BackgroundFill(Color.BLACK.apply { setOpacity(0.6) }, CornerRadii(8.0), Insets.EMPTY))
+						background = Background(BackgroundFill(Color(0.0, 0.0, 0.0, 0.7), CornerRadii(8.0), Insets.EMPTY))
 						padding = Insets(8.0)
 						translateY = -16.0
 					}
@@ -165,9 +189,10 @@ class TabReleases: StackTab() {
 			else {
 				val parent = HBox()
 				parent.add(HBox(
-					buttonWithId("play") { Player.playTrack(item) }.styleClass("releaseButton"),
-					buttonWithId("add") { /* TODO : Add to playlist once the branch is merged */ }.styleClass("releaseButton")
-				).apply { alignment = Pos.CENTER_LEFT })
+					buttonWithId("play") { Player.playTrack(item) },
+					buttonWithId("add") { /* TODO : Add to playlist once the branch is merged */ }, // TODO : Add icon
+					buttonWithId("save") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO: Save icon
+				).id("controls").apply { alignment = Pos.CENTER_LEFT })
 				parent.fill(HBox(Label(item.toString()) /* TODO : Unlicensable alert */), 0)
 				
 				graphic = parent
