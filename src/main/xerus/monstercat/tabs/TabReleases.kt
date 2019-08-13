@@ -117,8 +117,8 @@ class TabReleases: StackTab() {
 			HBox(Label(release.releaseDate), Label("${release.tracks.size} tracks")).apply { style += "-fx-font-size: 16px;" },
 			HBox(
 				buttonWithId("play") { Player.play(release) },
-				buttonWithId("add") { /* TODO : Playlist add when merged */ }, // TODO : Add icon
-				buttonWithId("save") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO : Save icon
+				buttonWithId("satin-add") { /* TODO : Playlist add when merged */ }, // TODO : Add icon
+				buttonWithId("satin-open") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO : Save icon
 			).id("controls").apply { fill(pos = 0) }
 		).apply { fill(pos = 3) })
 		
@@ -198,8 +198,8 @@ class TabReleases: StackTab() {
 				val parent = HBox()
 				parent.add(HBox(
 					buttonWithId("play") { Player.playTrack(item) },
-					buttonWithId("add") { /* TODO : Add to playlist once the branch is merged */ }, // TODO : Add icon
-					buttonWithId("save") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO: Save icon
+					buttonWithId("satin-add") { /* TODO : Add to playlist once the branch is merged */ }, // TODO : Add icon
+					buttonWithId("satin-open") { /* TODO : Tick in Downloader tab */ }.tooltip("Show in downloader") // TODO: Save icon
 				).id("controls").apply { alignment = Pos.CENTER_LEFT })
 				parent.fill(HBox(Label(item.toString()) /* TODO : Unlicensable alert */), 0)
 				
