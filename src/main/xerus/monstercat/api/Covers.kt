@@ -55,7 +55,7 @@ object Covers {
 		return coverFile.inputStream()
 	}
 	
-	fun getCachedCover(coverUrl: String, cachedSize: Int, imageSize: Int): Image? {
+	fun getCachedCover(coverUrl: String, cachedSize: Int, imageSize: Int = cachedSize): Image? {
 		val coverFile = coverCacheFile(coverUrl, cachedSize)
 		return try {
 			val imageStream = coverFile.inputStream()

@@ -32,7 +32,7 @@ import xerus.monstercat.monsterUtilities
 
 
 class TabReleases: StackTab() {
-	private var cols = SimpleObservable(3)
+	private var cols = SimpleObservable(2)
 	val cellSize: Double
 		get() = monsterUtilities.window.width / cols.value - 16.0 * (cols.value + 1)
 	
@@ -142,18 +142,26 @@ class TabReleases: StackTab() {
 	}
 	
 	class ReleaseGridCell(private val context: TabReleases): GridCell<Release>() {
-		override fun updateItem(item: Release?, empty: Boolean) {
+		override fun updateItem(item: Release?, empty : Boolean) {
 			super.updateItem(item, empty)
 			if(empty || item == null) {
 				graphic = null
 			} else {
 				val lowRes = SimpleBooleanProperty(true)
-				val coverImage = Covers.getThumbnailImage(item.coverUrl, 256)
-				val cover = ImageView(coverImage)
-				GlobalScope.launch {
-					val image = Covers.getCover(item.coverUrl, 256).use { Covers.createImage(it, 256) }
+				val cover = ImageView()
+				
+				val cachedCover = Covers.getCachedCover(item.coverUrl, 256, 256)
+				if(cachedCover != null) {
+					cover.image = cachedCover
 					lowRes.value = false
-					onFx { cover.image = image }
+				} else {
+					cover.image = Covers.getThumbnailImage(item.coverUrl, 256)
+					lowRes.value = true
+					GlobalScope.launch {
+						val image = Covers.getCover(item.coverUrl, 256).use { Covers.createImage(it, 256) }
+						lowRes.value = false
+						onFx { cover.image = image }
+					}
 				}
 				
 				cover.fitHeight = context.cellSize
@@ -200,4 +208,3 @@ class TabReleases: StackTab() {
 		}
 	}
 }
-
