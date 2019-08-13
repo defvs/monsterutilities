@@ -103,9 +103,16 @@ class TabReleases: StackTab() {
 		val infoHeader = HBox(16.0,
 			ImageView(Covers.getThumbnailImage(release.coverUrl, 256)).apply {
 				effect = GaussianBlur(10.0)
-				GlobalScope.launch {
-					val cover = Covers.getCover(release.coverUrl, 256).use { Covers.createImage(it, 256) }
-					onFx { image = cover; effect = null }
+				val cachedCover = Covers.getCachedCover(release.coverUrl, 256, 256)
+				if(cachedCover != null) {
+					image = cachedCover
+					effect = null
+				} else {
+					image = Covers.getThumbnailImage(release.coverUrl, 256)
+					GlobalScope.launch {
+						val image = Covers.getCover(release.coverUrl, 256).use { Covers.createImage(it, 256) }
+						onFx { this@apply.image = image; effect = null }
+					}
 				}
 			},
 			Separator(Orientation.VERTICAL)
