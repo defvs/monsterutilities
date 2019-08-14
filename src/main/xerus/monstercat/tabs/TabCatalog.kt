@@ -119,9 +119,8 @@ class TabCatalog: TableTab() {
 	private suspend fun getSongs(songList: ObservableList<List<String>>): ArrayList<Track> {
 		val tracklist = arrayListOf<Track>()
 		songList.forEach { item ->
-			val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-			if(track != null) tracklist.add(track)
-			else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+			APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])?.let { tracklist.add(it) }
+				?: logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 		}
 		return tracklist
 	}
