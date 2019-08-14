@@ -1,9 +1,11 @@
 dist: trusty
 sudo: false
-jdk:
-  - oraclejdk8
 git:
   depth: 3
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 env:
   - TERM=dumb
@@ -17,7 +19,7 @@ cache:
     - $HOME/.gradle/wrapper/
 
 script:
-  - ./gradlew build
+  - ./gradlew check --stacktrace --no-daemon
 
 deploy:
   provider: releases

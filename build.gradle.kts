@@ -166,5 +166,5 @@ tasks {
 	
 }
 
-println("Java version: ${JavaVersion.current()}")
+println("Java version: ${System.getProperty("java.version")}")
 println("Version: $version")

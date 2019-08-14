@@ -141,7 +141,7 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	
 	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
-	private fun String.devVersion() = if(startsWith("dev")) split('v', '-')[1].toInt() else null
+	private fun String.devVersion() = takeIf { it.startsWith("dev") }?.split('v', '-')?.getOrNull(1)?.toIntOrNull()
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
@@ -219,6 +219,10 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 				} else {
 					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
 				}
+			}
+			
+			override fun failed() {
+				showError(exception, "Error in the update process")
 			}
 		}
 		worker.launch()
