@@ -11,7 +11,8 @@ open class ListResponse<T> {
 	override fun toString() = "${this.javaClass.simpleName}($total elements): $results"
 }
 
-class ReleaseResponse: ListResponse<Release>()
-class TrackResponse: ListResponse<Track>()
+class ReleaseResponse : ListResponse<Release>()
+class TrackResponse : ListResponse<Track>()
+class PlaylistResponse : ListResponse<ConnectPlaylist>()
 
 class ReleaseList: ArrayList<Release>()
