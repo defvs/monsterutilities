@@ -5,6 +5,7 @@ import org.apache.http.HttpEntity
 import org.apache.http.client.methods.HttpGet
 import xerus.ktutil.replaceIllegalFileChars
 import xerus.monstercat.cacheDir
+import java.io.File
 import java.io.InputStream
 import java.net.URI
 
@@ -12,29 +13,47 @@ object Covers {
 	
 	private val coverCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
 	
+	private fun coverCacheFile(coverUrl: String, size: Int): File {
+		coverCacheDir.mkdirs()
+		val newFile = coverCacheDir.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
+		return coverCacheDir.resolve("${newFile.nameWithoutExtension}x$size.${newFile.extension}")
+	}
+		
 	/** Returns an Image of the cover in the requested size using caching.
-	 * @param size the size of the Image - the underlying image data will always be 64x64, thus this is the default. */
-	fun getCoverImage(coverUrl: String, size: Number = 64, invalidate: Boolean = false): Image =
-		getCover(coverUrl, invalidate).use { createImage(it, size) }
+	 * @param size the size of the Image that is returned - the image file will always be 64x64 */
+	fun getThumbnailImage(coverUrl: String, size: Number = 64, invalidate: Boolean = false): Image =
+		getCover(coverUrl, 64, invalidate).use { createImage(it, size) }
+	
+	/** Returns a larger Image of the cover in the requested size using caching.
+	 * @param size the size of the Image that is returned - the image file will always be 1024x1024 */
+	fun getCoverImage(coverUrl: String, size: Int = 1024, invalidate: Boolean = false): Image =
+		getCover(coverUrl, 1024, invalidate).use { createImage(it, size) }
 	
 	private fun createImage(content: InputStream, size: Number) =
 		Image(content, size.toDouble(), size.toDouble(), false, false)
 	
-	/** Returns an InputStream to the cover in size 64x64, using caching. */
-	fun getCover(coverUrl: String, invalidate: Boolean = false): InputStream {
-		val file = coverCacheFile(coverUrl)
-		if(!file.exists() || invalidate) {
-			fetchCover(coverUrl, 64).content.use { input ->
-				file.outputStream().use { out ->
-					input.copyTo(out)
-				}
+	/**
+	 * Returns an [InputStream] of the downloaded image file.
+	 * @param coverUrl the URL for fetching the cover
+	 * @param size the dimensions of the cover file
+	 * @param invalidate set to true to ignore already existing cache files
+	 */
+	fun getCover(coverUrl: String, size: Int, invalidate: Boolean = false): InputStream {
+		val coverFile = coverCacheFile(coverUrl, size)
+		if(!invalidate)
+			try {
+				return coverFile.inputStream()
+			} catch(e: Exception) {
 			}
+		fetchCover(coverUrl, size).content.use { input ->
+			val tempFile = File.createTempFile(coverFile.name, size.toString())
+			tempFile.outputStream().use { out ->
+				input.copyTo(out)
+			}
+			tempFile.renameTo(coverFile)
 		}
-		return file.inputStream()
+		return coverFile.inputStream()
 	}
-	
-	private fun coverCacheFile(coverUrl: String) =
-		coverCacheDir.apply { mkdirs() }.resolve(coverUrl.substringAfterLast('/').replaceIllegalFileChars())
 	
 	/** Fetches the given [coverUrl] with an [APIConnection] in the requested [size].
 	 * @param coverUrl the base url to fetch the cover

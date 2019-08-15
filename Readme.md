@@ -9,7 +9,12 @@ Browse, stream and download Monstercat Songs, powered by the Monstercat API and 
 
 ## Getting started
 
-[Download from the website](http://monsterutilities.bplaced.net/downloads?download) or [from GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).
+Download portable version [from the website](http://monsterutilities.bplaced.net/downloads?download) or [from GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).
+
+Download full-blown installers [from Github releases](https://github.com/Xerus2000/monsterutilities/releases) : Choose your platform, and choose if you want a bundled Java environment.
+
+###### [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) Installers created using [Install4J](https://www.ej-technologies.com/products/install4j/overview.html), a multi-platform installer builder, whom gracefully gave us a license
+
 
 > This is a pre-Release, you may encounter bugs. If you do, open an issue here or send feedback from inside the application. The latter will automatically include logs, which reside in `TEMP/monsterutilities/logs`
 
