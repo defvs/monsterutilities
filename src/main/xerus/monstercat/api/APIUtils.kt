@@ -4,6 +4,8 @@ import mu.KotlinLogging
 import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.toInt
+import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Settings
 import xerus.monstercat.api.response.Track
 
 val artistDelimiters = arrayOf(" & ", ", ", " and ", " x ", " feat. ")
@@ -33,7 +35,8 @@ object APIUtils {
 	suspend fun find(title: String, artists: String): Track? {
 		val titleSplit = "$artists $title".splitTitleTrimmed()
 		val loggingThreshold = titleSplit.size / 2
-		return Cache.getTracks().maxBy { track ->
+		val tracks = Cache.getAllTracks()
+		var bestTrack = tracks.maxBy { track ->
 			val splitTitleTrimmed = track.init().splitTitle
 			titleSplit.sumBy { splitTitleTrimmed.contains(it).toInt() }
 				.also {
@@ -41,6 +44,10 @@ object APIUtils {
 						logger.trace { "Rated $track with $it for \"$artists - $title\" - $splitTitleTrimmed $titleSplit" }
 				}
 		}
+		bestTrack = tracks.filter { it.id == bestTrack?.id }
+				.minBy { xerus.monstercat.Settings.PLAYERARTPRIORITY.get().priorities.map { it.displayName }.indexOf(it.release.type)}
+		
+		return bestTrack
 	}
 	
 }

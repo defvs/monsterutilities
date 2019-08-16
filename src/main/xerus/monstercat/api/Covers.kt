@@ -10,7 +10,7 @@ import java.io.InputStream
 import java.net.URI
 
 object Covers {
-	
+
 	private val coverCacheDir = cacheDir.resolve("cover-images").apply { mkdirs() }
 	
 	private fun coverCacheFile(coverUrl: String, size: Int): File {
