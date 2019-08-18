@@ -23,7 +23,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
-import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Settings
@@ -240,10 +239,10 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		
 		fun editPlaylist(id: String, tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
 			val json = HashMap<String, Any>()
-			tracks.ifNotNull { json["tracks"] = convertTracklist(it) }
-			name.ifNotNull { json["name"] = it }
-			public.ifNotNull { json["public"] = it }
-			deleted.ifNotNull { json["deleted"] = it }
+			tracks?.also { json["tracks"] = convertTracklist(it) }
+			name?.also { json["name"] = it }
+			public?.also { json["public"] = it }
+			deleted?.also { json["deleted"] = it }
 			val connection = APIConnection("v2", "playlist", id)
 			val request = HttpPatch(connection.uri).apply {
 				val content = Sheets.JSON_FACTORY.toString(json)
