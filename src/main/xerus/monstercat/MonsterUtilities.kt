@@ -37,11 +37,7 @@ import xerus.monstercat.api.Covers
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
-import xerus.monstercat.tabs.BaseTab
-import xerus.monstercat.tabs.TabCatalog
-import xerus.monstercat.tabs.TabGenres
-import xerus.monstercat.tabs.TabSettings
-import xerus.monstercat.tabs.TabSound
+import xerus.monstercat.tabs.*
 import java.io.File
 import java.net.URL
 import java.net.UnknownHostException
@@ -102,11 +98,14 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 				monsterUtilities.showError(e, "Couldn't create ${tabClass.java.simpleName}!")
 			}
 		}
-		addTab(TabCatalog::class)
-		addTab(TabGenres::class)
-		addTab(TabDownloader::class)
-		addTab(TabSound::class)
-		addTab(TabSettings::class)
+		listOf(
+			TabCatalog::class,
+			TabGenres::class,
+			TabDownloader::class,
+			TabSound::class,
+			TabPlaylist::class,
+			TabSettings::class
+		).forEach { addTab(it) }
 		if(currentVersion != Settings.LASTVERSION.get()) {
 			if(Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")

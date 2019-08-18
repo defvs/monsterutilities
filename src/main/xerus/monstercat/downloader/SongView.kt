@@ -21,11 +21,7 @@ import xerus.ktutil.javafx.properties.addOneTimeListener
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
-import xerus.monstercat.api.APIConnection
-import xerus.monstercat.api.Cache
-import xerus.monstercat.api.ConnectValidity
-import xerus.monstercat.api.Covers
-import xerus.monstercat.api.Player
+import xerus.monstercat.api.*
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -93,11 +89,51 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			}
 		}
 		
-		val defaultItems = {
-			arrayOf(MenuItem("Expand all") { expandAll() },
-				MenuItem("Collapse all") { expandAll(false) })
+		val menuPlay = MenuItem("Play") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			Playlist.clear()
+			val value = selected.value
+			when(value) {
+				is Release -> Player.play(value)
+				is Track -> Player.playTrack(value)
+			}
 		}
-		contextMenu = ContextMenu(*defaultItems())
+		val menuAdd = MenuItem("Add to playlist") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			GlobalScope.launch {
+				val value = selected.value
+				when(value) {
+					is Release -> {
+						value.tracks.forEach { track ->
+							Playlist.add(track)
+						}
+					}
+					is Track -> Playlist.add(value)
+				}
+			}
+		}
+		val menuAddNext = MenuItem("Play next") {
+			val selected = selectionModel.selectedItem ?: return@MenuItem
+			GlobalScope.launch {
+				val value = selected.value
+				when(value) {
+					is Release -> {
+						value.tracks.asReversed().forEach { track ->
+							Playlist.addNext(track)
+						}
+					}
+					is Track -> Playlist.addNext(value)
+				}
+			}
+		}
+		contextMenu = ContextMenu(menuPlay, menuAdd, menuAddNext, SeparatorMenuItem(), MenuItem("Expand all") { expandAll() }, MenuItem("Collapse all") { expandAll(false) })
+		setOnContextMenuRequested {
+			val value = selectionModel.selectedItem.value
+			val enable = (value is Track || value is Release)
+			menuPlay.isDisable = !enable
+			menuAdd.isDisable = !enable
+			menuAddNext.isDisable = !enable
+		}
 		onReady {
 			APIConnection.connectValidity.addListener { _, old, new ->
 				if(old != new && new == ConnectValidity.GOLD)

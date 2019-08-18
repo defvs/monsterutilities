@@ -1,12 +1,16 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
-import javafx.scene.control.Label
-import javafx.scene.control.TableColumn
-import javafx.scene.control.TableRow
+import javafx.collections.ObservableList
+import javafx.scene.control.*
+import javafx.scene.input.KeyCode
+import javafx.scene.input.MouseButton
 import javafx.scene.text.Font
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import xerus.ktutil.collections.ArraySet
 import xerus.ktutil.containsAny
+import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.TableColumn
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.onFx
@@ -18,7 +22,10 @@ import xerus.ktutil.javafx.ui.controls.SearchableColumn
 import xerus.ktutil.javafx.ui.controls.Type
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
+import xerus.monstercat.api.APIUtils
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.response.Track
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
@@ -54,12 +61,67 @@ class TabCatalog: TableTab() {
 		table.visibleLeafColumns.addListener(ListChangeListener {
 			it.next(); Settings.VISIBLECATALOGCOLUMNS.putMulti(*it.addedSubList.map { it.text }.toTypedArray())
 		})
-		table.setOnMouseClicked { me ->
-			if(me.clickCount == 2) {
-				val selected = table.selectionModel.selectedItem ?: return@setOnMouseClicked
-				Player.play(selected[cols.findUnsafe("Track")].trim(), selected[cols.findUnsafe("Artist")])
+		
+		fun playTracks(add: Boolean) {
+			val selected = table.selectionModel.selectedItems ?: return
+			GlobalScope.launch {
+				if(!add)
+					Player.playTracks(getSongs(selected))
+				else
+					Playlist.addAll(getSongs(selected))
 			}
 		}
+		table.setOnMouseClicked { me ->
+			when {
+				me.clickCount == 2 && me.button == MouseButton.PRIMARY -> playTracks(false)
+				me.button == MouseButton.MIDDLE -> playTracks(true)
+			}
+		}
+		table.setOnKeyPressed { ke ->
+			when(ke.code) {
+				KeyCode.ENTER -> playTracks(false)
+				KeyCode.PLUS, KeyCode.ADD -> playTracks(true)
+				else -> return@setOnKeyPressed
+			}
+		}
+		
+		table.selectionModel.selectionMode = SelectionMode.MULTIPLE
+		
+		val rightClickMenu = ContextMenu()
+		rightClickMenu.items.addAll(
+			MenuItem("Play") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Player.playTracks(getSongs(selected))
+				}
+			},
+			MenuItem("Add to playlist") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Playlist.addAll(getSongs(selected))
+				}
+			},
+			MenuItem("Play next") {
+				val selected = table.selectionModel.selectedItems
+				GlobalScope.launch {
+					Playlist.addAll(getSongs(selected), true)
+				}
+			},
+			SeparatorMenuItem(),
+			MenuItem("Select All") {
+				table.selectionModel.selectAll()
+			}
+		)
+		table.contextMenu = rightClickMenu
+	}
+	
+	private suspend fun getSongs(songList: ObservableList<List<String>>): ArrayList<Track> {
+		val tracklist = arrayListOf<Track>()
+		songList.forEach { item ->
+			APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])?.let { tracklist.add(it) }
+				?: logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+		}
+		return tracklist
 	}
 	
 	private fun setColumns(columns: List<String>) {
