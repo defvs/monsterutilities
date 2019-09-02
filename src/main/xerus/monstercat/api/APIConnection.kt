@@ -9,7 +9,10 @@ import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.*
+import org.apache.http.client.methods.CloseableHttpResponse
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.BasicCookieStore
@@ -221,7 +224,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 			}, context)
 
 			val code = connection.response?.statusLine?.statusCode
-			logger.trace("Login API (POST) returned response code $code")
+			logger.trace("Login POST returned response code $code")
 			if (code !in 200..206) return false
 			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
 			return true
