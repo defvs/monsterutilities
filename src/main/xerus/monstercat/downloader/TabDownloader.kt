@@ -6,7 +6,12 @@ import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
-import javafx.scene.layout.*
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
+import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
+import javafx.scene.layout.VBox
 import javafx.scene.text.Text
 import javafx.stage.Modality
 import javafx.stage.Stage
@@ -18,7 +23,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import xerus.ktutil.*
+import xerus.ktutil.FieldNotFoundException
+import xerus.ktutil.collections.nullIfEmpty
+import xerus.ktutil.currentSeconds
+import xerus.ktutil.exists
+import xerus.ktutil.formatTimeDynamic
+import xerus.ktutil.formattedTime
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.javafx.*
@@ -29,16 +39,18 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.ktutil.javafx.ui.controls.LogTextArea
 import xerus.ktutil.javafx.ui.controls.SearchRow
 import xerus.ktutil.javafx.ui.controls.Searchable
-import xerus.ktutil.javafx.ui.controls.Type as SearchType
 import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
+import xerus.ktutil.str
+import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.Covers
 import xerus.monstercat.api.response.ArtistRel
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Release.Type
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.globalThreadPool
 import xerus.monstercat.monsterUtilities
@@ -48,7 +60,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
-import xerus.monstercat.api.response.Release.Type
+import xerus.ktutil.javafx.ui.controls.Type as SearchType
 
 private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList(
@@ -104,7 +116,7 @@ class TabDownloader: VTab() {
 		
 		// Update Selection whenever filters change
 		songView.predicate.listen {
-			songView.roots.values.forEach {
+			songView.getRootItems().forEach {
 				it.updateSelection()
 			}
 		}
@@ -244,9 +256,9 @@ class TabDownloader: VTab() {
 					songView.onReady {
 						if(selected) {
 							GlobalScope.launch {
-								songView.roots.forEach { root -> root.value.isExpanded = false }
+								songView.getRootItems().forEach { root -> root.isExpanded = false }
 								var removed = 0
-								songView.roots.forEach { (_, root) ->
+								songView.getRootItems().forEach { root ->
 									root.internalChildren.removeIf { item ->
 										val result = (item.value as Release).run {
 											val folder = downloadFolder()
@@ -277,10 +289,10 @@ class TabDownloader: VTab() {
 		addRow(createButton("Smart select") {
 			songView.onReady {
 				GlobalScope.launch {
-					val albums = arrayOf(Type.ALBUM, Type.EP).map { songView.roots[it] }.filterNotNull()
-					albums.forEach { it.isSelected = true }
+					val albumRoots = songView.getRootItems(Type.ALBUM, Type.EP)
+					albumRoots.forEach { it.isSelected = true }
 					@Suppress("UNCHECKED_CAST")
-					val selectedAlbums = albums.flatMap { it.children } as List<FilterableTreeItem<Release>>
+					val selectedAlbums = albumRoots.flatMap { it.children } as List<FilterableTreeItem<Release>>
 					val selectedTracks = selectedAlbums.flatMapTo(ArrayList()) { it.value.tracks }
 					val filtered = selectedAlbums.filter {
 						val releaseTracks = (it.value as Release).tracks
@@ -293,28 +305,33 @@ class TabDownloader: VTab() {
 						false
 					}
 					logger.trace { "Filtered out Collections in Smart Select: $filtered" }
-					songView.getItemsInCategory(Type.SINGLE).filter {
-						val tracks = it.value.tracks
-						if(tracks.size == 1) { // an actual single, check it directly
-							val track = tracks.first()
-							if(!selectedTracks.contains(track)) {
-								it.isSelected = true
-								selectedTracks.add(track)
+					songView.getItemsInCategory(Type.SINGLE)
+						?.filter {
+							val tracks = it.value.tracks
+							if(tracks.size == 1) { // an actual single, check it directly
+								val track = tracks.first()
+								if(!selectedTracks.contains(track)) {
+									it.isSelected = true
+									selectedTracks.add(track)
+								}
+								return@filter false
+							} else { // has multiple tracks, check with collections
+								return@filter true
 							}
-							return@filter false
-						} else { // has multiple tracks, check with collections
-							return@filter true
-						}
-					}.plus(songView.getItemsInCategory(Type.MCOLLECTION)).forEach {
-						it.children.forEach {
-							@Suppress("UNCHECKED_CAST")
-							val tr = it as CheckBoxTreeItem<Track>
-							if(tr.value !in selectedTracks) {
-								tr.isSelected = true
-								selectedTracks.add(tr.value)
+						}.orEmpty()
+						.plus(songView.getItemsInCategory(Type.MCOLLECTION).orEmpty())
+						.nullIfEmpty()
+						?.forEach {
+							it.children.forEach {
+								@Suppress("UNCHECKED_CAST")
+								val tr = it as CheckBoxTreeItem<Track>
+								if(tr.value !in selectedTracks) {
+									tr.isSelected = true
+									selectedTracks.add(tr.value)
+								}
 							}
 						}
-					}
+						?: logger.warn("Smart select did not find any tracks!")
 				}
 			}
 		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
@@ -374,7 +391,7 @@ class TabDownloader: VTab() {
 			ConnectValidity.NOCONNECTION -> "No connection"
 			ConnectValidity.NOUSER -> {
 				login = true
-				if (CONNECTSID.value.isEmpty())
+				if(CONNECTSID.value.isEmpty())
 					"Click to login to Monstercat..."
 				else
 					"Invalid connect.sid! Click to login to Monstercat..."
@@ -453,7 +470,7 @@ class TabDownloader: VTab() {
 		
 		init {
 			@Suppress("UNCHECKED_CAST")
-			items = songView.roots.values.flatMap { it.internalChildren }.filter {
+			items = songView.getRootItems().flatMap { it.internalChildren }.filter {
 				val item = it as FilterableTreeItem
 				item.isSelected || item.internalChildren.any { (it as CheckBoxTreeItem).isSelected }
 			}.associate {
