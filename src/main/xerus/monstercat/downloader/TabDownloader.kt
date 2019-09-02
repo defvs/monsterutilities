@@ -103,7 +103,7 @@ class TabDownloader: VTab() {
 		songView.predicate.bind({
 			val searchText = searchField.text
 			if(releaseSearch.predicate == alwaysTruePredicate && searchText.isEmpty()) null
-			else { parent, value ->
+			else { parent: TreeItem<MusicItem>, value: MusicItem ->
 				val release = value as? Release
 				parent != songView.root &&
 					// Match titles
