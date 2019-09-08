@@ -236,6 +236,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			deleted.ifNotNull { json["deleted"] = it }
 			val connection = APIConnection("v2", "playlist", id)
 			val request = HttpPatch(connection.uri).apply {
+				setHeader("Content-Type", "application/json")
 				val content = Sheets.JSON_FACTORY.toString(json)
 				entity = StringEntity(content)
 			}
@@ -243,8 +244,9 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		fun createPlaylist(name: String, tracks: List<Track>, public: Boolean = false) {
-			val connection = APIConnection("api", "playlist")
+			val connection = APIConnection("v2", "self", "playlist")
 			val request = HttpPost(connection.uri).apply {
+				setHeader("Content-Type", "application/json")
 				val json = HashMap<String, Any>()
 				json["name"] = name
 				json["public"] = public
