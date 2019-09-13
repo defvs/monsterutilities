@@ -24,10 +24,10 @@ fun Track.toFileName(inAlbum: Boolean) =
 	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replaceIllegalFileChars()
 
 fun Release.downloadFolder(): Path = basePath.resolve(when {
-	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
-	isType(Release.Type.PODCAST) -> DOWNLOADDIRPODCAST()
-	isType(Release.Type.MIX) -> DOWNLOADDIRMIXES()
-	else -> DOWNLOADDIRSINGLE()
+	isMulti() -> if(ENABLEALBUMDIRVARS()) toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() else DOWNLOADDIRALBUM() // Album, Monstercat Collection
+	isType(Release.Type.PODCAST) -> if(ENABLEPODCASTDIRVARS()) toString(DOWNLOADDIRPODCAST()).replaceIllegalFileChars() else DOWNLOADDIRPODCAST()
+	isType(Release.Type.MIX) -> if(ENABLEMIXESDIRVARS()) toString(DOWNLOADDIRMIXES()).replaceIllegalFileChars() else DOWNLOADDIRMIXES()
+	else -> if(ENABLESINGLEDIRVARS()) toString(DOWNLOADDIRSINGLE()).replaceIllegalFileChars() else DOWNLOADDIRSINGLE()
 })
 
 fun Release.isMulti() = isCollection && tracks.size >= EPSTOSINGLES()
