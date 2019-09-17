@@ -1,7 +1,6 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import xerus.ktutil.to
 import xerus.monstercat.api.splitArtists
 import xerus.monstercat.api.splitTitle
 import xerus.monstercat.api.splitTitleTrimmed
@@ -67,6 +66,8 @@ open class Track: MusicItem() {
 				s.isNotBlank() -> extra = s
 			}
 		}
+		if(version.isNotEmpty())
+			remix = version
 		
 		return this
 	}

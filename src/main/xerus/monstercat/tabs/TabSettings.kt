@@ -24,6 +24,7 @@ import org.controlsfx.validation.ValidationResult
 import org.controlsfx.validation.ValidationSupport
 import org.controlsfx.validation.Validator
 import xerus.ktutil.byteCountString
+import xerus.ktutil.helpers.Named
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.ImmutableObservable
 import xerus.ktutil.javafx.properties.ImmutableObservableList
@@ -34,6 +35,13 @@ import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
+import xerus.monstercat.api.response.Release
+import xerus.monstercat.api.response.Release.Type.ALBUM
+import xerus.monstercat.api.response.Release.Type.BESTOF
+import xerus.monstercat.api.response.Release.Type.MCOLLECTION
+import xerus.monstercat.api.response.Release.Type.MIX
+import xerus.monstercat.api.response.Release.Type.PODCAST
+import xerus.monstercat.api.response.Release.Type.SINGLE
 import xerus.monstercat.cacheDir
 import xerus.monstercat.dataDir
 import xerus.monstercat.downloader.DownloaderSettings
@@ -84,6 +92,7 @@ class TabSettings: VTab() {
 			@Suppress("UNCHECKED_CAST")
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
+		addLabeled("Player Coverart priorities:", createComboBox(Settings.PLAYERARTPRIORITY))
 		
 		// Export chooser
 		val exportFileChooser = FileChooser(App.stage, Settings.PLAYEREXPORTFILE().toFile(), "", "export file").apply { selectedFile.listen { Settings.PLAYEREXPORTFILE.set(it.toPath()) } }
@@ -91,6 +100,8 @@ class TabSettings: VTab() {
 		
 		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
 		addLabeled("Internet Bandwidth", connectionSpeed)
+		
+		addLabeled("Internet Bandwidth", createComboBox(Settings.CONNECTIONSPEED))
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
 		if(Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN))
@@ -234,6 +245,28 @@ class TabSettings: VTab() {
 		}
 		
 		data class Feedback(val subject: String, val message: String)
+	}
+	
+	enum class PriorityList(val priorities: List<Release.Type>) : Named {
+		SGL_ALB_COL(listOf(SINGLE, ALBUM, MCOLLECTION, BESTOF, MIX, PODCAST)),
+		ALB_SGL_COL(listOf(ALBUM, SINGLE, MCOLLECTION, BESTOF, MIX, PODCAST)),
+		COL_SGL_ALB(listOf(MCOLLECTION, SINGLE, ALBUM, BESTOF, MIX, PODCAST)),
+		COL_ALB_SGL(listOf(MCOLLECTION, ALBUM, SINGLE, BESTOF, MIX, PODCAST));
+
+		override val displayName: String
+			get() = priorities.subList(0, 3).toString().removeSurrounding("[", "]").replace(", ", " > ")
+
+		companion object {
+			fun findFromString(string: String) =
+					PriorityList.values().find { string == getString(it) } ?: SGL_ALB_COL
+			
+			fun findFromList(list: List<String>) =
+					PriorityList.values().find { list[0] == it.priorities[0].displayName && list[1] == it.priorities[1].displayName } ?: SGL_ALB_COL
+			
+			fun getString(list: PriorityList): String {
+				return list.priorities.subList(0, 3).toString().removeSurrounding("[", "]").replace(", ", " > ")
+			}
+		}
 	}
 	
 }

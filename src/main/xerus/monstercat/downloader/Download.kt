@@ -81,10 +81,15 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 	
 	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
 		val connection = APIConnection("api", "release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
-		val entity = connection.getResponse().entity
+		val httpResponse = connection.getResponse()
+		val entity = httpResponse.entity
 		val contentLength = entity.contentLength
 		if(contentLength == 0L)
 			throw EmptyResponseException(connection.uri.toString())
+		if(!entity.contentType.value.let { it.startsWith("audio/") || it == "application/octet-stream" })
+			throw WrongResponseTypeException(connection.uri.toString(), entity.contentType.value)
+		if(httpResponse.statusLine.statusCode != 200)
+			throw WrongResponseCodeException(connection.uri.toString(), httpResponse.statusLine.toString())
 		val length = contentLength.toDouble()
 		downloadFile(entity.content, path, true) {
 			totalProgress + it / length
@@ -147,3 +152,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 }
 
 class EmptyResponseException(term: String) : Exception("No file found for $term!")
+
+class WrongResponseTypeException(term: String, mime: String) : Exception("Error downloading $term: file type $mime unexpected!")
+
+class WrongResponseCodeException(term: String, status: String) : Exception("Error downloading $term: Server returned \"$status\"")
