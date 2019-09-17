@@ -2,6 +2,7 @@ package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
 import mu.KotlinLogging
+import xerus.ktutil.helpers.Named
 import xerus.ktutil.to
 
 private val logger = KotlinLogging.logger { }
@@ -54,7 +55,7 @@ data class Release(
 	fun debugString(): String =
 		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$renderedArtists', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
-	enum class Type(val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): CharSequence by displayName {
+	enum class Type(override val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): Named, CharSequence by displayName {
 		MCOLLECTION("Monstercat Collection", true,
 			{ title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") }),
 		BESTOF("Best of", true, { title.contains("Best of") || title.endsWith("Anniversary") }),
@@ -63,6 +64,8 @@ data class Release(
 		MIX("Mix", false, { type == "Mixes" }),
 		SINGLE("Single", false),
 		PODCAST("Podcast", false);
+		
+		override fun toString() = displayName
 	}
 	
 }
