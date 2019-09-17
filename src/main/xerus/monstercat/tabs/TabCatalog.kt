@@ -20,7 +20,6 @@ import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
 import xerus.ktutil.javafx.ui.controls.Type
-import xerus.ktutil.preferences.multiSeparator
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.APIUtils
@@ -30,8 +29,8 @@ import xerus.monstercat.api.response.Track
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
-val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length").joinToString(multiSeparator)
-val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings").joinToString(multiSeparator)
+val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length")
+val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings")
 private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
 
 class TabCatalog: TableTab() {
@@ -119,9 +118,8 @@ class TabCatalog: TableTab() {
 	private suspend fun getSongs(songList: ObservableList<List<String>>): ArrayList<Track> {
 		val tracklist = arrayListOf<Track>()
 		songList.forEach { item ->
-			val track = APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-			if(track != null) tracklist.add(track)
-			else logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
+			APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])?.let { tracklist.add(it) }
+				?: logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 		}
 		return tracklist
 	}

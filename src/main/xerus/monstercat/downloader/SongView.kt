@@ -11,6 +11,7 @@ import javafx.util.Callback
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import xerus.ktutil.ifNull
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.controlsfx.FilterableCheckTreeView
 import xerus.ktutil.javafx.expandAll
@@ -33,7 +34,15 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	val logger = KotlinLogging.logger { }
 	
 	val ready = SimpleObservable(false)
-	val roots = HashMap<CharSequence, FilterableTreeItem<MusicItem>>()
+	private val roots = HashMap<CharSequence, FilterableTreeItem<MusicItem>>()
+	fun getRootItems(vararg categories: Release.Type): Collection<FilterableTreeItem<MusicItem>> {
+		if(categories.isNotEmpty())
+			return categories.mapNotNull {
+				roots[it.displayName]
+					.ifNull { logger.debug("requested nonexistent category: $it") }
+			}
+		return roots.values
+	}
 	
 	private val checkCellFactory: Callback<TreeView<MusicItem>, TreeCell<MusicItem>> = Callback {
 		object: CheckBoxTreeCell<MusicItem>() {
@@ -42,7 +51,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			init {
 				itemProperty().listen { item ->
 					if((item as? Release)?.downloadable == false ||
-						(item is Track && (treeItem.parent.value  as? Release)?.downloadable == false)) {
+						(item is Track && (treeItem.parent.value as? Release)?.downloadable == false)) {
 						if(tooltip == null) {
 							listener.onChanged(null)
 							children.addListener(listener)
@@ -199,9 +208,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				treeItem.internalChildren.add(CheckBoxTreeItem(track))
 			}
 			GlobalScope.launch(globalDispatcher) {
-				var image = Covers.getCoverImage(release.coverUrl, 16)
+				var image = Covers.getThumbnailImage(release.coverUrl, 16)
 				image.onError {
-					image = Covers.getCoverImage(release.coverUrl, 16, true)
+					image = Covers.getThumbnailImage(release.coverUrl, 16, true)
 					image.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
 				}
 				onFx {
@@ -218,12 +227,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	}
 	
 	private fun <T: Comparable<T>> sortReleases(selector: (Release) -> T) {
-		roots.forEach { _, item -> item.internalChildren.sortBy { selector(it.value as Release) } }
+		roots.forEach { (_, item) -> item.internalChildren.sortBy { selector(it.value as Release) } }
 	}
 	
 	@Suppress("UNCHECKED_CAST")
-	fun getItemsInCategory(category: CharSequence) =
-		roots[category]!!.children as List<FilterableTreeItem<Release>>
+	fun getItemsInCategory(category: Release.Type) =
+		getRootItems(category).firstOrNull()?.let { it.children as List<FilterableTreeItem<Release>> }
 	
 }
 

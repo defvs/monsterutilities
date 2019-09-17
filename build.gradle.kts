@@ -1,5 +1,6 @@
 import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.install4j.gradle.Install4jTask
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.IOException
@@ -23,6 +24,7 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "5.1.0"
 	id("com.github.breadmoirai.github-release") version "2.2.9"
 	id("com.github.ben-manes.versions") version "0.21.0"
+	id("com.install4j.gradle") version "8.0"
 }
 
 // source directories
@@ -49,7 +51,7 @@ repositories {
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.Xerus2000.util", "javafx", "b2813cc")
+	implementation("com.github.Xerus2000.util", "javafx", "259dad93192584306dbf951721d3cf8e6bd25d1b")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
@@ -78,6 +80,11 @@ githubRelease {
 	owner("Xerus2000")
 	
 	token(project.properties["github.token"]?.toString())
+}
+
+install4j {
+	(properties["install4j.installDir"] as String?)?.let { installDir = file(it) }
+	(properties["install4j.license"] as String?)?.let { license = it }
 }
 
 val MAIN = "_main"
@@ -131,6 +138,24 @@ tasks {
 		group = MAIN
 	}
 	
+	val buildInstaller by creating(Install4jTask::class) {
+		dependsOn(shadowJar)
+		group = MAIN
+		
+		projectFile = file("MonsterUtilities.install4j")
+		destination = "build/install4j/"
+		this.release = version.toString()
+		
+		lateinit var jarTemp: File
+		doFirst {
+			jarTemp = file(jarFile).copyTo(file("build/install4j/$jarFile"), true)
+		}
+		doLast {
+			if(!jarTemp.delete())
+				println("Couldn't delete temporary install4j file '${jarTemp.path}'")
+		}
+	}
+	
 	withType<KotlinCompile> {
 		kotlinOptions.jvmTarget = "1.8"
 	}
@@ -141,5 +166,5 @@ tasks {
 	
 }
 
-println("Java version: ${JavaVersion.current()}")
+println("Java version: ${System.getProperty("java.version")}")
 println("Version: $version")

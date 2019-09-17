@@ -18,7 +18,7 @@ import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.globalDispatcher
 import java.io.File
 
-private const val cacheVersion = 4
+private const val cacheVersion = 5
 
 object Cache: Refresher() {
 	private val logger = KotlinLogging.logger { }
@@ -38,9 +38,14 @@ object Cache: Refresher() {
 		return releases
 	}
 	
-	/** Gets all tracks by flatMapping all the tracks of all Releases */
+	/** Gets a complete collection of unique Tracks. */
 	suspend fun getTracks(): Collection<Track> =
 		getReleases().flatMap { it.tracks }.toHashSet()
+	
+	/** Gets all Tracks by flatMapping them from all Releases, thus Tracks that appear in multiple Releases appear multiple times.
+	 * Useful when you need a separate Track for each Release it is part of.*/
+	suspend fun getAllTracks(): Collection<Track> =
+		getReleases().flatMap { it.tracks }
 	
 	override suspend fun doRefresh() {
 		refreshReleases()

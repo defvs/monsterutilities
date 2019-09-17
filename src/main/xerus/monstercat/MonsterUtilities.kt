@@ -2,27 +2,29 @@ package xerus.monstercat
 
 import javafx.application.Platform
 import javafx.concurrent.Task
+import javafx.event.EventHandler
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.VBox
 import javafx.util.Duration
+import javafx.stage.Screen
+import javafx.stage.StageStyle
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.controlsfx.dialog.ExceptionDialog
 import xerus.ktutil.byteCountString
 import xerus.ktutil.copyTo
 import xerus.ktutil.currentSeconds
-import xerus.ktutil.javafx.checkFx
+import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.controlsfx.progressDialog
 import xerus.ktutil.javafx.controlsfx.stage
-import xerus.ktutil.javafx.createStage
-import xerus.ktutil.javafx.fill
-import xerus.ktutil.javafx.launch
-import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
 import xerus.ktutil.javafx.ui.Changelog
@@ -30,6 +32,8 @@ import xerus.ktutil.javafx.ui.JFXMessageDisplay
 import xerus.ktutil.javafx.ui.SimpleTransition
 import xerus.ktutil.javafx.ui.stage
 import xerus.ktutil.to
+import xerus.monstercat.api.Cache
+import xerus.monstercat.api.Covers
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
@@ -94,20 +98,22 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 				monsterUtilities.showError(e, "Couldn't create ${tabClass.java.simpleName}!")
 			}
 		}
-		addTab(TabCatalog::class)
-		addTab(TabPlaylist::class)
-		addTab(TabGenres::class)
-		addTab(TabDownloader::class)
-		addTab(TabSound::class)
-		addTab(TabSettings::class)
-		if(VERSION != Settings.LASTVERSION.get()) {
+		listOf(
+			TabCatalog::class,
+			TabGenres::class,
+			TabDownloader::class,
+			TabSound::class,
+			TabPlaylist::class,
+			TabSettings::class
+		).forEach { addTab(it) }
+		if(currentVersion != Settings.LASTVERSION.get()) {
 			if(Settings.LASTVERSION().isEmpty()) {
 				logger.info("First launch! Showing tutorial!")
 				showIntro()
-				Settings.LASTVERSION.put(VERSION)
+				Settings.LASTVERSION.put(currentVersion)
 			} else {
 				GlobalScope.launch {
-					logger.info("New version! Now running $VERSION, previously " + Settings.LASTVERSION())
+					logger.info("New version! Now running $currentVersion, previously " + Settings.LASTVERSION())
 					val f = Settings.DELETE()
 					if(f.exists()) {
 						logger.info("Deleting older version $f...")
@@ -119,10 +125,11 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 						if(res) {
 							Settings.DELETE.clear()
 							logger.info("Deleted $f!")
-						} else
+						} else {
 							logger.warn("Couldn't delete older version residing in $f")
+						}
 					}
-					Settings.LASTVERSION.put(VERSION)
+					Settings.LASTVERSION.put(currentVersion)
 				}
 				showChangelog()
 			}
@@ -137,14 +144,14 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	
 	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
-	private fun String.devVersion() = if(startsWith("dev")) split('v', '-')[1].toInt() else null
+	private fun String.devVersion() = takeIf { it.startsWith("dev") }?.split('v', '-')?.getOrNull(1)?.toIntOrNull()
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
 			try {
 				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if(unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
 				logger.info("Latest version: $latestVersion")
-				if(latestVersion == null || latestVersion.length > 50 || latestVersion == VERSION || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { VERSION.devVersion()!! < it } == true) {
+				if(latestVersion == null || latestVersion.length > 50 || latestVersion == currentVersion || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { currentVersion.devVersion()!! > it } == true) {
 					if(userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
 					return@launch
@@ -156,10 +163,12 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 						val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
 						dialog.stage.icons.setAll(Image("img/updater.png"))
 						dialog.resultProperty().listen { type ->
-							if(type.buttonData == ButtonBar.ButtonData.YES) {
-								update(latestVersion)
-							} else if(type.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE)
-								Settings.IGNOREVERSION.set(latestVersion)
+							when(type.buttonData) {
+								ButtonBar.ButtonData.YES -> update(latestVersion)
+								ButtonBar.ButtonData.CANCEL_CLOSE -> Settings.IGNOREVERSION.set(latestVersion)
+								else -> {
+								}
+							}
 						}
 					}
 			} catch(e: UnknownHostException) {
@@ -193,8 +202,8 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 			}
 			
 			override fun succeeded() {
-				if(isUnstable == unstable && jarLocation.toString().endsWith(".jar")) {
-					val jar = File(jarLocation.toURI())
+				if(isUnstable == unstable && codeSource.toString().endsWith(".jar")) {
+					val jar = File(codeSource.toURI())
 					logger.info("Scheduling '$jar' for delete")
 					Settings.DELETE.set(jar)
 				}
@@ -209,10 +218,14 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 				
 				if(!exited) {
 					Platform.exit()
-					logger.warn("Exiting $VERSION!")
+					logger.warn("Exiting $currentVersion!")
 				} else {
 					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
 				}
+			}
+			
+			override fun failed() {
+				showError(exception, "Error in the update process")
 			}
 		}
 		worker.launch()
@@ -329,6 +342,61 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 			dialog.initOwner(App.stage)
 			dialog.headerText = title
 			dialog.show()
+		}
+	}
+	
+	/** Shows a new window with an ImageView of the requested [coverUrl]
+	 * @param coverUrl URL of the cover to download and show
+	 * @param title Title of the window, only useful when decorated
+	 * @param size Height and width in pixel of the window and image
+	 * @param isDecorated True if the window has borders and title bar with close controls
+	 * @param isDraggable True if the window can be dragged by the mouse
+	 * @param closeOnFocusLost Should we close the window if we're out of focus ?
+	 * @param isResizable Allow resizing the window. The image will follow.
+	 */
+	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false){
+		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
+		
+		val pane = StackPane()
+		val largeImage = ImageView()
+		pane.add(Label("Cover loading..."))
+		pane.add(largeImage)
+		
+		App.stage.createStage(title, pane).apply {
+			height = windowSize
+			width = windowSize
+			this.isResizable = isResizable
+			
+			widthProperty().addListener { _, _, newValue ->
+				largeImage.fitHeight = newValue as Double
+				largeImage.fitWidth = newValue
+			}
+			
+			initStyle(if (isDecorated) StageStyle.DECORATED else StageStyle.UNDECORATED)
+			
+			if (isDraggable) {
+				var xOffset = 0.0
+				var yOffset = 0.0
+				pane.onMousePressed = EventHandler<MouseEvent> { event ->
+					xOffset = event.sceneX
+					yOffset = event.sceneY
+				}
+				pane.onMouseDragged = EventHandler<MouseEvent> { event ->
+					this.x = event.screenX - xOffset
+					this.y = event.screenY - yOffset
+				}
+			}
+			
+			if (closeOnFocusLost) {
+				focusedProperty().addListener { _, _, newFocus ->
+					if (!newFocus) close()
+				}
+			}
+			show()
+		}
+		
+		GlobalScope.launch {
+			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
 		}
 	}
 	

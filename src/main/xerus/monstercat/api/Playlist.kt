@@ -23,6 +23,8 @@ import xerus.monstercat.api.response.ConnectPlaylist
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
 import java.util.*
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 private val logger = KotlinLogging.logger {}
 
@@ -31,7 +33,7 @@ object Playlist {
 	val history = ArrayDeque<Track>()
 	val currentIndex = SimpleObservable<Int?>(null).apply {
 		bindSoft({
-			tracks.indexOf(Player.activeTrack.value).takeUnless { i -> i == -1 }
+			tracks.indexOf(Player.activeTrack.value).takeUnless { it == -1 }
 		}, Player.activeTrack, tracks)
 	}
 	
@@ -82,9 +84,9 @@ object Playlist {
 	}
 	
 	fun getNextTrackRandom(): Track {
-		val index = (Math.random() * (tracks.size - 1)).toInt().let { if(it >= currentIndex.value!!) it + 1 else it }.takeUnless { it >= tracks.size }
-			?: 0
-		return tracks[index]
+		return if (tracks.size <= 1) tracks[0]
+		else tracks[
+			Random.nextInt(0..tracks.lastIndex).let { if(it >= currentIndex.value!!) it + 1 else it } ]
 	}
 	
 	fun getNextTrack(): Track? {
@@ -99,7 +101,7 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		this.tracks.addAll(if(asNext) currentIndex.value?.let { it + 1 } ?: 0 else this.tracks.lastIndex, tracks)
+		this.tracks.addAll(if(asNext) currentIndex.value?.plus(1) ?: 0 else this.tracks.lastIndex.coerceAtLeast(0), tracks)
 	}
 }
 

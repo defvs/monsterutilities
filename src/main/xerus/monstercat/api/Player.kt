@@ -4,6 +4,7 @@ import javafx.beans.Observable
 import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.control.*
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -15,7 +16,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.addListener
@@ -28,6 +28,7 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.monsterUtilities
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
@@ -213,7 +214,13 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		onFx {
 			showText(text)
 			if(coverUrl != null) {
-				children.add(0, ImageView(Covers.getCoverImage(coverUrl!!, 24)))
+				val imageView = ImageView(Covers.getThumbnailImage(coverUrl!!, 24))
+				imageView.setOnMouseClicked {
+					if (it.button == MouseButton.PRIMARY) {
+						monsterUtilities.viewCover(coverUrl!!)
+					}
+				}
+				children.add(0, imageView)
 				children.add(1, Region().setSize(4.0))
 			}
 			children.addAll(pauseButton.apply { isSelected = false }, stopButton, skipbackButton, skipButton, shuffleButton, repeatButton, volumeSlider)
@@ -230,8 +237,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	
 	/** Finds the best match for the given [title] and [artists] and starts playing it */
 	fun play(title: String, artists: String) {
-		updateCover(null)
 		showText("Searching for \"$title\"...")
+		updateCover(null)
 		disposePlayer()
 		GlobalScope.launch {
 			val track = APIUtils.find(title, artists)
@@ -244,7 +251,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playFromPlaylist(index: Int) {
-		Playlist[index].ifNotNull { playTrack(it) }
+		Playlist[index]?.also { playTrack(it) }
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
@@ -264,15 +271,20 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	fun playPrev() {
-		Playlist.getPrev().ifNotNull { playTrack(it) }
+		Playlist.getPrev()?.also { playTrack(it) }
 	}
 	
 	fun updateCover(coverUrl: String?) {
+		if(coverUrl == this.coverUrl)
+			return
 		logger.debug("Updating cover: $coverUrl")
 		this.coverUrl = coverUrl
-		checkFx {
-			backgroundCover.value = coverUrl?.let {
-				Background(BackgroundImage(Covers.getCoverImage(coverUrl), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+		GlobalScope.launch {
+			val image: Image? = coverUrl?.let { Covers.getThumbnailImage(it) }
+			onFx {
+				backgroundCover.value = image?.let {
+					Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+				}
 			}
 		}
 	}

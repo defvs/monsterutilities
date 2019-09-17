@@ -23,9 +23,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
 import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
-import xerus.ktutil.ifNotNull
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
+import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
@@ -34,6 +34,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.lang.ref.WeakReference
 import java.net.URI
+import kotlin.math.min
 import kotlin.reflect.KClass
 
 
@@ -112,7 +113,8 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	override fun toString(): String = "APIConnection(uri=$uri)"
 	
 	companion object {
-		val maxConnections = Runtime.getRuntime().availableProcessors().coerceAtLeast(2) * 50
+		private fun getRealMaxConnections(networkMax: Int) = min(networkMax, Runtime.getRuntime().availableProcessors().coerceAtLeast(2) * 50)
+		var maxConnections = getRealMaxConnections(Settings.CONNECTIONSPEED.get().maxConnections)
 		private var httpClient = createHttpClient(CONNECTSID())
 		
 		val connectValidity = SimpleObservable(ConnectValidity.NOCONNECTION, true)
@@ -158,6 +160,13 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			connectionManager = PoolingHttpClientConnectionManager().apply {
 				defaultMaxPerRoute = (maxConnections * 0.9).toInt()
 				maxTotal = maxConnections
+				logger.debug("Initial maxConnections set is ${maxConnections}")
+				Settings.CONNECTIONSPEED.listen { newValue ->
+					maxConnections = getRealMaxConnections(newValue.maxConnections)
+					logger.debug("Changed maxConnections to ${maxConnections}")
+					defaultMaxPerRoute = (maxConnections * 0.9).toInt()
+					maxTotal = maxConnections
+				}
 			}
 			// trace ConnectionManager stats
 			if(logger.isTraceEnabled)
@@ -216,8 +225,8 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			}, context)
 			
 			val code = connection.response?.statusLine?.statusCode
-			logger.trace("Login API (POST) returned response code $code")
-			if(code !in 200..206) return false
+			logger.trace("Login POST returned response code $code")
+			if (code !in 200..206) return false
 			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
 			return true
 		}
@@ -230,10 +239,10 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		
 		fun editPlaylist(id: String, tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
 			val json = HashMap<String, Any>()
-			tracks.ifNotNull { json["tracks"] = convertTracklist(it) }
-			name.ifNotNull { json["name"] = it }
-			public.ifNotNull { json["public"] = it }
-			deleted.ifNotNull { json["deleted"] = it }
+			tracks?.also { json["tracks"] = convertTracklist(it) }
+			name?.also { json["name"] = it }
+			public?.also { json["public"] = it }
+			deleted?.also { json["deleted"] = it }
 			val connection = APIConnection("v2", "playlist", id)
 			val request = HttpPatch(connection.uri).apply {
 				setHeader("Content-Type", "application/json")

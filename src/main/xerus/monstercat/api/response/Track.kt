@@ -1,7 +1,6 @@
 package xerus.monstercat.api.response
 
 import com.google.api.client.util.Key
-import xerus.ktutil.to
 import xerus.monstercat.api.splitArtists
 import xerus.monstercat.api.splitTitle
 import xerus.monstercat.api.splitTitleTrimmed
@@ -15,6 +14,8 @@ open class Track: MusicItem() {
 	var artistsTitle: String = ""
 	@Key
 	override var title: String = ""
+	@Key
+	var version: String = ""
 	@Key
 	var albums: List<Album> = emptyList()
 	@Key("artistRelationships")
@@ -55,7 +56,7 @@ open class Track: MusicItem() {
 		
 		artistsTitle = formatArtists(artistsTitle)
 		artistsSplit = artistsTitle.splitArtists()
-		splitTitle = "$artistsTitle $title".splitTitleTrimmed()
+		splitTitle = "$artistsTitle $title $version".splitTitleTrimmed()
 		
 		title.splitTitle().forEachIndexed { index, s ->
 			when {
@@ -65,6 +66,8 @@ open class Track: MusicItem() {
 				s.isNotBlank() -> extra = s
 			}
 		}
+		if(version.isNotEmpty())
+			remix = version
 		
 		return this
 	}
@@ -74,7 +77,11 @@ open class Track: MusicItem() {
 		return super.toString(template, *additionalFields)
 	}
 	
-	override fun toString(): String = artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
+	override fun toString(): String = when {
+		artistsTitle.isEmpty() -> "%2\$s"
+		version.isEmpty() -> "%s - %s"
+		else -> "%s - %s (%s)"
+	}.format(artistsTitle, title, version)
 	
 	override fun equals(other: Any?): Boolean =
 		this === other || (other is Track && id == other.id)
