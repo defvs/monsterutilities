@@ -28,6 +28,7 @@ import xerus.ktutil.square
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.monsterUtilities
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
@@ -213,7 +214,13 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		onFx {
 			showText(text)
 			if(coverUrl != null) {
-				children.add(0, ImageView(Covers.getThumbnailImage(coverUrl!!, 24)))
+				val imageView = ImageView(Covers.getThumbnailImage(coverUrl!!, 24))
+				imageView.setOnMouseClicked {
+					if (it.button == MouseButton.PRIMARY) {
+						monsterUtilities.viewCover(coverUrl!!)
+					}
+				}
+				children.add(0, imageView)
 				children.add(1, Region().setSize(4.0))
 			}
 			children.addAll(pauseButton.apply { isSelected = false }, stopButton, skipbackButton, skipButton, shuffleButton, repeatButton, volumeSlider)

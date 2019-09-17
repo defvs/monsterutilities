@@ -224,8 +224,8 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			}, context)
 			
 			val code = connection.response?.statusLine?.statusCode
-			logger.trace("Login API (POST) returned response code $code")
-			if(code !in 200..206) return false
+			logger.trace("Login POST returned response code $code")
+			if (code !in 200..206) return false
 			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
 			return true
 		}
