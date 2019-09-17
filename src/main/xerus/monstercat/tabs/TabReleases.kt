@@ -114,6 +114,7 @@ class TabReleases: StackTab() {
 						onFx { this@apply.image = image; effect = null }
 					}
 				}
+				setOnMouseClicked { monsterUtilities.viewCover(release.coverUrl) }
 			},
 			Separator(Orientation.VERTICAL)
 		)
