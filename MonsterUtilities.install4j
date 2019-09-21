@@ -19,7 +19,7 @@
       </executable>
       <java mainClass="xerus.monstercat.MainKt">
         <classPath>
-          <scanDirectory location="." failOnError="false" />
+          <archive location="MonsterUtilities-${compiler:sys.version}.jar" />
         </classPath>
       </java>
       <iconImageFiles>
