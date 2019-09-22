@@ -2,6 +2,7 @@ package xerus.monstercat.downloader
 
 import javafx.concurrent.Task
 import mu.KotlinLogging
+import xerus.ktutil.collections.joinEnumeration
 import xerus.ktutil.copyTo
 import xerus.ktutil.createDirs
 import xerus.ktutil.exists
@@ -23,12 +24,16 @@ private inline val basePath
 fun Track.toFileName(inAlbum: Boolean) =
 	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replaceIllegalFileChars()
 
-fun Release.downloadFolder(): Path = basePath.resolve(when {
-	isMulti() -> if(ENABLEALBUMDIRVARS()) toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() else DOWNLOADDIRALBUM() // Album, Monstercat Collection
-	isType(Release.Type.PODCAST) -> if(ENABLEPODCASTDIRVARS()) toString(DOWNLOADDIRPODCAST()).replaceIllegalFileChars() else DOWNLOADDIRPODCAST()
-	isType(Release.Type.MIX) -> if(ENABLEMIXESDIRVARS()) toString(DOWNLOADDIRMIXES()).replaceIllegalFileChars() else DOWNLOADDIRMIXES()
-	else -> if(ENABLESINGLEDIRVARS()) toString(DOWNLOADDIRSINGLE()).replaceIllegalFileChars() else DOWNLOADDIRSINGLE()
-})
+fun Release.downloadFolder(): Path {
+	fun transformDirectories(string: String) =
+		string.split("/", "\\").joinToString("/") { toString(it).replaceIllegalFileChars() }
+	return basePath.resolve(when {
+		isMulti() -> transformDirectories(DOWNLOADDIRALBUM()) // Album, Monstercat Collection
+		isType(Release.Type.PODCAST) -> transformDirectories(DOWNLOADDIRPODCAST())
+		isType(Release.Type.MIX) -> transformDirectories(DOWNLOADDIRMIXES())
+		else -> transformDirectories(DOWNLOADDIRSINGLE())
+	})
+}
 
 fun Release.isMulti() = isCollection && tracks.size >= EPSTOSINGLES()
 

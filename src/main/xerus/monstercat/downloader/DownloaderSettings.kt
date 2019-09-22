@@ -24,11 +24,6 @@ val DOWNLOADDIRALBUM = DownloaderSettings.create("directoryAlbum", "{%renderedAr
 val DOWNLOADDIRPODCAST = DownloaderSettings.create("directoryPodcasts", "Podcast")
 val DOWNLOADDIRMIXES = DownloaderSettings.create("directoryMixes", "Mixes")
 
-val ENABLESINGLEDIRVARS = DownloaderSettings.create("enableSingleDirectoryVars", false)
-val ENABLEALBUMDIRVARS = DownloaderSettings.create("enableAlbumDirectoryVars", true)
-val ENABLEPODCASTDIRVARS = DownloaderSettings.create("enablePodcastDirectoryVars", false)
-val ENABLEMIXESDIRVARS = DownloaderSettings.create("enableMixesDirectoryVars", false)
-
 val TRACKNAMEPATTERN = DownloaderSettings.create("namepatternTrack", trackPatterns[0])
 val ALBUMTRACKNAMEPATTERN = DownloaderSettings.create("namepatternAlbumtrack", trackPatterns[0])
 
