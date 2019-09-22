@@ -13,6 +13,7 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
 import javafx.util.Duration
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -54,19 +55,39 @@ class TabReleases: StackTab() {
 		monsterUtilities.window.widthProperty().listen { setCellSize() }
 	}
 	
+	private val listView = ListView<Release>().apply {
+		setCellFactory {
+			ReleaseListCell().apply { setOnMouseClicked { showRelease(this.item) } }
+		}
+	}
+	
 	private val blurLowRes = SimpleBooleanProperty(false)
 	
 	init {
 		gridView.items = releases
+		listView.items = releases
 		GlobalScope.launch {
 			val releases = Cache.getReleases()
 			onFx { this@TabReleases.releases.setAll(releases) }
 		}
+		val gridEditor = HBox(0.0,
+			createButton("-") { cols.value = (cols.value - 1).coerceAtLeast(2) },
+			createButton("+") { cols.value = (cols.value + 1).coerceAtMost(4) },
+			CheckBox("Blur low-res").bind(blurLowRes).tooltip("May affect performance while loading covers, but looks less pixelated")
+		)
 		val colEditor = Group(
-			HBox(0.0,
-				createButton("-") { cols.value = (cols.value - 1).coerceAtLeast(2) },
-				createButton("+") { cols.value = (cols.value + 1).coerceAtMost(4) },
-				CheckBox("Blur low-res").bind(blurLowRes).tooltip("May affect performance while loading covers, but looks less pixelated")
+			VBox(
+				CheckBox("Grid View").apply { isSelected = false }.onClick {
+					gridEditor.isDisable = !isSelected
+					val tab = this@TabReleases
+					tab.children.removeAll(listView, gridView)
+					if(isSelected) {
+						tab.children.add(0, gridView)
+					}else{
+						tab.children.add(0, listView)
+					}
+				},
+				gridEditor
 			).apply {
 				background = Background(BackgroundFill(Color(0.0, 0.0, 0.0, 0.7), CornerRadii(8.0), Insets.EMPTY))
 				padding = Insets(8.0)
@@ -80,12 +101,12 @@ class TabReleases: StackTab() {
 		releases.listen {
 			onFx {
 				if(!it.isNullOrEmpty()) {
-					add(gridView)
+					add(listView)
 					add(colEditor)
 					setAlignment(colEditor, Pos.BOTTOM_LEFT)
 					children.remove(placeholder)
 				} else {
-					children.removeAll(gridView, colEditor)
+					children.removeAll(listView, gridView, colEditor)
 					add(placeholder)
 					setAlignment(placeholder, Pos.CENTER)
 				}
@@ -150,7 +171,7 @@ class TabReleases: StackTab() {
 	}
 	
 	class ReleaseGridCell(private val context: TabReleases): GridCell<Release>() {
-		override fun updateItem(item: Release?, empty : Boolean) {
+		override fun updateItem(item: Release?, empty: Boolean) {
 			super.updateItem(item, empty)
 			if(empty || item == null) {
 				graphic = null
@@ -194,6 +215,18 @@ class TabReleases: StackTab() {
 					alignment = Pos.BOTTOM_CENTER; tooltip = Tooltip(item.toString())
 					if(item.earlyAccess) style += "-fx-border-color: gold; -fx-border-width: 4px; -fx-border-radius: 8px"
 				}
+			}
+		}
+	}
+	
+	class ReleaseListCell: ListCell<Release>() {
+		override fun updateItem(item: Release?, empty: Boolean) {
+			super.updateItem(item, empty)
+			if(empty || item == null) {
+				graphic = null
+			} else {
+				val cover = ImageView(Covers.getThumbnailImage(item.coverUrl, 256)).apply { fitHeight = 64.0; fitWidth = 64.0; }
+				graphic = HBox(cover, Label(item.toString()).apply { font = Font(14.0); padding = Insets(16.0) })
 			}
 		}
 	}
