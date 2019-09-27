@@ -98,9 +98,6 @@ class TabSettings: VTab() {
 		val exportFileChooser = FileChooser(App.stage, Settings.PLAYEREXPORTFILE().toFile(), "", "export file").apply { selectedFile.listen { Settings.PLAYEREXPORTFILE.set(it.toPath()) } }
 		addRow(Label("Export currently played track :"), exportFileChooser.button().allowExpand(vertical = false), exportFileChooser.textField())
 		
-		val connectionSpeed = createComboBox(Settings.CONNECTIONSPEED)
-		addLabeled("Internet Bandwidth", connectionSpeed)
-		
 		addLabeled("Internet Bandwidth", createComboBox(Settings.CONNECTIONSPEED))
 		
 		addRow(CheckBox("Enable Cache").bind(Settings.ENABLECACHE))
