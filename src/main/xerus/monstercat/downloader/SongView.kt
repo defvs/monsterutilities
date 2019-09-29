@@ -195,9 +195,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		var done = 0
 		releases.toList().forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
-			if(!release.downloadable) {
+			if(!release.downloadable || (Settings.SKIPUNLICENSABLE() && release.tracks.all { !it.licensable })) {
 				if(notDownloadable < 3)
-					logger.trace("Not downloadable: $release")
+					logger.trace("Not downloadable${if (Settings.SKIPUNLICENSABLE()) " / licensable" else ""}: $release")
 				notDownloadable++
 				treeItem.selectedProperty().listen {
 					if(it)
