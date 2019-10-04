@@ -1,11 +1,9 @@
 package xerus.monstercat.api
 
+import javafx.beans.Observable
 import javafx.event.EventHandler
 import javafx.geometry.Pos
-import javafx.scene.control.Label
-import javafx.scene.control.ProgressBar
-import javafx.scene.control.Slider
-import javafx.scene.control.ToggleButton
+import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseButton
@@ -20,6 +18,7 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
+import xerus.ktutil.javafx.properties.addListener
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.controls.FadingHBox
@@ -30,6 +29,9 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
+import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.schedule
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -87,13 +89,20 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	/** Shows [text] in the [label] and adds a back Button that calls [reset] when clicked */
-	private fun showBack(text: String) {
+	private fun showError(text: String) {
 		checkFx {
 			showText(text)
 			addButton { reset() }.id("back")
 			fill(pos = 0)
 			fill()
-			add(closeButton)
+			if(Playlist.tracks.size < 2) {
+				add(closeButton)
+			} else {
+				add(buttonWithId("skip") { playNext() }).tooltip("Skip")
+				Timer().schedule(TimeUnit.SECONDS.toMillis(5)) {
+					playNext()
+				}
+			}
 		}
 	}
 	
@@ -130,28 +139,29 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	fun playTrack(track: Track) {
 		disposePlayer()
 		val hash = track.streamHash ?: run {
-			showBack("$track is currently not available for streaming!")
+			showError("$track is currently not available for streaming!")
 			return
 		}
 		updateCover(track.release.coverUrl)
 		logger.debug("Loading $track from $hash")
 		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
 		updateVolume()
+		onFx {
+			activeTrack.value = track
+		}
 		playing("Loading $track")
 		player?.run {
 			play()
+			setOnEndOfMedia { playNext() }
 			setOnReady {
 				label.text = "Now Playing: $track"
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-				onFx {
-					activeTrack.value = track
-				}
 			}
 			setOnError {
 				logger.warn("Error loading $track: $error", error)
-				showBack("Error loading $track: ${error.message?.substringAfter(": ")}")
+				showError("Error loading $track: ${error.message?.substringAfter(": ")}")
 			}
 		}
 	}
@@ -166,12 +176,38 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 	}
 	
-	private val pauseButton = ToggleButton().id("play-pause").onClick { if(isSelected) player?.pause() else player?.play() }
-	private val stopButton = buttonWithId("stop") { reset() }
-	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME()).scrollable(0.05).apply {
-		prefWidth = 100.0
-		valueProperty().listen { updateVolume() }
-	}
+	private val pauseButton = ToggleButton().id("play-pause")
+		.tooltip("Pause / Play")
+		.onClick { if(isSelected) player?.pause() else player?.play() }
+	private val stopButton = Button().id("stop")
+		.tooltip("Stop playing")
+		.onClick {
+			reset()
+			Playlist.clear()
+		}
+	private val volumeSlider = Slider(0.0, 1.0, Settings.PLAYERVOLUME())
+		.scrollable(0.05)
+		.apply {
+			prefWidth = 100.0
+			valueProperty().listen { updateVolume() }
+			tooltip = Tooltip("Volume")
+		}
+	private val shuffleButton = ToggleButton().id("shuffle")
+		.tooltip("Shuffle")
+		.apply { selectedProperty().bindBidirectional(Playlist.shuffle) }
+	private val repeatButton = ToggleButton().id("repeat")
+		.tooltip("Repeat all")
+		.apply { selectedProperty().bindBidirectional(Playlist.repeat) }
+	private val skipbackButton = buttonWithId("skipback") { playPrev() }
+		.tooltip("Previous")
+		.apply { Playlist.currentIndex.listen { value -> isVisible = value != 0 } }
+	private val skipButton = buttonWithId("skip") { playNext() }
+		.tooltip("Next")
+		.apply {
+			arrayOf<Observable>(Playlist.currentIndex, Playlist.repeat, Playlist.shuffle).addListener {
+				isVisible = Playlist.currentIndex.value != Playlist.tracks.lastIndex || Playlist.repeat.value || Playlist.shuffle.value
+			}
+		}
 	
 	private var coverUrl: String? = null
 	private fun playing(text: String) {
@@ -187,9 +223,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				children.add(0, imageView)
 				children.add(1, Region().setSize(4.0))
 			}
-			add(pauseButton.apply { isSelected = false })
-			add(stopButton)
-			add(volumeSlider)
+			children.addAll(pauseButton.apply { isSelected = false }, stopButton, skipbackButton, skipButton, shuffleButton, repeatButton, volumeSlider)
 			fill(pos = 0)
 			fill()
 			add(closeButton)
@@ -209,12 +243,15 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		GlobalScope.launch {
 			val track = APIUtils.find(title, artists)
 			if(track == null) {
-				onFx { showBack("Track not found") }
+				onFx { showError("Track not found") }
 				return@launch
 			}
-			playTrack(track)
-			player?.setOnEndOfMedia { reset() }
+			playTracks(listOf(track))
 		}
+	}
+	
+	fun playFromPlaylist(index: Int) {
+		Playlist[index]?.also { playTrack(it) }
 	}
 	
 	/** Plays this [release], creating an internal playlist when it has multiple Tracks */
@@ -224,15 +261,17 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	/** Set the [tracks] as the internal playlist and start playing from the specified [index] */
-	fun playTracks(tracks: List<Track>, index: Int) {
-		playTrack(tracks[index])
-		onFx {
-			if(index > 0)
-				children.add(children.size - 3, buttonWithId("skipback") { playTracks(tracks, index - 1) })
-			if(index < tracks.lastIndex)
-				children.add(children.size - 3, buttonWithId("skip") { playTracks(tracks, index + 1) })
-		}
-		player?.setOnEndOfMedia { if(tracks.lastIndex > index) playTracks(tracks, index + 1) else reset() }
+	fun playTracks(tracks: List<Track>, index: Int = 0) {
+		Playlist.setTracks(tracks)
+		playFromPlaylist(index)
+	}
+	
+	fun playNext() {
+		Playlist.getNext()?.let { playTrack(it) } ?: reset()
+	}
+	
+	fun playPrev() {
+		Playlist.getPrev()?.also { playTrack(it) }
 	}
 	
 	fun updateCover(coverUrl: String?) {
