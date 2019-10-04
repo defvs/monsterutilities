@@ -25,6 +25,7 @@ import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
 import xerus.ktutil.square
+import xerus.ktutil.write
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
@@ -32,6 +33,7 @@ import xerus.monstercat.monsterUtilities
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
+import java.nio.file.Files
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -109,6 +111,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
+		if(Files.exists(Settings.PLAYEREXPORTFILE()) && !Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+			Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf(""))
+			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()}) from its contents")
+		}
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -155,6 +161,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			setOnEndOfMedia { playNext() }
 			setOnReady {
 				label.text = "Now Playing: $track"
+				if(Files.exists(Settings.PLAYEREXPORTFILE()) && !Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+					Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"))
+					logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
+				}
 				val total = totalDuration.toMillis()
 				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)

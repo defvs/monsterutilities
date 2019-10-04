@@ -26,8 +26,12 @@ import org.controlsfx.validation.Validator
 import xerus.ktutil.byteCountString
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.javafx.*
-import xerus.ktutil.javafx.properties.*
+import xerus.ktutil.javafx.properties.ImmutableObservable
+import xerus.ktutil.javafx.properties.ImmutableObservableList
+import xerus.ktutil.javafx.properties.dependOn
+import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.App
+import xerus.ktutil.javafx.ui.FileChooser
 import xerus.ktutil.javafx.ui.createAlert
 import xerus.monstercat.Settings
 import xerus.monstercat.api.Cache
@@ -89,6 +93,10 @@ class TabSettings: VTab() {
 			Settings.PLAYERSEEKBARHEIGHT.bind(valueProperty() as ObservableValue<out Double>)
 		})
 		addLabeled("Player Coverart priorities:", createComboBox(Settings.PLAYERARTPRIORITY))
+		
+		// Export chooser
+		val exportFileChooser = FileChooser(App.stage, Settings.PLAYEREXPORTFILE().toFile(), "", "export file").apply { selectedFile.listen { Settings.PLAYEREXPORTFILE.set(it.toPath()) } }
+		addRow(Label("Export currently played track :"), exportFileChooser.button().allowExpand(vertical = false), exportFileChooser.textField())
 		
 		addLabeled("Internet Bandwidth", createComboBox(Settings.CONNECTIONSPEED))
 		

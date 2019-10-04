@@ -15,6 +15,7 @@ import xerus.monstercat.tabs.TabSettings
 import xerus.monstercat.tabs.availableColumns
 import xerus.monstercat.tabs.defaultColumns
 import java.io.File
+import java.nio.file.Paths
 
 object Settings: SettingsNode("xerus/monsterutilities") {
 	private val logger = KotlinLogging.logger { }
@@ -24,8 +25,9 @@ object Settings: SettingsNode("xerus/monsterutilities") {
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val PLAYERARTPRIORITY = create("coverartPriorityList", TabSettings.PriorityList.SGL_ALB_COL) { TabSettings.PriorityList.valueOf(it) }
+	val PLAYEREXPORTFILE = create("playerExportFile", Paths.get(""))
 	val SKIPUNLICENSABLE = create("skipUnlicensable", false)
-    
+
 	// Equalizer
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
 	val EQUALIZERBANDS = create("equalizerBands")
