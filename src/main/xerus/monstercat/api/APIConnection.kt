@@ -11,6 +11,7 @@ import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPatch
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
@@ -26,10 +27,7 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.ReleaseResponse
-import xerus.monstercat.api.response.Session
-import xerus.monstercat.api.response.TrackResponse
-import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -79,6 +77,9 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
+	
+	fun getPlaylists() =
+		parseJSON(PlaylistResponse::class.java)?.results
 	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
@@ -232,6 +233,37 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		
 		fun logout() {
 			CONNECTSID.clear()
+		}
+		
+		private fun convertTracklist(tracks: List<Track>) = tracks.map { HashMap<String, String>().apply { this["trackId"] = it.id; this["releaseId"] = it.release.id } }
+		
+		fun editPlaylist(id: String, tracks: List<Track>? = null, name: String? = null, public: Boolean? = null, deleted: Boolean? = null) {
+			val json = HashMap<String, Any>()
+			tracks?.also { json["tracks"] = convertTracklist(it) }
+			name?.also { json["name"] = it }
+			public?.also { json["public"] = it }
+			deleted?.also { json["deleted"] = it }
+			val connection = APIConnection("v2", "playlist", id)
+			val request = HttpPatch(connection.uri).apply {
+				setHeader("Content-Type", "application/json")
+				val content = Sheets.JSON_FACTORY.toString(json)
+				entity = StringEntity(content)
+			}
+			connection.execute(request)
+		}
+		
+		fun createPlaylist(name: String, tracks: List<Track>, public: Boolean = false) {
+			val connection = APIConnection("v2", "self", "playlist")
+			val request = HttpPost(connection.uri).apply {
+				setHeader("Content-Type", "application/json")
+				val json = HashMap<String, Any>()
+				json["name"] = name
+				json["public"] = public
+				json["tracks"] = convertTracklist(tracks)
+				val content = Sheets.JSON_FACTORY.toString(json)
+				entity = StringEntity(content)
+			}
+			connection.execute(request)
 		}
 		
 		data class ConnectResult(val connectsid: String, val validity: ConnectValidity, val session: Session?)

@@ -12,10 +12,12 @@ import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.TableColumn
+import xerus.ktutil.javafx.addButton
 import xerus.ktutil.javafx.fill
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.api.Player
 import xerus.monstercat.api.Playlist
+import xerus.monstercat.api.PlaylistManager
 import xerus.monstercat.api.response.Track
 
 
@@ -104,9 +106,10 @@ class TabPlaylist: VTab() {
 	
 	init {
 		table.items = Playlist.tracks
+		addButton("Playlists from Monstercat.com..."){ PlaylistManager.playlistDialog() }
 		fill(table)
 	}
-	
+
 	private val selectedTrack: Track
 		get() = table.selectionModel.selectedItem
 	private val selectedIndex: Int
