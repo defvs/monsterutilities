@@ -80,7 +80,7 @@ internal fun initLogging(args: Array<String>) {
 	logger.info("Console loglevel: $logLevel")
 	logger.info("Logging to $logFile")
 	GlobalScope.launch {
-		val logs = logDir.apply { mkdirs() }.listFiles()
+		val logs: Array<File> = logDir.apply { mkdirs() }.listFiles()!!
 		if(logs.size > 10) {
 			logs.asSequence().sortedByDescending { it.name }.drop(5).filter {
 				it.lastModified() + 50 * 360_000 < System.currentTimeMillis()
@@ -93,7 +93,7 @@ internal fun initLogging(args: Array<String>) {
 	}
 }
 
-internal class LogbackConfigurator : ContextAwareBase(), Configurator {
+internal class LogbackConfigurator: ContextAwareBase(), Configurator {
 	
 	override fun configure(lc: LoggerContext) {
 		

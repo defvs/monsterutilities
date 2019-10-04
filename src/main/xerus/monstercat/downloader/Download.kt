@@ -2,12 +2,7 @@ package xerus.monstercat.downloader
 
 import javafx.concurrent.Task
 import mu.KotlinLogging
-import xerus.ktutil.copyTo
-import xerus.ktutil.createDirs
-import xerus.ktutil.exists
-import xerus.ktutil.renameTo
-import xerus.ktutil.replaceIllegalFileChars
-import xerus.ktutil.toInt
+import xerus.ktutil.*
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.Covers
 import xerus.monstercat.api.response.MusicItem
@@ -23,12 +18,17 @@ private inline val basePath
 fun Track.toFileName(inAlbum: Boolean) =
 	toString(if(inAlbum) ALBUMTRACKNAMEPATTERN() else TRACKNAMEPATTERN()).replaceIllegalFileChars()
 
-fun Release.downloadFolder(): Path = basePath.resolve(when {
-	isMulti() -> toString(DOWNLOADDIRALBUM()).replaceIllegalFileChars() // Album, Monstercat Collection
-	isType(Release.Type.PODCAST) -> DOWNLOADDIRPODCAST()
-	isType(Release.Type.MIX) -> DOWNLOADDIRMIXES()
-	else -> DOWNLOADDIRSINGLE()
-})
+fun Release.downloadFolder(): Path {
+	fun transformDirectories(string: String) = string.split("/", "\\")
+		.mapNotNull { toString(it).nullIfEmpty()?.replaceIllegalFileChars() }
+		.joinToString("/")
+	return basePath.resolve(when {
+		isMulti() -> transformDirectories(DOWNLOADDIRALBUM()) // Album, Monstercat Collection
+		isType(Release.Type.PODCAST) -> transformDirectories(DOWNLOADDIRPODCAST())
+		isType(Release.Type.MIX) -> transformDirectories(DOWNLOADDIRMIXES())
+		else -> transformDirectories(DOWNLOADDIRSINGLE())
+	})
+}
 
 fun Release.isMulti() = isCollection && tracks.size >= EPSTOSINGLES()
 
@@ -36,7 +36,7 @@ fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 private val logger = KotlinLogging.logger { }
 
-abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Long>() {
+abstract class Download(val item: MusicItem, val coverUrl: String): Task<Long>() {
 	
 	init {
 		@Suppress("LEAKINGTHIS")
@@ -75,16 +75,21 @@ abstract class Download(val item: MusicItem, val coverUrl: String) : Task<Long>(
 	
 }
 
-class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>) : Download(release, release.coverUrl) {
+class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>): Download(release, release.coverUrl) {
 	
 	private var totalProgress = 0
 	
 	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
 		val connection = APIConnection("api", "release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
-		val entity = connection.getResponse().entity
+		val httpResponse = connection.getResponse()
+		val entity = httpResponse.entity
 		val contentLength = entity.contentLength
 		if(contentLength == 0L)
 			throw EmptyResponseException(connection.uri.toString())
+		if(!entity.contentType.value.let { it.startsWith("audio/") || it == "application/octet-stream" })
+			throw WrongResponseTypeException(connection.uri.toString(), entity.contentType.value)
+		if(httpResponse.statusLine.statusCode != 200)
+			throw WrongResponseCodeException(connection.uri.toString(), httpResponse.statusLine.toString())
 		val length = contentLength.toDouble()
 		downloadFile(entity.content, path, true) {
 			totalProgress + it / length
@@ -146,4 +151,8 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 	
 }
 
-class EmptyResponseException(term: String) : Exception("No file found for $term!")
+class EmptyResponseException(term: String): Exception("No file found for $term!")
+
+class WrongResponseTypeException(term: String, mime: String): Exception("Error downloading $term: file type $mime unexpected!")
+
+class WrongResponseCodeException(term: String, status: String): Exception("Error downloading $term: Server returned \"$status\"")
