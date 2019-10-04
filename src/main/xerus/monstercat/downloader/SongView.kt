@@ -86,6 +86,8 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 	
 	init {
 		showRoot(true)
+		
+		selectionModel.selectionMode = SelectionMode.MULTIPLE
 		setOnMouseClicked {
 			if(it.clickCount == 2) {
 				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
@@ -99,39 +101,34 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		}
 		
 		val menuPlay = MenuItem("Play") {
-			val selected = selectionModel.selectedItem ?: return@MenuItem
+			val selected = selectionModel.selectedItems ?: return@MenuItem
 			Playlist.clear()
-			val value = selected.value
-			when(value) {
-				is Release -> Player.play(value)
-				is Track -> Player.playTrack(value)
+			selected.map {it.value}.forEach {
+				when(it) {
+					is Release -> Player.play(it)
+					is Track -> Player.playTrack(it)
+				}
 			}
 		}
 		val menuAdd = MenuItem("Add to playlist") {
-			val selected = selectionModel.selectedItem ?: return@MenuItem
+			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				val value = selected.value
-				when(value) {
-					is Release -> {
-						value.tracks.forEach { track ->
-							Playlist.add(track)
-						}
+				selected.map {it.value}.forEach {
+					when(it) {
+						is Release -> it.tracks.forEach { track -> Playlist.add(track) }
+						is Track -> Playlist.add(it)
 					}
-					is Track -> Playlist.add(value)
 				}
 			}
 		}
 		val menuAddNext = MenuItem("Play next") {
-			val selected = selectionModel.selectedItem ?: return@MenuItem
+			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				val value = selected.value
-				when(value) {
-					is Release -> {
-						value.tracks.asReversed().forEach { track ->
-							Playlist.addNext(track)
-						}
+				selected.map {it.value}.forEach {
+					when(it) {
+						is Release -> it.tracks.asReversed().forEach { track -> Playlist.addNext(track) }
+						is Track -> Playlist.addNext(it)
 					}
-					is Track -> Playlist.addNext(value)
 				}
 			}
 		}
