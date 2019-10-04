@@ -22,6 +22,8 @@ open class Track: MusicItem() {
 	var artists: List<ArtistRel> = emptyList()
 	@Key
 	var bpm: Double? = null
+	@Key
+	var licensable: Boolean = false
 	
 	var artistsSplit: List<String> = emptyList()
 	var titleClean: String = ""

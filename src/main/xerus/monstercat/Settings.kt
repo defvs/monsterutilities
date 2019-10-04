@@ -6,8 +6,8 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonBar
 import mu.KotlinLogging
 import xerus.ktutil.helpers.Named
-import xerus.ktutil.javafx.applyTheme
 import xerus.ktutil.javafx.Themes
+import xerus.ktutil.javafx.applyTheme
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
 import xerus.monstercat.tabs.FetchTab
@@ -16,7 +16,7 @@ import xerus.monstercat.tabs.availableColumns
 import xerus.monstercat.tabs.defaultColumns
 import java.io.File
 
-object Settings : SettingsNode("xerus/monsterutilities") {
+object Settings: SettingsNode("xerus/monsterutilities") {
 	private val logger = KotlinLogging.logger { }
 	
 	// Player settings
@@ -24,7 +24,8 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	val PLAYERSCROLLSENSITIVITY = create("playerSeekbarScrollSensitivity", 6.0)
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val PLAYERARTPRIORITY = create("coverartPriorityList", TabSettings.PriorityList.SGL_ALB_COL) { TabSettings.PriorityList.valueOf(it) }
-	
+	val SKIPUNLICENSABLE = create("skipUnlicensable", false)
+    
 	// Equalizer
 	val ENABLEEQUALIZER = create("equalizerEnabled", false)
 	val EQUALIZERBANDS = create("equalizerBands")
@@ -57,19 +58,19 @@ object Settings : SettingsNode("xerus/monsterutilities") {
 	
 	init {
 		ENABLECACHE.listen { selected ->
-			logger.debug("Cache " + (if (selected) "en" else "dis") + "abled")
-			if (selected)
+			logger.debug("Cache " + (if(selected) "en" else "dis") + "abled")
+			if(selected)
 				FetchTab.writeCache()
 		}
 		
-		UNSTABLE.addListener(object : ChangeListener<Boolean> {
+		UNSTABLE.addListener(object: ChangeListener<Boolean> {
 			override fun changed(o: ObservableValue<out Boolean>, old: Boolean, new: Boolean) {
-				if (new) {
+				if(new) {
 					val alert = monsterUtilities.showAlert(Alert.AlertType.CONFIRMATION, title = "Are you sure?",
 						content = "Unstable builds contain the latest features and fixes, but may also introduce unexpected bugs, regressions and incompatible changes. Use at your own risk!\n" +
 							"The unstable version can be used alongside the stable one and will forcibly update itself whenever possible.")
 					alert.resultProperty().listen {
-						if (alert.result.buttonData == ButtonBar.ButtonData.YES) {
+						if(alert.result.buttonData == ButtonBar.ButtonData.YES) {
 							monsterUtilities.checkForUpdate(true, true)
 						} else {
 							UNSTABLE.removeListener(this)
