@@ -38,6 +38,7 @@ import xerus.monstercat.api.response.Release.Type.MCOLLECTION
 import xerus.monstercat.api.response.Release.Type.MIX
 import xerus.monstercat.api.response.Release.Type.PODCAST
 import xerus.monstercat.api.response.Release.Type.SINGLE
+import xerus.monstercat.api.Player
 import xerus.monstercat.cacheDir
 import xerus.monstercat.dataDir
 import xerus.monstercat.downloader.DownloaderSettings
@@ -105,33 +106,21 @@ class TabSettings: VTab() {
 		val buttonWidth = 160.0
 		addRow(
 			createButton("Quick Restart") {
-				Settings.refresh()
-				DownloaderSettings.refresh()
-				App.restart()
+				restartApp()
 			}.apply { prefWidth = buttonWidth },
 			createButton("Clear cache & Restart") {
-				Settings.refresh()
-				DownloaderSettings.refresh()
-				try {
-					Cache.clear()
-					App.restart()
-				} catch(e: Exception) {
-					monsterUtilities.showError(e)
-				}
+				Cache.clear()
+				restartApp()
 			}.apply { prefWidth = buttonWidth },
 			createButton("Reset") {
 				App.stage.createAlert(Alert.AlertType.WARNING, content = "Are you sure you want to RESET ALL SETTINGS?", buttons = *arrayOf(ButtonType.YES, ButtonType.CANCEL)).apply {
 					initStyle(StageStyle.UTILITY)
 					resultProperty().listen {
 						if(it.buttonData == ButtonBar.ButtonData.YES) {
-							try {
-								Settings.clear()
-								DownloaderSettings.clear()
-								Cache.clear()
-							} catch(e: Exception) {
-								monsterUtilities.showError(e)
-							}
-							App.restart()
+							Settings.clear()
+							DownloaderSettings.clear()
+							Cache.clear()
+							restartApp()
 						}
 					}
 					show()
@@ -141,6 +130,15 @@ class TabSettings: VTab() {
 				textFillProperty().bind(ImmutableObservable<Paint>(Color.hsb(0.0, 1.0, 0.8)))
 			}
 		)
+	}
+	
+	/** Restarts the application. */
+	private fun restartApp() {
+		Player.fadeOut()
+		Settings.refresh()
+		DownloaderSettings.refresh()
+		App.restart()
+		Player.reset()
 	}
 	
 	fun feedback() {
