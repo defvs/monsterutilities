@@ -15,7 +15,7 @@ Browse, stream and download Monstercat Songs, powered by the Monstercat API and 
 Download the portable version from [the website](http://monsterutilities.bplaced.net/downloads?download) or from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).  
 Download OS-specific installers from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases) with an optional bundled Java environment.
 
-###### [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) gracefully provided us a license to easily build these installers.
+> [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) graciously provided us a license to comfortably build these installers.
 
 If you did not choose a download with a bundled JRE, the application requires [Java 8 by Oracle](https://www.java.com/de/download/manual.jsp) to be installed on your computer.  
 Make sure to read the initial guide and watch out for tooltips.
