@@ -8,23 +8,23 @@ Browse, stream and download Monstercat Songs, powered by the Monstercat API and 
 - [Screenshots](#screenshots)
 - [Development](#development)
 
-## Getting started
+_The application is still in a beta state, you may encounter bugs. Please report issues via GitHub and send a report from inside the application. The latter will automatically include logs from `TEMP/monsterutilities/logs`._
 
-> The application is still in a beta state, you may encounter bugs. Please report issues via GitHub and send a report from inside the application. The latter will automatically include logs from `TEMP/monsterutilities/logs`.
+## Getting started
 
 Download the portable version from [the website](http://monsterutilities.bplaced.net/downloads?download) or from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).  
 Download OS-specific installers from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases) with an optional bundled Java environment.
 
-> [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) graciously provided us a license to comfortably build these installers.
+If you did not choose a download with a bundled JRE, the application requires [Java 8 by Oracle](https://www.java.com/de/download/manual.jsp) to be installed on your computer.
 
-If you did not choose a download with a bundled JRE, the application requires [Java 8 by Oracle](https://www.java.com/de/download/manual.jsp) to be installed on your computer.  
-Make sure to read the initial guide and watch out for tooltips.
+Make sure to read the initial in-app guide and watch out for tooltips.
 
 ### Troubleshooting
 
-#### connect.sid
+#### Authentication - the connect.sid
 
-For downloading and listening to early access, your `connect.sid` needs to be entered in the bottom of the Downloader. It is a cookie that identifies your Monstercat Account. You can either login with your credentials or obtain it manually as described below.
+For downloading and listening to early access, your `connect.sid` needs to be entered in the bottom of the Downloader. It is a cookie that identifies your Monstercat Account. 
+You can either login with your credentials or obtain it manually as described below.
 
 1) Log in on [monstercat.com/gold](https://www.monstercat.com/gold) and ensure that you have a valid Monstercat Gold subscription
 2) Go to your browser cookies and search for `connect.monstercat.com`  
@@ -41,7 +41,7 @@ Sometimes the cache runs into issues which may cause problems in the Downloader.
 ### Caching & Offline usage
 
 Upon starting the application for the first time, it will fetch and cache all Releases as well as Sheets (Catalog/Genres). This might take some time depending on your internet connection. On subsequent use it will prefer to fetch incrementally, reducing the load on your connection as well as Monstercat's Servers.  
-Once fetched, Releases and Tracks can be browsed offline but not played or downloaded.
+Once fetched, Songs can be **browsed offline** but **not played or downloaded**.
 
 The cache as well as logs are stored in the TEMP directory, depending on your operating system:
 - Windows: `C:\Users\<username>\AppData\Local\Temp\monsterutilities` - can be changed by editing the `java.io.tmpdir` system property
@@ -52,7 +52,8 @@ The cache as well as logs are stored in the TEMP directory, depending on your op
 ### Catalog
 
 The Catalog provides an overview of all Tracks ever released on the label with extensive filtering possibilities.
-> Tip: You can customize which columns to show by clicking on the `+` in the top right
+
+_Tip: You can customize which columns to show by clicking the `+` in the top right of the table._
 
 ![Catalog](assets/screenshots/catalog.png)
 ![Catalog filtering](assets/screenshots/filtering.png)
@@ -104,7 +105,7 @@ In order to fetch the Catalog and Genres you have to create a file called `src/r
 
 Provide the argument `-Dargs="--loglevel trace"` to the run task to change the log level or pass other commandline options to the application.
 
-If you run a self-compiled jar, the updater might automatically start on start-up. To prevent this, add the `--no-update` flag.
+When running a self-compiled jar, the application might try to update itself to an earlier version due to missing information. To prevent this, add the `--no-update` flag.
 
 ### Logging
 
@@ -115,3 +116,7 @@ Then use the `logger` object to log key information at the INFO level, debugging
 
 The application runs in WARN by default, however the run task automatically passes arguments to run it at DEBUG. This can be changed using the `--loglevel` flag.  
 The log is additionally saved to a file in `TEMP/monsterutilities/logs` at DEBUG level unless the log level is set to TRACE in which case it records everything.
+
+## Acknowledgments
+
+Thanks to [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) for providing us a free license to build the installers.
