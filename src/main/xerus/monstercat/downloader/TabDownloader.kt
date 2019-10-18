@@ -435,6 +435,9 @@ class TabDownloader: VTab() {
 		parent.children.addAll(emailField, passwordField, errorMessage,
 			HBox().apply {
 				addButton("Login") {
+					if(emailField.text.isEmpty() || passwordField.text.isEmpty())
+						return@addButton
+					
 					isDisable = true
 					errorMessage.isVisible = false
 					loadingGif.isVisible = true
