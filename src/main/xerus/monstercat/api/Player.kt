@@ -32,6 +32,7 @@ import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
 import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import kotlin.math.pow
 
 object Player: FadingHBox(true, targetHeight = 25) {
@@ -102,8 +103,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
-		if(Files.exists(Settings.PLAYEREXPORTFILE()) && !Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-			Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf(""))
+		if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+			Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf(""), StandardOpenOption.CREATE)
 			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()}) from its contents")
 		}
 		GlobalScope.launch {
@@ -148,8 +149,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			play()
 			setOnReady {
 				label.text = "Now Playing: $track"
-				if(Files.exists(Settings.PLAYEREXPORTFILE()) && !Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-					Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"))
+				if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+					Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"), StandardOpenOption.CREATE)
 					logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
 				}
 				val total = totalDuration.toMillis()
