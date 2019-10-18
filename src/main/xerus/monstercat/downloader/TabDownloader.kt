@@ -5,6 +5,7 @@ import javafx.beans.property.Property
 import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
@@ -424,23 +425,39 @@ class TabDownloader: VTab() {
 	private fun openLoginDialog() {
 		val parent = VBox()
 		val stage = App.stage.createStage("Login to Monstercat.com", parent)
+		
 		val emailField = TextField("").apply { promptText = "Email address" }
 		val passwordField = PasswordField().apply { promptText = "Password" }
-		parent.children.addAll(emailField, passwordField,
+		
+		val errorMessage = Label("Wrong username / password").apply { isVisible = false; managedProperty().bind(visibleProperty()) }
+		val loadingGif = ImageView(Image("img/loading-16.gif")).apply { isVisible = false }
+		
+		parent.children.addAll(emailField, passwordField, errorMessage,
 			HBox().apply {
 				addButton("Login") {
-					val login = APIConnection.login(emailField.text, passwordField.text)
-					logger.debug("Login as ${emailField.text} returned $login")
-					if(login) {
-						stage.close()
-					} else {
-						parent.children.add(parent.children.lastIndex - 1, Label("Wrong username/password"))
-						stage.sizeToScene()
+					isDisable = true
+					errorMessage.isVisible = false
+					loadingGif.isVisible = true
+					stage.sizeToScene()
+					
+					GlobalScope.launch {
+						val login = APIConnection.login(emailField.text, passwordField.text)
+						logger.debug("Login as ${emailField.text} returned $login")
+						onFx {
+							if(login) {
+								stage.close()
+							} else {
+								errorMessage.isVisible = true
+								loadingGif.isVisible = false
+								isDisable = false
+								
+								stage.sizeToScene()
+							}
+						}
 					}
 				}
-				addButton("Cancel") {
-					stage.close()
-				}
+				addButton("Cancel") { stage.close() }
+				add(loadingGif)
 			}
 		)
 		stage.apply {
