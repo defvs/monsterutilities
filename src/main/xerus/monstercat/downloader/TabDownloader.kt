@@ -368,8 +368,10 @@ class TabDownloader: VTab() {
 		}, Button("Checking connection...").apply {
 			prefWidth = 400.0
 			CONNECTSID.listen {
-				isDisable = true
-				text = "Verifying connect.sid..."
+				checkFx {
+					isDisable = true
+					text = "Verifying connect.sid..."
+				}
 				logger.trace("Verifying connect.sid...")
 			}
 			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
