@@ -21,8 +21,8 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.JTextArea
 
-val VERSION = getResource("version")!!.readText()
-val isUnstable = VERSION.contains('-')
+val currentVersion = getResource("version")!!.readText()
+val isUnstable = currentVersion.contains('-')
 
 val dataDir: File
 	get() = SystemUtils.cacheDir.resolve("monsterutilities").apply { mkdirs() }
@@ -39,24 +39,25 @@ val globalThreadPool: ExecutorService = Executors.newCachedThreadPool(object: Th
 })
 val globalDispatcher = globalThreadPool.asCoroutineDispatcher()
 
-val jarLocation: URL = MonsterUtilities::class.java.protectionDomain.codeSource.location
+val codeSource: URL = MonsterUtilities::class.java.protectionDomain.codeSource.location
 
 fun main(args: Array<String>) {
 	initLogging(args)
 	val logger = KotlinLogging.logger {}
 	logger.debug("Commandline arguments: ${args.joinToString(", ", "[", "]")}")
+	logger.debug("Running from $codeSource")
 	
 	if(!SystemUtils.javaVersion.startsWith("1.8")) {
 		SimpleFrame { add(JTextArea("Please install and use Java 8!\nThe current version is ${SystemUtils.javaVersion}").apply { isEditable = false }) }
 		return
 	}
-	logger.info("Version: $VERSION, Java version: ${SystemUtils.javaVersion}")
+	logger.info("Version: $currentVersion, Java version: ${SystemUtils.javaVersion}")
 	
 	logger.info("Initializing Google Sheets API Service")
 	Sheets.initService("MonsterUtilities")
 	
-	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && jarLocation.toString().endsWith(".jar")
-	App.launch("MonsterUtilities $VERSION", Settings.THEME(), { stage ->
+	val checkUpdate = !args.contains("--no-update") && Settings.AUTOUPDATE() && codeSource.toString().endsWith(".jar")
+	App.launch("MonsterUtilities $currentVersion", Settings.THEME(), { stage ->
 		stage.icons.addAll(arrayOf("img/icon64.png").map {
 			getResource(it)?.let { Image(it.toExternalForm()) }
 				?: null.apply { logger.warn("Resource $it not found!") }
