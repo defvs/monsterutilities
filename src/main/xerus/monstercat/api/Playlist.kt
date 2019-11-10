@@ -89,8 +89,6 @@ object Playlist {
 		else showUnlicensableAlert(track)
 	}
 	
-	fun addAll(tracks: ArrayList<Track>) = this.tracks.addAll(tracks)
-	
 	fun removeAt(index: Int?) {
 		tracks.removeAt(index ?: tracks.size - 1)
 	}
