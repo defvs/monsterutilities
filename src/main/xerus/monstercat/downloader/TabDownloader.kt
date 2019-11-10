@@ -5,13 +5,10 @@ import javafx.beans.property.Property
 import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.*
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.StackPane
-import javafx.scene.layout.VBox
+import javafx.scene.input.KeyCode
+import javafx.scene.layout.*
 import javafx.scene.text.Text
 import javafx.stage.Modality
 import javafx.stage.Stage
@@ -23,12 +20,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.controlsfx.control.SegmentedButton
 import org.controlsfx.control.TaskProgressView
-import xerus.ktutil.FieldNotFoundException
+import xerus.ktutil.*
 import xerus.ktutil.collections.nullIfEmpty
-import xerus.ktutil.currentSeconds
-import xerus.ktutil.exists
-import xerus.ktutil.formatTimeDynamic
-import xerus.ktutil.formattedTime
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.helpers.ParserException
 import xerus.ktutil.javafx.*
@@ -42,8 +35,6 @@ import xerus.ktutil.javafx.ui.controls.Searchable
 import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
-import xerus.ktutil.str
-import xerus.ktutil.toLocalDate
 import xerus.monstercat.api.APIConnection
 import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.Covers
@@ -368,8 +359,10 @@ class TabDownloader: VTab() {
 		}, Button("Checking connection...").apply {
 			prefWidth = 400.0
 			CONNECTSID.listen {
-				isDisable = true
-				text = "Verifying connect.sid..."
+				checkFx {
+					isDisable = true
+					text = "Verifying connect.sid..."
+				}
 				logger.trace("Verifying connect.sid...")
 			}
 			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
@@ -422,23 +415,49 @@ class TabDownloader: VTab() {
 	private fun openLoginDialog() {
 		val parent = VBox()
 		val stage = App.stage.createStage("Login to Monstercat.com", parent)
+		
 		val emailField = TextField("").apply { promptText = "Email address" }
 		val passwordField = PasswordField().apply { promptText = "Password" }
-		parent.children.addAll(emailField, passwordField,
-			HBox().apply {
-				addButton("Login") {
-					val login = APIConnection.login(emailField.text, passwordField.text)
-					logger.debug("Login as ${emailField.text} returned $login")
+		
+		val errorMessage = Label("Wrong username / password").apply { isVisible = false; managedProperty().bind(visibleProperty()) }
+		val loadingGif = ImageView(Image("img/loading-16.gif")).apply { isVisible = false }
+		
+		val buttonHBox = HBox()
+		
+		fun login() {
+			if(emailField.text.isEmpty() || passwordField.text.isEmpty())
+				return
+			
+			buttonHBox.isDisable = true
+			errorMessage.isVisible = false
+			loadingGif.isVisible = true
+			stage.sizeToScene()
+			
+			GlobalScope.launch {
+				val login = APIConnection.login(emailField.text, passwordField.text)
+				logger.debug("Login as ${emailField.text} returned $login")
+				onFx {
 					if(login) {
 						stage.close()
 					} else {
-						parent.children.add(parent.children.lastIndex - 1, Label("Wrong username/password"))
+						errorMessage.isVisible = true
+						loadingGif.isVisible = false
+						buttonHBox.isDisable = false
+						
 						stage.sizeToScene()
 					}
 				}
-				addButton("Cancel") {
-					stage.close()
+			}
+		}
+		passwordField.setOnKeyPressed { if(it.code == KeyCode.ENTER) login() }
+		
+		parent.children.addAll(emailField, passwordField, errorMessage,
+			buttonHBox.apply {
+				addButton("Login") {
+					login()
 				}
+				addButton("Cancel") { stage.close() }
+				add(loadingGif)
 			}
 		)
 		stage.apply {
