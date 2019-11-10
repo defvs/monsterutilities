@@ -66,7 +66,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 							disableDownload("This Release is currently not downloadable")
 						
 						// Licensable check (if in streamer mode)
-						((item as? Track)?.licensable == false || (item as? Release)?.tracks?.all { !it.licensable } == true)
+						((item as? Track)?.licensable == false || (item as? Release)?.tracks?.none { it.licensable } == true)
 							&& Settings.SKIPUNLICENSABLE() -> disableDownload("This Release is not licensable")
 						
 						else -> {
@@ -201,7 +201,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		var done = 0
 		releases.toList().forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
-			if(!release.downloadable || (Settings.SKIPUNLICENSABLE() && release.tracks.all { !it.licensable })) {
+			if(!release.downloadable || (Settings.SKIPUNLICENSABLE() && release.tracks.none { it.licensable })) {
 				if(notDownloadable < 3)
 					logger.trace("Not downloadable${if (Settings.SKIPUNLICENSABLE()) " / licensable" else ""}: $release")
 				notDownloadable++

@@ -1,120 +1,122 @@
 # ![icon](assets/favicon.png) MonsterUtilities ![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord) [![Build Status](https://semaphoreci.com/api/v1/xerus2000/monsterutilities/branches/master/shields_badge.svg)](https://semaphoreci.com/xerus2000/monsterutilities)
 
-Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog.
+Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog. [This is the story of how it came to be.](assets/Story.md)
 
-- [How it all began](assets/Story.md)
 - [Getting started](#getting-started)
+  - [Troubleshooting](#troubleshooting)
+  - [Caching & Offline usage](#caching--offline-usage)
 - [Screenshots](#screenshots)
 - [Development](#development)
 
+_The application is still in a beta state, you may encounter bugs. Please report issues via GitHub and send a report from inside the application. The latter will automatically include logs from `TEMP/monsterutilities/logs`._
+
 ## Getting started
 
-Download portable version [from the website](http://monsterutilities.bplaced.net/downloads?download) or [from GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).
+Download the portable version from [the website](http://monsterutilities.bplaced.net/downloads?download) or from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).  
+Download OS-specific installers from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases) with an optional bundled Java environment.
 
-Download full-blown installers [from Github releases](https://github.com/Xerus2000/monsterutilities/releases) : Choose your platform, and choose if you want a bundled Java environment.
+If you did not choose a download with a bundled JRE, the application requires [Java 8 by Oracle](https://www.java.com/de/download/manual.jsp) to be installed on your computer.
 
-###### [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) Installers created using [Install4J](https://www.ej-technologies.com/products/install4j/overview.html), a multi-platform installer builder, whom gracefully gave us a license
-
-
-> This is a pre-Release, you may encounter bugs. If you do, open an issue here or send feedback from inside the application. The latter will automatically include logs, which reside in `TEMP/monsterutilities/logs`
-
-To run it, you need to have Java 8 by Oracle installed on your computer.
-
-Read the initial guide and follow the tooltips. 
-Improved user-friendliness is in development ;)
+Make sure to read the initial in-app guide and watch out for tooltips.
 
 ### Troubleshooting
 
-#### connect.sid
+#### Authentication - the connect.sid
 
-For downloading and listening to the latest Track, your `connect.sid` 
-needs to be entered in the bottom of the Downloader. It is a cookie that
-identifies your Monstercat Account. Here's how to obtain it:
+For downloading and listening to early access, your `connect.sid` needs to be entered in the bottom of the Downloader. It is a cookie that identifies your Monstercat Account. 
+You can either login with your credentials or obtain it manually as described below.
 
 1) Log in on [monstercat.com/gold](https://www.monstercat.com/gold) and ensure that you have a valid Monstercat Gold subscription
 2) Go to your browser cookies and search for `connect.monstercat.com`  
-   For Chrome users: chrome://settings/cookies/detail?site=connect.monstercat.com
+   For Chromium-based browsers: `chrome://settings/cookies/detail?site=connect.monstercat.com`
 3) Find the content of `connect.sid`. It is a string starting with `s%3A` and has around 90 characters.
 4) Copy that string into the `connect.sid` Textfield at the bottom of the Downloader.
 
 #### Downloader
 
-Sometimes, the cache runs into issues and that may contribute to issues in the Downloader.
-Simply disable the cache, restart the application and enable it again.
+Sometimes the cache runs into issues which may cause problems in the Downloader. In that case use the "Clear cache & Restart" button in the settings to reset the cache.
 
-> If you still have issues - no problem! Hit me up on [Discord](https://discord.gg/ZEusvHS) or send Feedback directly from the application!
+> If you still have issues, hit me up on [Discord](https://discord.gg/ZEusvHS) or send Feedback directly from the application!
 
 ### Caching & Offline usage
 
-When starting the application for the first time, it will fetch and cache all Releases as well as Sheets (Catalog/Genres), which might take some time depending on your internet connection since they comprise a few MB. But after that, it will always prefer to fetch incrementally, reducing the load on your internet as well as Monstercat's Servers.  
-This also enables you to browse the Releases and Tracks offline on subsequent runs, but obviously the Player and Downloader won't work then.
+Upon starting the application for the first time, it will fetch and cache all Releases as well as Sheets (Catalog/Genres). This might take some time depending on your internet connection. On subsequent use it will prefer to fetch incrementally, reducing the load on your connection as well as Monstercat's Servers.  
+Once fetched, Songs can be **browsed offline** but **not played or downloaded**.
 
 The cache as well as logs are stored in the TEMP directory, depending on your operating system:
-
-- Windows: `C:\Users\<username>\AppData\Local\Temp\monsterutilities` (can be overridden by changing the `java.io.tmpdir` JVM system property)
-- Unix: `/var/tmp/monsterutilities`
+- Windows: `C:\Users\<username>\AppData\Local\Temp\monsterutilities` - can be changed by editing the `java.io.tmpdir` system property
+- Unix: `/var/tmp/monsterutilities`, or under `/tmp` if `/var/tmp` does not exist
 
 ## Screenshots
 
 ### Catalog
 
-The Catalog provides an overview of all Tracks ever released on the label and 
-extensive possibilities of filtering them.
-> Tip: You can customize which columns to show by clicking on the `+` in the top right
+The Catalog provides an overview of all Tracks ever released on the label with extensive filtering possibilities.
+
+_Tip: You can customize which columns to show by clicking the `+` in the top right of the table._
 
 ![Catalog](assets/screenshots/catalog.png)
 ![Catalog filtering](assets/screenshots/filtering.png)
 
 ### Streaming
 
-In case you missed it in the other Screenshots:  
-There's a player on top that can stream any Monstercat track, just like the website. 
+There is a player on the top that can stream any Monstercat track, just like the website. 
 Double-click on any piece in the Catalog or Downloader to load it into the Player!
+
 ![Player](assets/screenshots/player.png)
 
 ### Downloader
 
-You have a Monstercat Gold membership? Great, because now you can download whatever you want exactly how you want it!
+If you have Monstercat Gold you can bulk download everything according to your preferences!
+
 ![Downloader](assets/screenshots/downloader.png)
 ![Downloader](assets/screenshots/downloading.png)
 
 ### Customization
 
-The application has multiple available skins and other options if the defaults don't suit your needs.
+The application has various color schemes and configuration options.
+
 ![Settings](assets/screenshots/settings.png)
 
 ## Development 
 
-[Gradle](https://gradle.org/) is used for building the project.
-
-If you want to build locally, you can get started without needing to install anything by checking out the project and simply executing`./gradlew run`, which will run the application right from source. More gradle tasks are [below](#important-tasks). 
+The project is built using [Gradle](https://gradle.org/).
 
 ### Setup
 
-If you want Gradle to use a JDK other than your system default, create a `gradle.properties` file at the root of the project with the following line: 
+1. Clone the project
+2. Run the application using `./gradlew run` from the Terminal or by executing the Gradle run task within your IDE
+3. Start coding & submit a PR when you think you've made an improvement
+
+To have Gradle use a specific JDK, create a `gradle.properties` file at the root of the project with the following line: 
 ```
 org.gradle.java.home=/path/to/jdk
 ```
 
-To fetch the Catalog and Genres, you need to create the file `src/resources/sheets-api-key` and put an api key for Google Sheets into it.
+In order to fetch the Catalog and Genres you have to create a file called `src/resources/sheets-api-key` and put an api key for Google Sheets into it.
 
-### Important Tasks
+### Important Gradle Tasks
+
  Name        | Action
  ---         | ---
- `run`       | runs the project right from source
- `shadowJar` | Creates an executable jar in the root directory of the project bundled with all libraries
- `runShadow` | Creates a shadowJar and runs it
- `build` | Builds & tests the whole project
+ `run`       | run the project right from source
+ `shadowJar` | create an executable jar in the root directory of the project bundled with all libraries
+ `build`     | build & test the whole project
 
-Both run tasks can be run with the argument `-Dargs="--loglevel trace"`to change the log level or pass other arguments to the application.
+Provide the argument `-Dargs="--loglevel trace"` to the run task to change the log level or pass other commandline options to the application.
 
-If you run a self-compiled jar, the updater might automatically start on start-up. To prevent that, you can use the `--no-update` flag in the commandline.
+When running a self-compiled jar, the application might try to update itself to an earlier version due to missing information. To prevent this, add the `--no-update` flag.
 
 ### Logging
 
-Logging is done via slf4j wrapped by kotlin-logging and carried out by logback-classic.  
-A Logger can be created anywhere via `val logger = KotlinLogging.logger { }` and will automatically pick up the context where it was instantiated.
+Logging is done via [slf4j](https://www.slf4j.org) wrapped by [kotlin-logging](https://github.com/MicroUtils/kotlin-logging) and carried out by [logback-classic](https://logback.qos.ch).
 
-The application runs with the WARN log level by default, however both run tasks automatically pass arguments to run it at DEBUG. If you want really fine-grained logs, you can also switch it to TRACE with the `--loglevel` flag, but please note that this might slow down your computer in some circumstances.
+A Logger can be created anywhere via `val logger = KotlinLogging.logger { }` and will automatically pick up the context where it was instantiated. Prefer to create it statically to avoid creating a new logger object for each instance.  
+Then use the `logger` object to log key information at the INFO level, debugging clues in DEBUG and more detailed/spammy information in TRACE. WARN should only be used at key points of the application or for non-critical but unusual exceptions. Use ERROR solely for critical exceptions.
 
-The application also logs to a file in `TEMP/monsterutilities/logs`, the log level of which defaults to the lower of the console log level and DEBUG.
+The application runs in WARN by default, however the run task automatically passes arguments to run it at DEBUG. This can be changed using the `--loglevel` flag.  
+The log is additionally saved to a file in `TEMP/monsterutilities/logs` at DEBUG level unless the log level is set to TRACE in which case it records everything.
+
+## Acknowledgments
+
+Thanks to [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) for providing us a free license to build the installers.
