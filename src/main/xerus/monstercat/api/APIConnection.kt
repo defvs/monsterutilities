@@ -43,7 +43,7 @@ import kotlin.reflect.KClass
 private val logger = KotlinLogging.logger { }
 
 /** eases query creation to the Monstercat API */
-class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
+class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	private val path: String = "/" + path.joinToString("/")
 	val uri: URI
@@ -79,7 +79,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
-
+	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
@@ -87,7 +87,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 	}
 	
 	// Direct Requesting
-
+	
 	fun execute(request: HttpUriRequest, context: HttpClientContext? = null) {
 		httpRequest = request
 		response = executeRequest(request, context)
@@ -222,7 +222,7 @@ class APIConnection(vararg path: String) : HTTPQuery<APIConnection>() {
 				setHeader("Content-type", "application/json")
 				entity = StringEntity("""{"email":"$username","password":"$password"}""")
 			}, context)
-
+			
 			val code = connection.response?.statusLine?.statusCode
 			logger.trace("Login POST returned response code $code")
 			if (code !in 200..206) return false
