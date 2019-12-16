@@ -19,7 +19,7 @@ try {
 file("src/resources/version").writeText(version as String)
 
 plugins {
-	kotlin("jvm") version "1.3.41"
+	kotlin("jvm") version "1.3.61"
 	application
 	id("com.github.johnrengelman.shadow") version "5.1.0"
 	id("com.github.breadmoirai.github-release") version "2.2.9"
@@ -51,7 +51,7 @@ repositories {
 dependencies {
 	implementation(kotlin("reflect"))
 	
-	implementation("com.github.Xerus2000.util", "javafx", "259dad93192584306dbf951721d3cf8e6bd25d1b")
+	implementation("com.github.Xerus2000.util", "javafx", "504c8e1")
 	implementation("org.controlsfx", "controlsfx", "8.40.+")
 	
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")

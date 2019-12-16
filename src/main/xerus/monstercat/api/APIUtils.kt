@@ -3,13 +3,12 @@ package xerus.monstercat.api
 import mu.KotlinLogging
 import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.nullIfEmpty
+import xerus.ktutil.splitTitleTrimmed
 import xerus.ktutil.toInt
-import xerus.monstercat.api.response.Release
-import xerus.monstercat.api.response.Settings
 import xerus.monstercat.api.response.Track
 
 val artistDelimiters = arrayOf(" & ", ", ", " and ", " x ", " feat. ")
-// todo fetch from https://connect.monstercat.com/api/catalog/artist
+// TODO fetch from https://connect.monstercat.com/api/catalog/artist
 val artistExceptions = arrayOf("Slips & Slurs", "Case & Point", "Gent & Jawns", "A.M.C & Turno")
 val artistMasker = StringMasker("artist", *artistExceptions)
 
@@ -21,12 +20,6 @@ fun String.splitTitle(): List<String> {
 	val matches = Regex("(.*?)(?: \\((.*?)\\))?(?: \\[(.*?)])?(?: \\((.*?)\\))?").matchEntire(this)!!
 	return matches.groupValues.subList(1, matches.groupValues.size).mapNotNull { it.trim().nullIfEmpty() }
 }
-
-val meaninglessTitleContents = arrayOf("", "feat.", "Remix")
-
-fun String.splitTitleTrimmed() =
-	split(' ', ',', '[', ']', '(', ')', '&').filterNot { it in meaninglessTitleContents }
-
 
 object APIUtils {
 	private val logger = KotlinLogging.logger { }
