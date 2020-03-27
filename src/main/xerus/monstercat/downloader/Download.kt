@@ -80,7 +80,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 	private var totalProgress = 0
 	
 	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
-		val connection = APIConnection("api", "release", releaseId, "download").addQueries("method=download", "type=${QUALITY()}", "track=$trackId")
+		val connection = APIConnection("v2", "release", releaseId, "track-download", trackId).addQuery("format", QUALITY())
 		val httpResponse = connection.getResponse()
 		val entity = httpResponse.entity
 		val contentLength = entity.contentLength

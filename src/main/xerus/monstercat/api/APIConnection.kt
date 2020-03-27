@@ -26,6 +26,7 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
+import xerus.monstercat.api.response.MixedReleaseResponse
 import xerus.monstercat.api.response.ReleaseResponse
 import xerus.monstercat.api.response.Session
 import xerus.monstercat.api.response.TrackResponse
@@ -79,6 +80,10 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	/** @return null when the connection fails, else the parsed result */
 	fun getTracks() =
 		parseJSON(TrackResponse::class.java)?.results
+	
+	/** @return null when the connection fails, else the parsed result */
+	fun getMixedRelease() =
+		parseJSON(MixedReleaseResponse::class.java)
 	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
@@ -201,7 +206,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		private fun getConnectValidity(connectsid: String): ConnectResult {
-			val session = APIConnection("api", "self", "session").parseJSON(Session::class.java)
+			val session = APIConnection("v2", "self", "session").parseJSON(Session::class.java)
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION
 				session.user == null -> ConnectValidity.NOUSER
