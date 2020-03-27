@@ -220,7 +220,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		}
 		logger.debug { "$notDownloadable of ${releases.size} Releases are not downloadable" }
 		sorter.listen { sortReleases(it.selector) }.changed(null, null, sorter.value)
-		roots.flatMap { it.value.internalChildren }.forEach { release -> (release as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).albums.find { it.albumId == release.value.id }?.trackNumber } }
+		roots.flatMap { it.value.internalChildren }.forEach { release -> (release as FilterableTreeItem).internalChildren.sortBy { (it.value as Track).trackNumber } }
 	}
 	
 	private fun <T: Comparable<T>> sortReleases(selector: (Release) -> T) {
