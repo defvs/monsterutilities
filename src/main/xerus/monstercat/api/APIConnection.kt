@@ -128,7 +128,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			return httpClient.execute(request, context)
 		}
 		
-		fun getRedirectedCoverURL(track: Track): String?{
+		fun getRedirectedStreamURL(track: Track): String?{
 			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
 			val context = HttpClientContext()
 			connection.execute(HttpGet(connection.uri), context)

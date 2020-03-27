@@ -16,7 +16,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import org.apache.http.client.methods.HttpUriRequest
 import xerus.ktutil.javafx.*
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.addListener
@@ -30,8 +29,6 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
@@ -145,9 +142,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			showError("$track is currently not available for streaming!")
 			return
 		}
-		
-		// Get redirect URL
-		val streamUrl = APIConnection.getRedirectedCoverURL(track)
+		val streamUrl = APIConnection.getRedirectedStreamURL(track)
 		
 		updateCover(track.release.coverUrl)
 		logger.debug("Loading $track from '$streamUrl'")
