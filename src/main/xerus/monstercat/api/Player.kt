@@ -142,30 +142,34 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			showError("$track is currently not available for streaming!")
 			return
 		}
-		val streamUrl = APIConnection.getRedirectedStreamURL(track)
+		var streamUrl: String? = null
+		GlobalScope.launch {
+			streamUrl = APIConnection.getRedirectedStreamURL(track)
+		}.invokeOnCompletion {
+			activePlayer.value = MediaPlayer(Media(streamUrl))
+			updateVolume()
+			onFx {
+				activeTrack.value = track
+			}
+			playing("Loading $track")
+			player?.run {
+				play()
+				setOnEndOfMedia { playNext() }
+				setOnReady {
+					label.text = "Now Playing: $track"
+					val total = totalDuration.toMillis()
+					seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
+					seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
+				}
+				setOnError {
+					logger.warn("Error loading $track: $error", error)
+					showError("Error loading $track: ${error.message?.substringAfter(": ")}")
+				}
+			}
+		}
 		
 		updateCover(track.release.coverUrl)
 		logger.debug("Loading $track from '$streamUrl'")
-		activePlayer.value = MediaPlayer(Media(streamUrl))
-		updateVolume()
-		onFx {
-			activeTrack.value = track
-		}
-		playing("Loading $track")
-		player?.run {
-			play()
-			setOnEndOfMedia { playNext() }
-			setOnReady {
-				label.text = "Now Playing: $track"
-				val total = totalDuration.toMillis()
-				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
-				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-			}
-			setOnError {
-				logger.warn("Error loading $track: $error", error)
-				showError("Error loading $track: ${error.message?.substringAfter(": ")}")
-			}
-		}
 	}
 	
 	/** Disposes the [activePlayer] and hides the [seekBar] */
