@@ -3,7 +3,7 @@ package xerus.monstercat.api.response
 import com.google.api.client.util.Key
 import xerus.monstercat.api.splitArtists
 import xerus.monstercat.api.splitTitle
-import xerus.monstercat.api.splitTitleTrimmed
+import xerus.ktutil.splitTitleTrimmed
 import java.util.Collections.emptyList
 
 open class Track: MusicItem() {
