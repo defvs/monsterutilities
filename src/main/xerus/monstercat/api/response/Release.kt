@@ -8,13 +8,12 @@ import xerus.ktutil.to
 private val logger = KotlinLogging.logger { }
 
 data class Release(
-	@Key("_id") override var id: String = "",
+	@Key override var id: String = "",
 	@Key var catalogId: String = "",
 	@Key var releaseDate: String = "",
 	@Key var type: String = "",
-	@Key var renderedArtists: String = "",
+	@Key("artistsTitle") var renderedArtists: String = "",
 	@Key override var title: String = "",
-	@Key var coverUrl: String = "",
 	@Key var downloadable: Boolean = false): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
@@ -25,11 +24,13 @@ data class Release(
 			field = value
 		}
 	
+	val coverUrl: String
+		get() = "https://connect.monstercat.com/v2/release/$id/cover"
+	
 	fun init(): Release {
 		renderedArtists = formatArtists(renderedArtists)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
-		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
 		
 		if(!isType(Type.MIX, Type.PODCAST)) {
 			val typeValue = Type.values().find {
