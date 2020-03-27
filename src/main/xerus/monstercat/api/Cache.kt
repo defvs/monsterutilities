@@ -11,7 +11,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
-import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.ReleaseListResponse
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
@@ -60,7 +60,7 @@ object Cache: Refresher() {
 			readCache()
 		val releaseResponse = APIConnection("v2", "releases").fields(Release::class)
 			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(4, 9))
-			.parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
+			.parseJSON(ReleaseListResponse::class.java)?.also { it.results.forEach { it.init() } }
 			?: run {
 				logger.info("Release refresh failed!")
 				return
@@ -109,13 +109,13 @@ object Cache: Refresher() {
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
-				val mixedRelease = APIConnection("v2", "catalog", "release", release.catalogId).getMixedRelease()
-				if(mixedRelease?.tracks == null) {
+				val tracks = APIConnection("v2", "catalog", "release", release.catalogId).getTracks()
+				if(tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
 					failed++
 					return@async false
 				} else {
-					release.tracks = mixedRelease.tracks!!
+					release.tracks = tracks
 					success = true
 					return@async true
 				}

@@ -71,15 +71,12 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	/** @return null when the connection fails, else the parsed result */
 	fun getReleases() =
-		parseJSON(ReleaseResponse::class.java)?.results?.map { it.init() }
+		parseJSON(ReleaseListResponse::class.java)?.results?.map { it.init() }
+	
+	fun getRelease() = parseJSON(ReleaseResponse::class.java)
 	
 	/** @return null when the connection fails, else the parsed result */
-	fun getTracks() =
-		parseJSON(TrackResponse::class.java)?.results
-	
-	/** @return null when the connection fails, else the parsed result */
-	fun getMixedRelease() =
-		parseJSON(MixedReleaseResponse::class.java)
+	fun getTracks() = getRelease()?.tracks
 	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
