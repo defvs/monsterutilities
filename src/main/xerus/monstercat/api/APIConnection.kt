@@ -26,11 +26,7 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.MixedReleaseResponse
-import xerus.monstercat.api.response.ReleaseResponse
-import xerus.monstercat.api.response.Session
-import xerus.monstercat.api.response.TrackResponse
-import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -133,6 +129,14 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		fun executeRequest(request: HttpUriRequest, context: HttpClientContext? = null): CloseableHttpResponse {
 			logger.trace { "Connecting to ${request.uri}" }
 			return httpClient.execute(request, context)
+		}
+		
+		fun getRedirectedCoverURL(track: Track): String?{
+			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
+			val context = HttpClientContext()
+			connection.execute(HttpGet(connection.uri), context)
+			return if (connection.response?.getLastHeader("Content-Type")?.value == "audio/mpeg")
+				context.redirectLocations.lastOrNull().toString() else null
 		}
 		
 		private fun updateConnectsid(connectsid: String) {
