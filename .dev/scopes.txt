@@ -1,0 +1,13 @@
+gradle
+readme
+install4j
+travis
+
+api
+logging
+player
+catalog
+downloader
+equalizer
+settings
+main

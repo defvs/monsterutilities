@@ -3,10 +3,9 @@
 Browse, stream and download Monstercat Songs, powered by the Monstercat API and MCatalog. [This is the story of how it came to be.](assets/Story.md)
 
 - [Getting started](#getting-started)
-  - [Troubleshooting](#troubleshooting)
-  - [Caching & Offline usage](#caching--offline-usage)
+- [Troubleshooting](#troubleshooting)
+- [Caching & Offline usage](#caching--offline-usage)
 - [Screenshots](#screenshots)
-- [Development](#development)
 
 _The application is still in a beta state, you may encounter bugs. Please report issues via GitHub and send a report from inside the application. The latter will automatically include logs from `TEMP/monsterutilities/logs`._
 
@@ -19,7 +18,7 @@ If you did not choose a download with a bundled JRE, the application requires [J
 
 Make sure to read the initial in-app guide and watch out for tooltips.
 
-### Troubleshooting
+## Troubleshooting
 
 #### Authentication - the connect.sid
 
@@ -38,7 +37,7 @@ Sometimes the cache runs into issues which may cause problems in the Downloader.
 
 > If you still have issues, hit me up on [Discord](https://discord.gg/ZEusvHS) or send Feedback directly from the application!
 
-### Caching & Offline usage
+## Caching & Offline usage
 
 Upon starting the application for the first time, it will fetch and cache all Releases as well as Sheets (Catalog/Genres). This might take some time depending on your internet connection. On subsequent use it will prefer to fetch incrementally, reducing the load on your connection as well as Monstercat's Servers.  
 Once fetched, Songs can be **browsed offline** but **not played or downloaded**.
@@ -77,45 +76,6 @@ If you have Monstercat Gold you can bulk download everything according to your p
 The application has various color schemes and configuration options.
 
 ![Settings](assets/screenshots/settings.png)
-
-## Development 
-
-The project is built using [Gradle](https://gradle.org/).
-
-### Setup
-
-1. Clone the project
-2. Run the application using `./gradlew run` from the Terminal or by executing the Gradle run task within your IDE
-3. Start coding & submit a PR when you think you've made an improvement
-
-To have Gradle use a specific JDK, create a `gradle.properties` file at the root of the project with the following line: 
-```
-org.gradle.java.home=/path/to/jdk
-```
-
-In order to fetch the Catalog and Genres you have to create a file called `src/resources/sheets-api-key` and put an api key for Google Sheets into it.
-
-### Important Gradle Tasks
-
- Name        | Action
- ---         | ---
- `run`       | run the project right from source
- `shadowJar` | create an executable jar in the root directory of the project bundled with all libraries
- `build`     | build & test the whole project
-
-Provide the argument `-Dargs="--loglevel trace"` to the run task to change the log level or pass other commandline options to the application.
-
-When running a self-compiled jar, the application might try to update itself to an earlier version due to missing information. To prevent this, add the `--no-update` flag.
-
-### Logging
-
-Logging is done via [slf4j](https://www.slf4j.org) wrapped by [kotlin-logging](https://github.com/MicroUtils/kotlin-logging) and carried out by [logback-classic](https://logback.qos.ch).
-
-A Logger can be created anywhere via `val logger = KotlinLogging.logger { }` and will automatically pick up the context where it was instantiated. Prefer to create it statically to avoid creating a new logger object for each instance.  
-Then use the `logger` object to log key information at the INFO level, debugging clues in DEBUG and more detailed/spammy information in TRACE. WARN should only be used at key points of the application or for non-critical but unusual exceptions. Use ERROR solely for critical exceptions.
-
-The application runs in WARN by default, however the run task automatically passes arguments to run it at DEBUG. This can be changed using the `--loglevel` flag.  
-The log is additionally saved to a file in `TEMP/monsterutilities/logs` at DEBUG level unless the log level is set to TRACE in which case it records everything.
 
 ## Acknowledgments
 
