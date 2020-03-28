@@ -1,0 +1,17 @@
+#!/bin/bash
+shopt -s lastpipe
+
+scopes_file=".dev/scopes.txt"
+
+scopes="("
+cat "$scopes_file" | while read a;
+do test -z "$a" || [[ "$a" == \#* ]] || scopes+="$a|";
+done;
+scopes="${scopes%\|})"
+
+cat "$1" | grep -Eq "(fix|feat|docs|style|refactor|test|chore|rework|release)(\($scopes\))?: [a-z]"
+result=$?
+if test $result -ne 0
+then echo "Please check that the commit message adheres to the guidelines at http://karma-runner.github.io/latest/dev/git-commit-msg.html and that its scope is one of $scopes as defined in .dev/scopes.txt"
+fi
+exit $result
