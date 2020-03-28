@@ -129,7 +129,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 			totalProgress++
 		}
 		if(!isCancelled && downloadCover) {
-			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + release.coverUrl.substringAfterLast('.')
+			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + ".jpeg" // UGLY but avoids lots of code
 			updateMessage(coverName)
 			val entity = Covers.fetchCover(release.coverUrl, COVERARTSIZE())
 			val length = entity.contentLength.toDouble()
