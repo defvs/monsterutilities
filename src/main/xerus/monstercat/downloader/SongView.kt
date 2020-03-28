@@ -62,12 +62,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 					when {
 						// Downloadable check
 						(item as? Release)?.downloadable == false ||
-							(item is Track && (treeItem.parent.value  as? Release)?.downloadable == false) ->
+							(item is Track && (treeItem.parent.value as? Release)?.downloadable == false) ->
 							disableDownload("This Release is currently not downloadable")
 						
 						// Licensable check (if in streamer mode)
-						((item as? Track)?.licensable == false || (item as? Release)?.tracks?.none { it.licensable } == true)
-							&& Settings.SKIPUNLICENSABLE() -> disableDownload("This Release is not licensable")
+						Settings.SKIPUNLICENSABLE() && ((item as? Track)?.licensable == false || (item as? Release)?.tracks?.none { it.licensable } == true)
+						-> disableDownload("This Release is not licensable")
 						
 						else -> {
 							if(tooltip != null) {
@@ -115,7 +115,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuPlay = MenuItem("Play") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			Playlist.clear()
-			selected.map {it.value}.forEach {
+			selected.map { it.value }.forEach {
 				when(it) {
 					is Release -> Player.play(it)
 					is Track -> Player.playTrack(it)
@@ -125,7 +125,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuAdd = MenuItem("Add to playlist") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				selected.map {it.value}.forEach {
+				selected.map { it.value }.forEach {
 					when(it) {
 						is Release -> it.tracks.forEach { track -> Playlist.add(track) }
 						is Track -> Playlist.add(it)
@@ -136,7 +136,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuAddNext = MenuItem("Play next") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				selected.map {it.value}.forEach {
+				selected.map { it.value }.forEach {
 					when(it) {
 						is Release -> it.tracks.asReversed().forEach { track -> Playlist.addNext(track) }
 						is Track -> Playlist.addNext(it)
@@ -203,7 +203,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			val treeItem = FilterableTreeItem(release as MusicItem)
 			if(!release.downloadable || (Settings.SKIPUNLICENSABLE() && release.tracks.none { it.licensable })) {
 				if(notDownloadable < 3)
-					logger.trace("Not downloadable${if (Settings.SKIPUNLICENSABLE()) " / licensable" else ""}: $release")
+					logger.trace("Not downloadable${if(Settings.SKIPUNLICENSABLE()) " / licensable" else ""}: $release")
 				notDownloadable++
 				treeItem.selectedProperty().listen {
 					if(it)
