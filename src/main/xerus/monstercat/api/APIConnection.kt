@@ -128,6 +128,12 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			return httpClient.execute(request, context)
 		}
 		
+		/**
+		 * Uses [APIConnection]'s HTTP client to process an HTTP 307 redirection to fetch the stream URL of a [track]
+		 *
+		 * @param track to get the stream URL from
+		 * @return the redirected (real) stream URL for use with [javafx.scene.media.Media] which doesn't support redirections
+		 */
 		fun getRedirectedStreamURL(track: Track): String?{
 			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
 			val context = HttpClientContext()
