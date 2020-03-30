@@ -15,6 +15,7 @@ open class Track: MusicItem() {
 	@Key var artists: List<ArtistRel> = emptyList()
 	@Key var bpm: Double? = null
 	@Key var streamable: Boolean = false
+	@Key var trackNumber = -1
 	
 	var artistsSplit: List<String> = emptyList()
 	var titleClean: String = ""
@@ -28,7 +29,6 @@ open class Track: MusicItem() {
 	var albumArtists = ""
 	var albumId = ""
 	var albumName = ""
-	@Key var trackNumber = -1
 	
 	val isAlbumMix
 		get() = title.contains("Album Mix")
