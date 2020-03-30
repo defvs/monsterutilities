@@ -129,10 +129,9 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 			totalProgress++
 		}
 		if(!isCancelled && downloadCover) {
-			var coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars()
-			updateMessage(coverName)
 			val entity = Covers.fetchCover(release.coverUrl, COVERARTSIZE())
-			coverName += "." + entity.contentType.value.substringAfter('/')
+			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + entity.contentType.value.substringAfter('/')
+			updateMessage(coverName)
 			val length = entity.contentLength.toDouble()
 			downloadFile(entity.content, downloadFolder.resolve(coverName), true) {
 				totalProgress + (coverFraction * it / length)
