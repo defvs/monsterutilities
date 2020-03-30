@@ -142,10 +142,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			showError("$track is currently not available for streaming!")
 			return
 		}
-		var streamUrl: String? = null
 		GlobalScope.launch {
-			streamUrl = APIConnection.getRedirectedStreamURL(track)
-		}.invokeOnCompletion {
+			logger.debug("Fetching stream url for $track")
+			val streamUrl = APIConnection.getRedirectedStreamURL(track)
+			logger.debug("Loading $track from '$streamUrl'")
 			activePlayer.value = MediaPlayer(Media(streamUrl))
 			updateVolume()
 			onFx {
@@ -169,7 +169,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		}
 		
 		updateCover(track.release.coverUrl)
-		logger.debug("Loading $track from '$streamUrl'")
 	}
 	
 	/** Disposes the [activePlayer] and hides the [seekBar] */
