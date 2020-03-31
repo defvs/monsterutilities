@@ -38,7 +38,7 @@ open class Track: MusicItem() {
 			return this
 		
 		if(::release.isInitialized) {
-			albumArtists = release.renderedArtists
+			albumArtists = release.artistsTitle
 			albumName = release.title
 			albumId = release.catalogId
 		}

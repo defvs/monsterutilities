@@ -12,7 +12,7 @@ val SONGSORTING = DownloaderSettings.create("songViewReleaseSorting", ReleaseSor
 enum class ReleaseSorting(val selector: (Release) -> String) : Named {
 	DATE(Release::releaseDate),
 	TITLE(Release::title),
-	ARTIST(Release::renderedArtists),
+	ARTIST(Release::artistsTitle),
 	AMOUNT_OF_TRACKS({ it.tracks.size.toString().padStart(2, '0') });
 	
 	override val displayName = name.replace('_', ' ').toLowerCase().capitalize()

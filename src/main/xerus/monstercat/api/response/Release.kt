@@ -28,7 +28,7 @@ data class Release(
 		get() = "https://connect.monstercat.com/v2/release/$id/cover"
 	
 	fun init(): Release {
-		renderedArtists = formatArtists(renderedArtists)
+		artistsTitle = formatArtists(artistsTitle)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
 		
@@ -50,10 +50,10 @@ data class Release(
 	fun isType(vararg types: Type): Boolean = types.any { type.equals(it.displayName, true) }
 	
 	override fun toString(): String =
-		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
+		artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 	fun debugString(): String =
-		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$renderedArtists', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
+		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$artistsTitle', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
 	enum class Type(override val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): Named, CharSequence by displayName {
 		MCOLLECTION("Monstercat Collection", true,
