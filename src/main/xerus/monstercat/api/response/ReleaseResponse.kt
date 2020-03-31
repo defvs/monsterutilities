@@ -8,5 +8,6 @@ import com.google.api.client.util.Key
  */
 data class ReleaseResponse(
 	@Key var release: Release? = null,
-	@Key var tracks: ArrayList<Track>? = null
+	@Key var tracks: ArrayList<Track>? = null,
+	@Key var related: ReleaseListResponse? = null
 )
