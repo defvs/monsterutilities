@@ -69,8 +69,3 @@ data class Release(
 	}
 	
 }
-
-data class ReleaseResponse(
-	@Key var release: Release? = null,
-	@Key var tracks: ArrayList<Track>? = null
-)
