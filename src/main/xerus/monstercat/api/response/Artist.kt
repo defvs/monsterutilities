@@ -11,7 +11,13 @@ abstract class Artist {
 	override fun equals(other: Any?): Boolean = this === other || (other is Artist && name == other.name)
 }
 
-class ArtistRel(@Key override var name: String = "", @Key var role: String = "", @Key var vendor: String? = null, @Key override var artistId: String = ""): Artist() {
+class ArtistRel(
+	@Key override var name: String = "",
+	@Key var role: String = "",
+	@Key var vendor: String? = null,
+	@Key("id") override var artistId: String = "",
+	@Key var uri: String? = null
+): Artist() {
 	fun debugString() = "ArtistRel(name=$name, role=$role, vendor=$vendor)"
 }
 

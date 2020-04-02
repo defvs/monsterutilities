@@ -138,32 +138,37 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** Plays the given [track] in the Player, stopping the previous MediaPlayer if necessary */
 	fun playTrack(track: Track) {
 		disposePlayer()
-		val hash = track.streamHash ?: run {
+		if(!track.streamable) {
 			showError("$track is currently not available for streaming!")
 			return
 		}
+		GlobalScope.launch {
+			logger.debug("Fetching stream url for $track")
+			val streamUrl = APIConnection.getRedirectedStreamURL(track)
+			logger.debug("Loading $track from '$streamUrl'")
+			activePlayer.value = MediaPlayer(Media(streamUrl))
+			updateVolume()
+			onFx {
+				activeTrack.value = track
+			}
+			playing("Loading $track")
+			player?.run {
+				play()
+				setOnEndOfMedia { playNext() }
+				setOnReady {
+					label.text = "Now Playing: $track"
+					val total = totalDuration.toMillis()
+					seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
+					seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
+				}
+				setOnError {
+					logger.warn("Error loading $track: $error", error)
+					showError("Error loading $track: ${error.message?.substringAfter(": ")}")
+				}
+			}
+		}
+		
 		updateCover(track.release.coverUrl)
-		logger.debug("Loading $track from $hash")
-		activePlayer.value = MediaPlayer(Media("https://s3.amazonaws.com/data.monstercat.com/blobs/$hash"))
-		updateVolume()
-		onFx {
-			activeTrack.value = track
-		}
-		playing("Loading $track")
-		player?.run {
-			play()
-			setOnEndOfMedia { playNext() }
-			setOnReady {
-				label.text = "Now Playing: $track"
-				val total = totalDuration.toMillis()
-				seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
-				seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
-			}
-			setOnError {
-				logger.warn("Error loading $track: $error", error)
-				showError("Error loading $track: ${error.message?.substringAfter(": ")}")
-			}
-		}
 	}
 	
 	/** Disposes the [activePlayer] and hides the [seekBar] */

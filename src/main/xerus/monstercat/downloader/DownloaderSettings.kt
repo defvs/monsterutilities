@@ -12,7 +12,7 @@ val SONGSORTING = DownloaderSettings.create("songViewReleaseSorting", ReleaseSor
 enum class ReleaseSorting(val selector: (Release) -> String) : Named {
 	DATE(Release::releaseDate),
 	TITLE(Release::title),
-	ARTIST(Release::renderedArtists),
+	ARTIST(Release::artistsTitle),
 	AMOUNT_OF_TRACKS({ it.tracks.size.toString().padStart(2, '0') });
 	
 	override val displayName = name.replace('_', ' ').toLowerCase().capitalize()
@@ -20,7 +20,7 @@ enum class ReleaseSorting(val selector: (Release) -> String) : Named {
 
 val DOWNLOADDIR = DownloaderSettings.create("directory", Paths.get("Monstercat"))
 val DOWNLOADDIRSINGLE = DownloaderSettings.create("directorySingle")
-val DOWNLOADDIRALBUM = DownloaderSettings.create("directoryAlbum", "{%renderedArtists% - }%title%")
+val DOWNLOADDIRALBUM = DownloaderSettings.create("directoryAlbum", "{%artistsTitle% - }%title%")
 val DOWNLOADDIRPODCAST = DownloaderSettings.create("directoryPodcasts", "Podcast")
 val DOWNLOADDIRMIXES = DownloaderSettings.create("directoryMixes", "Mixes")
 
@@ -46,7 +46,7 @@ enum class AlbumMixes(override val displayName: String) : Named {
 
 
 val COVERARTSIZE = DownloaderSettings.create("coverArtSize", 1024)
-val COVERPATTERN = DownloaderSettings.create("coverPattern", "{%renderedArtists% - }%title%")
+val COVERPATTERN = DownloaderSettings.create("coverPattern", "{%artistsTitle% - }%title%")
 
 val QUALITY = DownloaderSettings.create("quality")
 val CONNECTSID = DownloaderSettings.create("connect.sid")

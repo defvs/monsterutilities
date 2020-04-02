@@ -8,13 +8,12 @@ import xerus.ktutil.to
 private val logger = KotlinLogging.logger { }
 
 data class Release(
-	@Key("_id") override var id: String = "",
+	@Key override var id: String = "",
 	@Key var catalogId: String = "",
 	@Key var releaseDate: String = "",
 	@Key var type: String = "",
-	@Key var renderedArtists: String = "",
+	@Key var artistsTitle: String = "",
 	@Key override var title: String = "",
-	@Key var coverUrl: String = "",
 	@Key var downloadable: Boolean = false): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
@@ -25,11 +24,13 @@ data class Release(
 			field = value
 		}
 	
+	val coverUrl: String
+		get() = "https://connect.monstercat.com/v2/release/$id/cover"
+	
 	fun init(): Release {
-		renderedArtists = formatArtists(renderedArtists)
+		artistsTitle = formatArtists(artistsTitle)
 		title = title.trim()
 		releaseDate = releaseDate.substring(0, 10)
-		coverUrl = coverUrl.replace(" ", "%20").replace("[", "%5B").replace("]", "%5D")
 		
 		if(!isType(Type.MIX, Type.PODCAST)) {
 			val typeValue = Type.values().find {
@@ -49,10 +50,10 @@ data class Release(
 	fun isType(vararg types: Type): Boolean = types.any { type.equals(it.displayName, true) }
 	
 	override fun toString(): String =
-		renderedArtists.isEmpty().to("%2\$s", "%s - %s").format(renderedArtists, title)
+		artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 	fun debugString(): String =
-		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$renderedArtists', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
+		"Release(id='$id', releaseDate='$releaseDate', type='$type', artistsTitle='$artistsTitle', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
 	enum class Type(override val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): Named, CharSequence by displayName {
 		MCOLLECTION("Monstercat Collection", true,

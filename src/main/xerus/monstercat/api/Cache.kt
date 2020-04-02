@@ -11,14 +11,14 @@ import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.ReleaseList
-import xerus.monstercat.api.response.ReleaseResponse
+import xerus.monstercat.api.response.ReleaseListResponse
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.cacheDir
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.globalDispatcher
 import java.io.File
 
-private const val cacheVersion = 6
+private const val cacheVersion = 10
 
 object Cache: Refresher() {
 	private val logger = KotlinLogging.logger { }
@@ -58,16 +58,16 @@ object Cache: Refresher() {
 		
 		if(releases.isEmpty() && Settings.ENABLECACHE())
 			readCache()
-		val releaseResponse = APIConnection("api", "catalog", "release").fields(Release::class)
+		val releaseResponse = APIConnection("v2", "releases").fields(Release::class)
 			.limit(((currentSeconds() - lastRefresh) / 80_000).coerceIn(4, 9))
-			.parseJSON(ReleaseResponse::class.java)?.also { it.results.forEach { it.init() } }
+			.parseJSON(ReleaseListResponse::class.java)?.also { it.results.forEach { it.init() } }
 			?: run {
 				logger.info("Release refresh failed!")
 				return
 			}
 		val results = releaseResponse.results
 		
-		val releaseConnection = APIConnection("api", "catalog", "release").fields(Release::class)
+		val releaseConnection = APIConnection("v2", "releases").fields(Release::class)
 		when {
 			releaseResponse.total - releases.size > results.size || !releases.contains(results.last()) -> {
 				logger.info("Full Release refresh initiated")
@@ -109,7 +109,7 @@ object Cache: Refresher() {
 		releases.associateWith { release ->
 			if(release.tracks.isNotEmpty()) return@associateWith null
 			GlobalScope.async(globalDispatcher) {
-				val tracks = APIConnection("api", "catalog", "release", release.id, "tracks").getTracks()
+				val tracks = APIConnection("v2", "catalog", "release", release.catalogId).getTracks()
 				if(tracks == null) {
 					logger.warn("Couldn't fetch tracks for $release")
 					failed++

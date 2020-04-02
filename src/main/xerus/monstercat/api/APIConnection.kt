@@ -26,10 +26,7 @@ import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
-import xerus.monstercat.api.response.ReleaseResponse
-import xerus.monstercat.api.response.Session
-import xerus.monstercat.api.response.TrackResponse
-import xerus.monstercat.api.response.declaredKeys
+import xerus.monstercat.api.response.*
 import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.downloader.QUALITY
 import java.io.IOException
@@ -74,11 +71,12 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	/** @return null when the connection fails, else the parsed result */
 	fun getReleases() =
-		parseJSON(ReleaseResponse::class.java)?.results?.map { it.init() }
+		parseJSON(ReleaseListResponse::class.java)?.results?.map { it.init() }
+	
+	fun getRelease() = parseJSON(ReleaseResponse::class.java)
 	
 	/** @return null when the connection fails, else the parsed result */
-	fun getTracks() =
-		parseJSON(TrackResponse::class.java)?.results
+	fun getTracks() = getRelease()?.tracks
 	
 	private var httpRequest: HttpUriRequest? = null
 	/** Aborts this connection and thus terminates the InputStream if active */
@@ -128,6 +126,20 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		fun executeRequest(request: HttpUriRequest, context: HttpClientContext? = null): CloseableHttpResponse {
 			logger.trace { "Connecting to ${request.uri}" }
 			return httpClient.execute(request, context)
+		}
+		
+		/**
+		 * Uses [APIConnection]'s HTTP client to process an HTTP 307 redirection to fetch the stream URL of a [track]
+		 *
+		 * @param track to get the stream URL from
+		 * @return the redirected (real) stream URL for use with [javafx.scene.media.Media] which doesn't support redirections
+		 */
+		fun getRedirectedStreamURL(track: Track): String?{
+			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
+			val context = HttpClientContext()
+			connection.execute(HttpGet(connection.uri), context)
+			return if (connection.response?.getLastHeader("Content-Type")?.value == "audio/mpeg")
+				context.redirectLocations.lastOrNull().toString() else null
 		}
 		
 		private fun updateConnectsid(connectsid: String) {
@@ -201,7 +213,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		private fun getConnectValidity(connectsid: String): ConnectResult {
-			val session = APIConnection("api", "self", "session").parseJSON(Session::class.java)
+			val session = APIConnection("v2", "self", "session").parseJSON(Session::class.java)
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION
 				session.user == null -> ConnectValidity.NOUSER
