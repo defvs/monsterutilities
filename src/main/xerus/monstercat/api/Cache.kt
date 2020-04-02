@@ -18,7 +18,7 @@ import xerus.monstercat.downloader.CONNECTSID
 import xerus.monstercat.globalDispatcher
 import java.io.File
 
-private const val cacheVersion = 5
+private const val cacheVersion = 6
 
 object Cache: Refresher() {
 	private val logger = KotlinLogging.logger { }

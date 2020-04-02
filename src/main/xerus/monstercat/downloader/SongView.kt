@@ -22,6 +22,7 @@ import xerus.ktutil.javafx.properties.addOneTimeListener
 import xerus.ktutil.javafx.properties.dependOn
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.javafx.ui.FilterableTreeItem
+import xerus.monstercat.Settings
 import xerus.monstercat.api.*
 import xerus.monstercat.api.response.MusicItem
 import xerus.monstercat.api.response.Release
@@ -50,20 +51,31 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			
 			init {
 				itemProperty().listen { item ->
-					if((item as? Release)?.downloadable == false ||
-						(item is Track && (treeItem.parent.value as? Release)?.downloadable == false)) {
+					fun disableDownload(tooltipString: String) {
 						if(tooltip == null) {
 							listener.onChanged(null)
 							children.addListener(listener)
 							styleClass.add("not-downloadable")
-							tooltip = Tooltip("This Release is currently not downloadable")
+							tooltip = Tooltip(tooltipString)
 						}
-					} else {
-						if(tooltip != null) {
-							children.removeListener(listener)
-							children.filterIsInstance<CheckBox>().firstOrNull()?.isDisable = false
-							styleClass.remove("not-downloadable")
-							tooltip = null
+					}
+					when {
+						// Downloadable check
+						(item as? Release)?.downloadable == false ||
+							(item is Track && (treeItem.parent.value as? Release)?.downloadable == false) ->
+							disableDownload("This Release is currently not downloadable")
+						
+						// Licensable check (if in streamer mode)
+						Settings.SKIPUNLICENSABLE() && ((item as? Track)?.licensable == false || (item as? Release)?.tracks?.none { it.licensable } == true)
+						-> disableDownload("This Release is not licensable")
+						
+						else -> {
+							if(tooltip != null) {
+								children.removeListener(listener)
+								children.filterIsInstance<CheckBox>().firstOrNull()?.isDisable = false
+								styleClass.remove("not-downloadable")
+								tooltip = null
+							}
 						}
 					}
 				}
@@ -103,7 +115,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuPlay = MenuItem("Play") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			Playlist.clear()
-			selected.map {it.value}.forEach {
+			selected.map { it.value }.forEach {
 				when(it) {
 					is Release -> Player.play(it)
 					is Track -> Player.playTrack(it)
@@ -113,7 +125,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuAdd = MenuItem("Add to playlist") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				selected.map {it.value}.forEach {
+				selected.map { it.value }.forEach {
 					when(it) {
 						is Release -> it.tracks.forEach { track -> Playlist.add(track) }
 						is Track -> Playlist.add(it)
@@ -124,7 +136,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		val menuAddNext = MenuItem("Play next") {
 			val selected = selectionModel.selectedItems ?: return@MenuItem
 			GlobalScope.launch {
-				selected.map {it.value}.forEach {
+				selected.map { it.value }.forEach {
 					when(it) {
 						is Release -> it.tracks.asReversed().forEach { track -> Playlist.addNext(track) }
 						is Track -> Playlist.addNext(it)
@@ -145,6 +157,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				if(old != new && new == ConnectValidity.GOLD)
 					load()
 			}
+			Settings.SKIPUNLICENSABLE.listen { load() }
 		}
 	}
 	
@@ -188,9 +201,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		var done = 0
 		releases.toList().forEach { release ->
 			val treeItem = FilterableTreeItem(release as MusicItem)
-			if(!release.downloadable) {
+			if(!release.downloadable || (Settings.SKIPUNLICENSABLE() && release.tracks.none { it.licensable })) {
 				if(notDownloadable < 3)
-					logger.trace("Not downloadable: $release")
+					logger.trace("Not downloadable${if(Settings.SKIPUNLICENSABLE()) " / licensable" else ""}: $release")
 				notDownloadable++
 				treeItem.selectedProperty().listen {
 					if(it)

@@ -3,10 +3,14 @@ package xerus.monstercat.api
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import javafx.scene.control.Alert
 import mu.KotlinLogging
+import xerus.ktutil.javafx.onFx
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.bindSoft
+import xerus.monstercat.Settings.SKIPUNLICENSABLE
 import xerus.monstercat.api.response.Track
+import xerus.monstercat.monsterUtilities
 import java.util.*
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -42,14 +46,34 @@ object Playlist {
 		else -> getNextTrack()
 	}
 	
+	/** Displays an warning dialog, telling the user about the unlicensable status of the [Track] (s) he's trying to add.
+	 * @param track : Can be null if unknown, [Track.toString] (Artist - Title) will be shown to the user if given.
+	 */
+	private fun showUnlicensableAlert(track: Track? = null) {
+		onFx {
+			monsterUtilities.showAlert(Alert.AlertType.WARNING, "Playlist", "Unlicensable tracks !",
+				"Skipped adding ${track ?: "tracks"} according to your settings.")
+		}
+	}
+	
+	/** Removes unlicensable [Track]s (including mixes and podcasts, which are recognizable by their [Track.artistsTitle] being "Monstercat")
+	 * @param tracks : [Collection] of [Track]s from which should be deducted tracks which are not [Track.licensable].
+	 * @return : The received [tracks] with unlicensable tracks removed. Warning, can end up being empty !
+	 */
+	private fun removeUnlicensable(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
+	
 	fun addNext(track: Track) {
 		tracks.remove(track)
-		tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
+		if(track.licensable || !SKIPUNLICENSABLE())
+			tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
+		else showUnlicensableAlert(track)
 	}
 	
 	fun add(track: Track) {
 		tracks.remove(track)
-		tracks.add(track)
+		if(track.licensable || !SKIPUNLICENSABLE())
+			tracks.add(track)
+		else showUnlicensableAlert(track)
 	}
 	
 	fun removeAt(index: Int?) {
@@ -63,17 +87,16 @@ object Playlist {
 	
 	fun setTracks(playlist: Collection<Track>) {
 		history.clear()
-		tracks.setAll(playlist)
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnlicensable(playlist) else playlist
+		if(checkedTracks.isEmpty()) showUnlicensableAlert()
+		tracks.setAll(checkedTracks)
 	}
 	
 	fun getNextTrackRandom(): Track {
-		return if(tracks.size <= 1) {
-			tracks[0]
-		} else {
-			var index = Random.nextInt(0..tracks.lastIndex)
-			if(index >= currentIndex.value!!) index++
-			tracks[index]
-		}
+		val index = Random.nextInt(0..tracks.lastIndex)
+			.let { if(it >= currentIndex.value!!) it + 1 else it }
+			.takeUnless { it >= tracks.size } ?: 0
+		return tracks[index]
 	}
 	
 	fun getNextTrack(): Track? {
@@ -88,6 +111,8 @@ object Playlist {
 	
 	fun addAll(tracks: ArrayList<Track>, asNext: Boolean = false) {
 		this.tracks.removeAll(tracks)
-		this.tracks.addAll(if(asNext) currentIndex.value?.plus(1) ?: 0 else this.tracks.lastIndex.coerceAtLeast(0), tracks)
+		val checkedTracks = if(SKIPUNLICENSABLE()) removeUnlicensable(tracks) else tracks
+		if(checkedTracks.isEmpty()) showUnlicensableAlert()
+		this.tracks.addAll(if(asNext) currentIndex.value?.plus(1) ?: 0 else this.tracks.lastIndex.coerceAtLeast(0), checkedTracks)
 	}
 }
