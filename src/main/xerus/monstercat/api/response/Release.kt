@@ -53,7 +53,7 @@ data class Release(
 		artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
 	
 	fun debugString(): String =
-		"Release(id='$id', releaseDate='$releaseDate', type='$type', renderedArtists='$artistsTitle', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
+		"Release(id='$id', releaseDate='$releaseDate', type='$type', artistsTitle='$artistsTitle', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
 	
 	enum class Type(override val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): Named, CharSequence by displayName {
 		MCOLLECTION("Monstercat Collection", true,
