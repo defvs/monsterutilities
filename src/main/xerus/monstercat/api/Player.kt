@@ -25,10 +25,13 @@ import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
 import xerus.ktutil.square
+import xerus.ktutil.write
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
@@ -79,6 +82,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	}
 	
 	private val label = Label()
+	
 	/** clears the [children] and shows the [label] with [text] */
 	private fun showText(text: String) {
 		ensureVisible()
@@ -109,6 +113,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
+		if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+			Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf(""), StandardOpenOption.CREATE)
+			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()}) from its contents")
+		}
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -157,6 +165,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				setOnEndOfMedia { playNext() }
 				setOnReady {
 					label.text = "Now Playing: $track"
+					if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+						Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"), StandardOpenOption.CREATE)
+						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
+					}
 					val total = totalDuration.toMillis()
 					seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 					seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
@@ -167,7 +179,6 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				}
 			}
 		}
-		
 		updateCover(track.release.coverUrl)
 	}
 	
@@ -221,7 +232,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			if(coverUrl != null) {
 				val imageView = ImageView(Covers.getThumbnailImage(coverUrl!!, 24))
 				imageView.setOnMouseClicked {
-					if (it.button == MouseButton.PRIMARY) {
+					if(it.button == MouseButton.PRIMARY) {
 						monsterUtilities.viewCover(coverUrl!!)
 					}
 				}
