@@ -33,6 +33,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.lang.ref.WeakReference
 import java.net.URI
+import java.net.UnknownHostException
 import kotlin.math.min
 import kotlin.reflect.KClass
 
@@ -226,20 +227,33 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			return ConnectResult(connectsid, validity, session)
 		}
 		
-		fun login(username: String, password: String): Boolean {
+		enum class LoginStatus{
+			CONNECTED,
+			INVALID,
+			NOINTERNET,
+			UNKNOWNERROR
+		}
+		
+		fun login(username: String, password: String): LoginStatus {
 			val connection = APIConnection("v2", "signin")
 			val context = HttpClientContext()
-			connection.execute(HttpPost(connection.uri).apply {
-				setHeader("Accept", "application/json")
-				setHeader("Content-type", "application/json")
-				entity = StringEntity("""{"email":"$username","password":"$password"}""")
-			}, context)
+			try {
+				connection.execute(HttpPost(connection.uri).apply {
+					setHeader("Accept", "application/json")
+					setHeader("Content-type", "application/json")
+					entity = StringEntity("""{"email":"$username","password":"$password"}""")
+				}, context)
+			} catch(e: Exception) {
+				logger.warn("Error when trying to login through API", e)
+				return if(e is UnknownHostException) LoginStatus.NOINTERNET
+				else LoginStatus.UNKNOWNERROR
+			}
 			
 			val code = connection.response?.statusLine?.statusCode
 			logger.trace("Login POST returned response code $code")
-			if (code !in 200..206) return false
-			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
-			return true
+			if (code !in 200..206) return LoginStatus.INVALID
+			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return LoginStatus.INVALID)
+			return LoginStatus.CONNECTED
 		}
 		
 		fun logout() {

@@ -36,6 +36,7 @@ import xerus.ktutil.javafx.ui.controls.alwaysTruePredicate
 import xerus.ktutil.javafx.ui.initWindowOwner
 import xerus.ktutil.preferences.PropertySetting
 import xerus.monstercat.api.APIConnection
+import xerus.monstercat.api.APIConnection.Companion.LoginStatus.*
 import xerus.monstercat.api.ConnectValidity
 import xerus.monstercat.api.Covers
 import xerus.monstercat.api.response.ArtistRel
@@ -419,7 +420,7 @@ class TabDownloader: VTab() {
 		val emailField = TextField("").apply { promptText = "Email address" }
 		val passwordField = PasswordField().apply { promptText = "Password" }
 		
-		val errorMessage = Label("Wrong username / password").apply { isVisible = false; managedProperty().bind(visibleProperty()) }
+		val errorMessage = Label("An error has been encountered").apply { isVisible = false; managedProperty().bind(visibleProperty()) }
 		val loadingGif = ImageView(Image("img/loading-16.gif")).apply { isVisible = false }
 		
 		val buttonHBox = HBox()
@@ -437,14 +438,19 @@ class TabDownloader: VTab() {
 				val login = APIConnection.login(emailField.text, passwordField.text)
 				logger.debug("Login as ${emailField.text} returned $login")
 				onFx {
-					if(login) {
-						stage.close()
-					} else {
+					fun showErrorText(message: String) {
+						errorMessage.text = message
 						errorMessage.isVisible = true
 						loadingGif.isVisible = false
 						buttonHBox.isDisable = false
-						
 						stage.sizeToScene()
+					}
+					
+					when(login) {
+						CONNECTED -> stage.close()
+						INVALID -> showErrorText("Wrong username / password")
+						NOINTERNET -> showErrorText("You are not connected to the Internet")
+						UNKNOWNERROR -> showErrorText("An error has occured.")
 					}
 				}
 			}
