@@ -217,7 +217,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION
 				session.user == null -> ConnectValidity.NOUSER
-				session.user!!.goldService -> {
+				session.user!!.hasGold -> {
 					Cache.refresh(true)
 					ConnectValidity.GOLD
 				}
