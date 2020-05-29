@@ -2,8 +2,8 @@
 
 Browse, stream and download [Monstercat] Songs, powered by the [Monstercat API] and [MCatalog].
 
-> Current state: The application has been used by many people without major problems. But it will probably stay in "beta" because the [main developers](#credits) are not as active anymore.  
-We are however still available for questions in the [Discord] or via [GitHub issues][issues] and would welcome new contributors!
+> The application has been used by many people without major problems. But it will probably stay in "beta" because the [main developers](#credits) are not as active anymore.  
+We are however still available for questions in the [Discord] or via [GitHub issues][issues] and [welcome new contributors](CONTRIBUTING.md)!
 
 - [Getting started](#getting-started)
 - [Troubleshooting](#troubleshooting)
