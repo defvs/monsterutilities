@@ -13,7 +13,7 @@ We are however still available for questions in the [Discord] or via [GitHub iss
 
 ## Getting started
 
-Packaged portable versions as well as OS-specific installers, optionally with a bundled JRE, are available from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).  
+Packaged portable versions as well as OS-specific installers are available from [GitHub releases](https://github.com/Xerus2000/monsterutilities/releases).  
 For packages without a bundled JRE, the application requires [Java 8 by Oracle](https://www.java.com/download).
 
 Make sure to read the initial in-app guide and watch out for tooltips.
