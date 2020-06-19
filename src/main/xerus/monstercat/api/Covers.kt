@@ -21,8 +21,11 @@ object Covers {
 		
 	/** Returns an Image of the cover in the requested size using caching.
 	 * @param size the size of the Image that is returned - the image file will always be 64x64 */
-	fun getThumbnailImage(coverUrl: String, size: Number = 64, invalidate: Boolean = false): Image =
+	fun getThumbnailImage(coverUrl: String, size: Number = 64, invalidate: Boolean = false) = try {
 		getCover(coverUrl, 64, invalidate).use { createImage(it, size) }
+	} catch (e: Exception) {
+		null
+	}
 	
 	/** Returns a larger Image of the cover in the requested size using caching.
 	 * @param size the size of the Image that is returned - the image file will always be 1024x1024 */

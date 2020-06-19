@@ -219,10 +219,12 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 			}
 			GlobalScope.launch(globalDispatcher) {
 				var image = Covers.getThumbnailImage(release.coverUrl, 16)
-				image.onError {
+				fun invalidateImage() {
 					image = Covers.getThumbnailImage(release.coverUrl, 16, true)
-					image.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
+					image?.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
 				}
+				if (image == null) invalidateImage()
+				else image!!.onError { invalidateImage() }
 				onFx {
 					treeItem.graphic = ImageView(image)
 					done++
