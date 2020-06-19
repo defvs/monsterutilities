@@ -1,5 +1,11 @@
 package xerus.monstercat
 
+import com.beust.klaxon.JsonArray
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Parser
+import com.google.api.client.json.Json
+import com.google.api.client.json.JsonFactory
+import com.google.api.client.json.jackson2.JacksonFactory
 import javafx.application.Platform
 import javafx.concurrent.Task
 import javafx.event.EventHandler
@@ -38,7 +44,10 @@ import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.*
+import java.awt.Desktop
 import java.io.File
+import java.io.InputStream
+import java.net.URI
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
@@ -145,6 +154,8 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	inline fun <reified T: BaseTab> tabsByClass() = tabs.mapNotNull { it as? T }
 	
 	private fun String.devVersion() = takeIf { it.startsWith("dev") }?.split('v', '-')?.getOrNull(1)?.toIntOrNull()
+	
+	suspend fun fetchJson(url: String) = Parser.default().parse(URL(url).openConnection().getInputStream())
 	
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
