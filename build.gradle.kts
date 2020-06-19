@@ -62,6 +62,8 @@ dependencies {
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.30.1")
 	
+	implementation("com.beust", "klaxon", "5.2")
+	
 	val junitVersion = "5.5.0"
 	testImplementation("org.junit.jupiter", "junit-jupiter-api", junitVersion)
 	testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
