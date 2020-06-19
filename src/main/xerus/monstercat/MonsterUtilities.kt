@@ -197,82 +197,16 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	}
 	
 	fun showChangelog() {
-		val c = Changelog().apply {
-			version("dev139", "Improved fetching, caching & processing",
-				"The Release fetching now works with the new pagination of the Monstercat API",
-				"Added a little cover art in the Player",
-				"Fixed naming patterns in Downloader",
-				"Improved cache structure",
-				"Squashed many small bugs")
-			
-			version("dev116", "Bugfixes & Downloader aftercare",
-				"Updated & Expanded connect.sid instructions",
-				"Fixed a bug where the Player always played \"Halo Nova - The Force\"")
-				.change("Downloader", "Added cover icons for Releases in Downloader", "Fixed Track naming issues")
-			
-			version("dev107", "Downloader Rework",
-				"Fixed many, many minor issues")
-				.change("Downloader Rework",
-					"Downloader now focuses on Releases first and incorporates Tracks subtly",
-					"\"Smart Select\" & \"Exclude already downloaded songs\" now work properly",
-					"Adjusted track naming patterns to enable more customization, fix parsing for more obscure titles",
-					"Non-downloadable songs are now properly highlighted")
-				.change("Improved cache", "Now saved as json", "Versioning ensures integrity")
-			
-			version("dev59", "Improved Downloading and Logging")
-				.change("Improved Downloader, fixed Windows part files not being renamed")
-				.change("Reworked logging to be more transparent")
-			
-			version("dev43", "Safer downloading")
-				.change("Downloader now creates part-files while downloading so your files are safe from crashes")
-				.change("Backend has been updated to cope with changes in the Monstercat API")
-			
-			version("dev30", "Rework",
-				"Brand new shiny icons - big thanks to NocFA!", "Added intro dialog", "Automatic self-update",
-				"Send feedback directly from the application!", "Every Slider is now scrollable with the mouse wheel")
-				.change("New Downloader!",
-					"Can download any combinations of Releases and Tracks", "Easy filtering",
-					"Validates connect.sid while typing", "Two distinct filename patterns for Singles and Album tracks",
-					"Greatly improved pattern syntax with higher flexibility")
-				.change("Settings reworked",
-					"Multiple skins available, changeable on-the-fly", "Startup Tab can now also be the previously opened one")
-				.change("Catalog and Genre Tab show Genre colors")
-				.change("Catalog improved",
-					"More filtering options", "Smart column size")
-				.change("Player now has a slick Seekbar inspired by the website",
-					"It can also be controlled via scrolling (suggested by AddiVF)")
-				.change("Added an Audio Equalizer")
-				.change("Added Discord Rich Presence")
-			
-			version(0, 3, "UI Rework started", "Genres are now presented as a tree",
-				"Music playing is better integrated", "Fixed some mistakes in the Downloader")
-				.change("Catalog rework", "New, extremely flexible SearchVíew added", "Visible catalog columns can now be changed on-the-fly")
-				.patch("Music player can now also play EPs", "Added more functionality to the Music player",
-					"Improved the SearchView used in the Catalog", "Added a silver skin")
-				.patch("Fixed a small bug in the Downloader", "Added the possibility to log to a file",
-					"Prevented silent crashes")
-				.patch("Fixed an issue that prevented the Player from playing older Remixes with featured Artists",
-					"Fixed an issue with the cache preventing immediate downloading")
-			
-			version(0, 2, "Interactive Catalog",
-				"Added direct song streaming by double-clicking a Song in the Catalog")
-			
-			version(0, 1, "Downloader overhaul", "Added more downloading options & prettified them", "Tweaked many Settings",
-				"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
-				.patch("Added Downloader continuator", "Improved the readability of the current Downloader-status and added an \"Estimated time left\"",
-					"Cleared up some categorising Errors, but some will stay due to mislabelings on Monstercats side", "Endless bugfixes")
-				.patch("Multiple Settings changed again, so another soft reset happened", "Fixed some formatting issues",
-					"Added capability to split off Album Mixes when downloading", "Fixed various bugs and added some logging")
-				.patch("Added Release caching for faster Release fetching",
-					"Improved Downloader view & cancellation (now with 90% less spasticity!)", "Fixed various bugs")
-			
-			version(0, 0, "Offline caching", "Added Changelog", "Fixed offline Catalog caching",
-				"Fixed Genre Tab", "Fixed some small downloading Errors", "Improved Error handling")
-				.patch("Added more downloading options & prettified them", "Tweaked many Settings",
-					"Catalog tab is now more flexible", "Implemented dismissable infobar (Only used in the Catalog yet)")
-			
+		GlobalScope.launch {
+			val releasesArray = fetchJson("https://api.github.com/repos/xerus2000/monsterutilities/releases") as JsonArray<*>
+			val c = Changelog()
+			releasesArray.forEach {
+				if (it is JsonObject) {
+					c.version(it.string("tag_name") ?: "", it.string("name") ?: "", it.string("body") ?: "")
+				}
+			}
+			onFx { c.show(App.stage) }
 		}
-		onFx { c.show(App.stage) }
 	}
 	
 	override fun showError(error: Throwable, title: String) {
