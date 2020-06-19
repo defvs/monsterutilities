@@ -123,21 +123,6 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 			} else {
 				GlobalScope.launch {
 					logger.info("New version! Now running $currentVersion, previously " + Settings.LASTVERSION())
-					val f = Settings.DELETE()
-					if(f.exists()) {
-						logger.info("Deleting older version $f...")
-						val time = currentSeconds()
-						var res: Boolean
-						do {
-							res = f.delete()
-						} while(!res && time + 10 > currentSeconds())
-						if(res) {
-							Settings.DELETE.clear()
-							logger.info("Deleted $f!")
-						} else {
-							logger.warn("Couldn't delete older version residing in $f")
-						}
-					}
 					Settings.LASTVERSION.put(currentVersion)
 				}
 				showChangelog()

@@ -47,7 +47,6 @@ object Settings: SettingsNode("xerus/monsterutilities") {
 	// Update mechanism
 	val LASTVERSION = create("versionLast")
 	val IGNOREVERSION = create("versionIgnore")
-	val DELETE = create("versionDelete", File(""))
 	val AUTOUPDATE = create("updateAutomatic", true)
 	val UNSTABLE = create("updateUnstable", false)
 	
