@@ -145,92 +145,36 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
 			try {
-				val latestVersion = URL("http://monsterutilities.bplaced.net/downloads/" + if(unstable) "unstable" else "latest").openConnection().getInputStream().reader().readLines().firstOrNull()
-				logger.info("Latest version: $latestVersion")
+				val jsonObject = fetchJson("https://api.github.com/repos/Xerus2000/monsterutilities/releases/latest") as? JsonObject
+				val latestVersion = jsonObject?.string("tag_name")
+				val versionName = jsonObject?.string("name")
+				val githubReleaseUrl = jsonObject?.string("html_url") ?: "https://github.com/xerus2000/monsterutilities/releases"
 				if(latestVersion == null || latestVersion.length > 50 || latestVersion == currentVersion || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { currentVersion.devVersion()!! > it } == true) {
 					if(userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
 					return@launch
 				}
-				if(unstable)
-					update(latestVersion, true)
-				else
-					onFx {
-						val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", null, "New version $latestVersion available! Update now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
-						dialog.stage.icons.setAll(Image("img/updater.png"))
-						dialog.resultProperty().listen { type ->
-							when(type.buttonData) {
-								ButtonBar.ButtonData.YES -> update(latestVersion)
-								ButtonBar.ButtonData.CANCEL_CLOSE -> Settings.IGNOREVERSION.set(latestVersion)
-								else -> {
-								}
+				logger.info("Latest release: $latestVersion / $versionName")
+				onFx {
+					val dialog = showAlert(Alert.AlertType.CONFIRMATION, "Updater", "New version $latestVersion available", "\n$versionName\nUpdate now?", ButtonType.YES, ButtonType("Not now", ButtonBar.ButtonData.NO), ButtonType("Ignore this update", ButtonBar.ButtonData.CANCEL_CLOSE))
+					dialog.stage.icons.setAll(Image("img/updater.png"))
+					dialog.resultProperty().listen { type ->
+						when(type.buttonData) {
+							ButtonBar.ButtonData.YES -> {
+								if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
+									Desktop.getDesktop().browse(URI(githubReleaseUrl))
+								else showAlert(Alert.AlertType.INFORMATION, "Updater", "Could not open Browser", "Please browse to the release manually:\n$githubReleaseUrl", ButtonType.OK)
 							}
+							ButtonBar.ButtonData.CANCEL_CLOSE -> Settings.IGNOREVERSION.set(latestVersion)
+							else -> {}
 						}
 					}
+				}
 			} catch(e: UnknownHostException) {
 				if(userControlled)
 					showMessage("No connection possible!", "Updater", Alert.AlertType.INFORMATION)
 			} catch(e: Throwable) {
 				showError(e, "Update failed!")
-			}
-		}
-	}
-	
-	private fun update(version: String, unstable: Boolean = false) {
-		val newFile = File(Settings.FILENAMEPATTERN().replace("%version%", version, true)).absoluteFile
-		logger.info("Update initiated to $newFile")
-		val worker = object: Task<Unit>() {
-			init {
-				updateTitle("Downloading Update")
-				updateMessage("Downloading ${newFile.name} to ${newFile.absoluteFile.parent}")
-			}
-			
-			override fun call() {
-				val connection = URL("http://monsterutilities.bplaced.net/downloads?download&version=" + if(unstable) "unstable" else version).openConnection()
-				val contentLength = connection.contentLengthLong
-				logger.debug("Update to $version started, size ${contentLength.byteCountString()}")
-				connection.getInputStream().copyTo(newFile.outputStream(), true, true) {
-					updateProgress(it, contentLength)
-					isCancelled
-				}
-				if(isCancelled)
-					logger.info("Update cancelled, deleting $newFile: ${newFile.delete().to("Success", "FAILED")}")
-			}
-			
-			override fun succeeded() {
-				if(isUnstable == unstable && codeSource.toString().endsWith(".jar")) {
-					val jar = File(codeSource.toURI())
-					logger.info("Scheduling '$jar' for delete")
-					Settings.DELETE.set(jar)
-				}
-				logger.warn("Exiting for update to $version!")
-				Settings.flush()
-				
-				newFile.setExecutable(true)
-				val cmd = arrayOf("${System.getProperty("java.home")}/bin/java", "-jar", newFile.toString())
-				logger.info("Executing '${cmd.joinToString(" ")}'")
-				val p = Runtime.getRuntime().exec(cmd)
-				val exited = p.waitFor(3, TimeUnit.SECONDS)
-				
-				if(!exited) {
-					Platform.exit()
-					logger.warn("Exiting $currentVersion!")
-				} else {
-					showAlert(Alert.AlertType.WARNING, "Error while updating", content = "The downloaded jar was not started successfully!")
-				}
-			}
-			
-			override fun failed() {
-				showError(exception, "Error in the update process")
-			}
-		}
-		worker.launch()
-		checkFx {
-			worker.progressDialog().run {
-				title = "Updater"
-				stage.icons.setAll(Image("img/updater.png"))
-				show()
-				graphic = ImageView(Image("img/updater.png"))
 			}
 		}
 	}
