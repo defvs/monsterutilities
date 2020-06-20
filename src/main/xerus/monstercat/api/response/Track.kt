@@ -16,7 +16,7 @@ open class Track: MusicItem() {
 	@Key var bpm: Double? = null
 	@Key var streamable: Boolean = false
 	@Key var trackNumber = -1
-	@Key var licensable: Boolean = false
+	@Key var creatorFriendly: Boolean = false
 	
 	var artistsSplit: List<String> = emptyList()
 	var titleClean: String = ""

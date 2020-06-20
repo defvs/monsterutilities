@@ -57,21 +57,21 @@ object Playlist {
 	}
 	
 	/** Removes unlicensable [Track]s (including mixes and podcasts, which are recognizable by their [Track.artistsTitle] being "Monstercat")
-	 * @param tracks : [Collection] of [Track]s from which should be deducted tracks which are not [Track.licensable].
+	 * @param tracks : [Collection] of [Track]s from which should be deducted tracks which are not [Track.creatorFriendly].
 	 * @return : The received [tracks] with unlicensable tracks removed. Warning, can end up being empty !
 	 */
-	private fun removeUnlicensable(tracks: Collection<Track>) = tracks.filter { it.licensable && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
+	private fun removeUnlicensable(tracks: Collection<Track>) = tracks.filter { it.creatorFriendly && it.artistsTitle != "" && it.artistsTitle != "Monstercat" }
 	
 	fun addNext(track: Track) {
 		tracks.remove(track)
-		if(track.licensable || !SKIPUNLICENSABLE())
+		if(track.creatorFriendly || !SKIPUNLICENSABLE())
 			tracks.add(currentIndex.value?.let { it + 1 } ?: 0, track)
 		else showUnlicensableAlert(track)
 	}
 	
 	fun add(track: Track) {
 		tracks.remove(track)
-		if(track.licensable || !SKIPUNLICENSABLE())
+		if(track.creatorFriendly || !SKIPUNLICENSABLE())
 			tracks.add(track)
 		else showUnlicensableAlert(track)
 	}
