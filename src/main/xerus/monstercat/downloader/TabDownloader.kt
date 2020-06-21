@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 import xerus.ktutil.javafx.ui.controls.Type as SearchType
 
-private val qualities = arrayOf("mp3_128", "mp3_v2", "mp3_v0", "mp3_320", "flac", "wav")
+private val qualities = arrayOf("mp3_320", "flac", "wav")
 val trackPatterns = ImmutableObservableList(
 	"%artistsTitle% - %title%",
 	"%artists|enumerate% - %title%",
