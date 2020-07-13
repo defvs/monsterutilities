@@ -86,7 +86,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 		val contentLength = entity.contentLength
 		if(contentLength == 0L)
 			throw EmptyResponseException(connection.uri.toString())
-		if(!entity.contentType.value.let { it.startsWith("audio/") || it == "binary/octet-stream" })
+		if(!entity.contentType.value.let { it.startsWith("audio/") || it == "binary/octet-stream" || it == "application/octet-stream" })
 			throw WrongResponseTypeException(connection.uri.toString(), entity.contentType.value)
 		if(httpResponse.statusLine.statusCode != 200)
 			throw WrongResponseCodeException(connection.uri.toString(), httpResponse.statusLine.toString())
