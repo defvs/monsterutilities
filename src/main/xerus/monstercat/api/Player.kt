@@ -166,7 +166,10 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				setOnReady {
 					label.text = "Now Playing: $track"
 					if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-						Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"), StandardOpenOption.CREATE)
+						Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"),
+								StandardOpenOption.CREATE,
+								StandardOpenOption.WRITE,
+								StandardOpenOption.TRUNCATE_EXISTING)
 						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
 					}
 					val total = totalDuration.toMillis()
