@@ -114,7 +114,11 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	fun reset() {
 		fadeOut()
 		if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-			Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf(""), StandardOpenOption.CREATE)
+			Files.newBufferedWriter(Settings.PLAYEREXPORTFILE(),
+					StandardOpenOption.TRUNCATE_EXISTING,
+					StandardOpenOption.WRITE,
+					StandardOpenOption.CREATE
+			).close()
 			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()}) from its contents")
 		}
 		GlobalScope.launch {
@@ -166,10 +170,12 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				setOnReady {
 					label.text = "Now Playing: $track"
 					if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-						Files.write(Settings.PLAYEREXPORTFILE(), arrayListOf("$track"),
-								StandardOpenOption.CREATE,
+						Files.newBufferedWriter(Settings.PLAYEREXPORTFILE(),
+								StandardOpenOption.TRUNCATE_EXISTING,
 								StandardOpenOption.WRITE,
-								StandardOpenOption.TRUNCATE_EXISTING)
+								StandardOpenOption.CREATE
+						).close()
+						Files.write(Settings.PLAYEREXPORTFILE(), track.toString().toByteArray())
 						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
 					}
 					val total = totalDuration.toMillis()
