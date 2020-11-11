@@ -30,6 +30,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.util.*
@@ -170,12 +171,8 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				setOnReady {
 					label.text = "Now Playing: $track"
 					if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
-						Files.newBufferedWriter(Settings.PLAYEREXPORTFILE(),
-								StandardOpenOption.TRUNCATE_EXISTING,
-								StandardOpenOption.WRITE,
-								StandardOpenOption.CREATE
-						).apply {
-							write("$track ")
+						Files.newBufferedWriter(Settings.PLAYEREXPORTFILE()).apply {
+							write(track.toString(Settings.PLAYEREXPORTFILEPATTERN()))
 						}.close()
 						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
 					}

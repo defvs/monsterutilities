@@ -23,6 +23,7 @@ import org.controlsfx.validation.Severity
 import org.controlsfx.validation.ValidationResult
 import org.controlsfx.validation.ValidationSupport
 import org.controlsfx.validation.Validator
+import xerus.ktutil.FieldNotFoundException
 import xerus.ktutil.byteCountString
 import xerus.ktutil.helpers.Named
 import xerus.ktutil.javafx.*
@@ -43,10 +44,11 @@ import xerus.monstercat.api.response.Release.Type.MIX
 import xerus.monstercat.api.response.Release.Type.PODCAST
 import xerus.monstercat.api.response.Release.Type.SINGLE
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.response.ArtistRel
+import xerus.monstercat.api.response.Track
 import xerus.monstercat.cacheDir
 import xerus.monstercat.dataDir
-import xerus.monstercat.downloader.DownloaderSettings
-import xerus.monstercat.downloader.createComboBox
+import xerus.monstercat.downloader.*
 import xerus.monstercat.logDir
 import xerus.monstercat.monsterUtilities
 import java.awt.Desktop
@@ -97,7 +99,12 @@ class TabSettings: VTab() {
 		
 		// Export chooser
 		val exportFileChooser = FileChooser(App.stage, Settings.PLAYEREXPORTFILE().toFile(), "", "export file").apply { selectedFile.listen { Settings.PLAYEREXPORTFILE.set(it.toPath()) } }
-		addRow(Label("Export currently played track :"), exportFileChooser.button().allowExpand(vertical = false), exportFileChooser.textField())
+		addRow(Label("Export currently played track:"), exportFileChooser.button().allowExpand(vertical = false), exportFileChooser.textField())
+		
+		// Export pattern
+		addLabeled("Export pattern:",
+			ComboBox<String>(trackPatterns).apply { isEditable = true; editor.textProperty().bindBidirectional(Settings.PLAYEREXPORTFILEPATTERN) }
+		)
 		
 		addLabeled("Internet Bandwidth", createComboBox(Settings.CONNECTIONSPEED))
 		
