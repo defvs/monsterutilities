@@ -119,7 +119,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 					StandardOpenOption.WRITE,
 					StandardOpenOption.CREATE
 			).close()
-			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()}) from its contents")
+			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()})")
 		}
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
@@ -174,8 +174,9 @@ object Player: FadingHBox(true, targetHeight = 25) {
 								StandardOpenOption.TRUNCATE_EXISTING,
 								StandardOpenOption.WRITE,
 								StandardOpenOption.CREATE
-						).close()
-						Files.write(Settings.PLAYEREXPORTFILE(), track.toString().toByteArray())
+						).apply {
+							write("$track ")
+						}.close()
 						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
 					}
 					val total = totalDuration.toMillis()
