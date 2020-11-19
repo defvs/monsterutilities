@@ -103,8 +103,7 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 		setOnMouseClicked {
 			if(it.clickCount == 2) {
 				val selected = selectionModel.selectedItem ?: return@setOnMouseClicked
-				val value = selected.value
-				when(value) {
+				when(val value = selected.value) {
 					is Release -> Player.play(value)
 					is Track -> Player.playTrack(value)
 					else -> selected.isExpanded = !selected.isExpanded
@@ -221,9 +220,9 @@ class SongView(private val sorter: ObservableValue<ReleaseSorting>):
 				var image = Covers.getThumbnailImage(release.coverUrl, 16)
 				fun invalidateImage() {
 					image = Covers.getThumbnailImage(release.coverUrl, 16, true)
-					image?.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
+					image.onError { logger.debug("Failed to load coverUrl ${release.coverUrl} for $release", it) }
 				}
-				image?.onError { invalidateImage() } ?: invalidateImage()
+				image.onError { invalidateImage() }
 				onFx {
 					treeItem.graphic = ImageView(image)
 					done++

@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.apache.http.HttpResponse
+import org.apache.http.client.ClientProtocolException
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
@@ -123,6 +124,8 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			CONNECTSID.listen { updateConnectsid(it) }
 		}
 		
+		/**@return a [CloseableHttpResponse] resulting from the HTTP [request]
+		 * @throws IOException when the request fails */
 		fun executeRequest(request: HttpUriRequest, context: HttpClientContext? = null): CloseableHttpResponse {
 			logger.trace { "Connecting to ${request.uri}" }
 			return httpClient.execute(request, context)

@@ -39,6 +39,7 @@ import xerus.monstercat.api.Player
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.*
 import java.io.File
+import java.io.IOException
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
@@ -362,7 +363,7 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 		pane.add(Label("Cover loading..."))
 		pane.add(largeImage)
 		
-		App.stage.createStage(title, pane).apply {
+		val stage = App.stage.createStage(title, pane).apply {
 			height = windowSize
 			width = windowSize
 			this.isResizable = isResizable
@@ -396,7 +397,14 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 		}
 		
 		GlobalScope.launch {
-			largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
+			try {
+				largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
+			} catch (e: IOException) {
+				onFx {
+					stage.close()
+					showError(e, "Cover could not be fetched.")
+				}
+			}
 		}
 	}
 	

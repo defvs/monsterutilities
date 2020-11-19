@@ -30,6 +30,7 @@ import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.util.*
@@ -296,11 +297,15 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		logger.debug("Updating cover: $coverUrl")
 		this.coverUrl = coverUrl
 		GlobalScope.launch {
-			val image: Image? = coverUrl?.let { Covers.getThumbnailImage(it) }
-			onFx {
-				backgroundCover.value = image?.let {
-					Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+			try {
+				val image: Image? = coverUrl?.let { Covers.getThumbnailImage(it) }
+				onFx {
+					backgroundCover.value = image?.let {
+						Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
+					}
 				}
+			} catch (e: IOException) {
+				logger.warn("Background Cover could not be fetched.", e)
 			}
 		}
 	}
