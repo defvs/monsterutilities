@@ -36,7 +36,6 @@ private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", 
 class TabCatalog: TableTab() {
 	
 	private val searchView = SearchView<List<String>>()
-	private val searchables = searchView.options
 	
 	init {
 		table.setRowFactory {
@@ -51,7 +50,7 @@ class TabCatalog: TableTab() {
 			}
 		}
 		
-		searchables.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre (\"Label\")", Type.TEXT) { val c = cols.findAll("label"); it.filterIndexed { index, _ -> c.contains(index) } })
+		searchView.options.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre (\"Label\")", Type.TEXT) { val c = cols.findAll("label"); it.filterIndexed { index, _ -> c.contains(index) } })
 		setColumns(Settings.LASTCATALOGCOLUMNS.all)
 		
 		children.add(searchView)
@@ -168,7 +167,7 @@ class TabCatalog: TableTab() {
 					else -> SearchableColumn.simple(colName, Type.TEXT, colValue::invoke)
 				}
 				if(col is SearchableColumn<List<String>, *, *>)
-					searchables.add(col)
+					searchView.options.add(col)
 				if(isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"
 				newColumns.add(col)
