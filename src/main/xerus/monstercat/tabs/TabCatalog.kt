@@ -20,6 +20,7 @@ import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
 import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.APIUtils
@@ -45,7 +46,7 @@ class TabCatalog: TableTab() {
 					style = genreColor(it?.get(genre)?.let {
 						genreColors.find(it)
 							?: genreColors.find(it.split(' ').map { it.first() }.joinToString(separator = ""))
-					}) ?: "-fx-background-color: transparent"
+					}.nullIfEmpty()) ?: "-fx-background-color: transparent"
 				}
 			}
 		}
