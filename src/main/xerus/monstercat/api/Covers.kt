@@ -16,7 +16,7 @@ object Covers {
 	private fun coverCacheFile(coverUrl: String, size: Int): File {
 		coverCacheDir.mkdirs()
 		val newFile = coverCacheDir.resolve(coverUrl.substringBeforeLast('/').substringAfterLast('/').replaceIllegalFileChars())
-		return coverCacheDir.resolve("${newFile.nameWithoutExtension}x$size.jpg") // FIXME : Do not hardcode extension
+		return coverCacheDir.resolve("${newFile.nameWithoutExtension}x$size")
 	}
 		
 	/** Returns an Image of the cover in the requested size using caching.
