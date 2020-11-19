@@ -29,9 +29,9 @@ import xerus.monstercat.api.response.Track
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
-val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length")
-val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings")
-private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
+val defaultColumns = arrayOf("Label", "Artists", "Track", "Length")
+val availableColumns = arrayOf("ID", "Date", "CC", "E", "Label", "Artists", "Track", "Comp", "Length", "BPM", "Key")
+private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp") || colName == "E"
 
 class TabCatalog: TableTab() {
 	
@@ -41,7 +41,7 @@ class TabCatalog: TableTab() {
 	init {
 		table.setRowFactory {
 			TableRow<List<String>>().apply {
-				val genre = cols.find("Genre") ?: return@apply
+				val genre = cols.find("label") ?: return@apply
 				itemProperty().listen {
 					style = genreColor(it?.get(genre)?.let {
 						genreColors.find(it)
@@ -51,7 +51,7 @@ class TabCatalog: TableTab() {
 			}
 		}
 		
-		searchables.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre", Type.TEXT) { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } })
+		searchables.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre (\"Label\")", Type.TEXT) { val c = cols.findAll("label"); it.filterIndexed { index, _ -> c.contains(index) } })
 		setColumns(Settings.LASTCATALOGCOLUMNS.all)
 		
 		children.add(searchView)
@@ -162,7 +162,7 @@ class TabCatalog: TableTab() {
 								it.toIntOrNull() ?: return@converter null
 							}?.let { LocalTime.of(it[0] / 60, it[0] % 60, it[1]) }
 						}
-					colName.contains("genre", true) ->
+					colName.contains("label", true) ->
 						TableColumn<List<String>, String>(colName)
 						{ colValue(it.value) ?: "" }
 					else -> SearchableColumn.simple(colName, Type.TEXT, colValue::invoke)
