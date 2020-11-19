@@ -121,7 +121,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 					StandardOpenOption.CREATE
 			).close()
 			logger.debug("Cleared export file (${Settings.PLAYEREXPORTFILE()})")
-		}
+		} else logger.warn("Export file ${Settings.PLAYEREXPORTFILE()} is a folder! Not overwriting.")
 		GlobalScope.launch {
 			val latest = Cache.getReleases().firstOrNull() ?: return@launch
 			while(fading) delay(50)
@@ -175,7 +175,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 							write(track.toString(Settings.PLAYEREXPORTFILEPATTERN()))
 						}.close()
 						logger.debug("""Wrote "$track" into export file (${Settings.PLAYEREXPORTFILE()})""")
-					}
+					} else logger.warn("Export file ${Settings.PLAYEREXPORTFILE()} is a folder! Not overwriting.")
 					val total = totalDuration.toMillis()
 					seekBar.progressProperty().dependOn(currentTimeProperty()) { it.toMillis() / total }
 					seekBar.transitionToHeight(Settings.PLAYERSEEKBARHEIGHT(), 1.0)
