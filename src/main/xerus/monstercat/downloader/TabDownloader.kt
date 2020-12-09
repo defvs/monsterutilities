@@ -328,8 +328,8 @@ class TabDownloader: VTab() {
 		}.tooltip("Selects all Albums+EPs and then all other Songs that are not included in these"))
 		
 		addRow(TextField(CONNECTSID()).apply {
-			promptText = "connect.sid"
-			tooltip = Tooltip("Log in on monstercat.com from your browser, find the cookie \"connect.sid\" from \"connect2.monstercat.com\" and copy the content into here")
+			promptText = "cid Cookie"
+			tooltip = Tooltip("Log in on monstercat.com from your browser, find the cookie \"cid\" from \"connect2.monstercat.com\" and copy the content into here")
 			val textListener = textProperty().debounce(400) { text ->
 				CONNECTSID.set(text)
 			}
@@ -337,9 +337,9 @@ class TabDownloader: VTab() {
 			maxWidth = Double.MAX_VALUE
 		}.grow(), createButton("?") {
 			Alert(Alert.AlertType.NONE, null, ButtonType.OK).apply {
-				title = "How to get your connect.sid"
+				title = "How to get your cid Cookie"
 				dialogPane.content = VBox(
-					Label("""Log in on monstercat.com from your browser, go to your browser's cookies (usually somewhere in settings), find the cookie "connect.sid" from "connect.monstercat.com" and copy the content into the Textfield. It should start with with "s%3A"."""),
+					Label("""Log in on monstercat.com from your browser, go to your browser's cookies (usually somewhere in settings), find the cookie "cid" from "connect.monstercat.com" and copy the content into the Textfield.."""),
 					HBox(Label("If you use Chrome, you can simply paste this into the address bar after logging in:"), TextField().apply {
 						isEditable = false
 						maxWidth = Double.MAX_VALUE
@@ -351,7 +351,7 @@ class TabDownloader: VTab() {
 							}
 						}
 					}),
-					Label("Note that your connect.sid might expire at some point, then simply go through these steps again."))
+					Label("Note that your cid Cookie might expire at some point, then simply go through these steps again."))
 				dialogPane.minHeight = Region.USE_PREF_SIZE
 				initWindowOwner(App.stage)
 				show()
@@ -361,9 +361,9 @@ class TabDownloader: VTab() {
 			CONNECTSID.listen {
 				checkFx {
 					isDisable = true
-					text = "Verifying connect.sid..."
+					text = "Verifying cid Cookie..."
 				}
-				logger.trace("Verifying connect.sid...")
+				logger.trace("Verifying cid Cookie...")
 			}
 			arrayOf<Observable>(patternValid, noItemsSelected, APIConnection.connectValidity, QUALITY, songView.ready).addListener {
 				onFx { refreshDownloadButton(this) }
@@ -387,7 +387,7 @@ class TabDownloader: VTab() {
 				if(CONNECTSID.value.isEmpty())
 					"Click to login to Monstercat..."
 				else
-					"Invalid connect.sid! Click to login to Monstercat..."
+					"Invalid cid Cookie! Click to login to Monstercat..."
 			}
 			ConnectValidity.NOGOLD -> "No Gold subscription"
 			ConnectValidity.GOLD -> {
@@ -472,8 +472,8 @@ class TabDownloader: VTab() {
 			noConnection -> button.setOnAction { openLoginDialog() }
 			else -> button.setOnAction {
 				button.isDisable = true
-				button.text = "Verifying connect.sid..."
-				logger.trace("Verifying connect.sid...")
+				button.text = "Verifying cid Cookie..."
+				logger.trace("Verifying cid Cookie...")
 				APIConnection.checkConnectsid(CONNECTSID())
 			}
 		}
