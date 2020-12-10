@@ -10,6 +10,7 @@ import xerus.ktutil.javafx.Themes
 import xerus.ktutil.javafx.applyTheme
 import xerus.ktutil.javafx.properties.listen
 import xerus.ktutil.preferences.SettingsNode
+import xerus.monstercat.downloader.trackPatterns
 import xerus.monstercat.tabs.FetchTab
 import xerus.monstercat.tabs.TabSettings
 import xerus.monstercat.tabs.availableColumns
@@ -26,6 +27,7 @@ object Settings: SettingsNode("xerus/monsterutilities") {
 	val PLAYERSEEKBARHEIGHT = create("playerSeekbarHeight", 8.0)
 	val PLAYERARTPRIORITY = create("coverartPriorityList", TabSettings.PriorityList.SGL_ALB_COL) { TabSettings.PriorityList.valueOf(it) }
 	val PLAYEREXPORTFILE = create("playerExportFile", Paths.get(""))
+	val PLAYEREXPORTFILEPATTERN = create("playerExportFilePattern", trackPatterns[0])
 	val SKIPUNLICENSABLE = create("skipUnlicensable", false)
 	
 	// Equalizer
