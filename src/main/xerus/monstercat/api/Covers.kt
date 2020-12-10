@@ -52,9 +52,9 @@ object Covers {
 			try {
 				return coverFile.inputStream()
 			} catch (e: FileNotFoundException) {
-				logger.warn("Cover file at ${coverFile.path} not found, invalidating.", e)
+				logger.warn("Cover file at ${coverFile.path} not found, invalidating.")
 			} catch (e: SecurityException) {
-				logger.warn("Cover file at ${coverFile.path} cannot be opened, invalidating.", e)
+				logger.warn("Cover file at ${coverFile.path} cannot be opened, invalidating.")
 			}
 		fetchCover(coverUrl, size).content.use { input ->
 			val tempFile = File.createTempFile(coverFile.name, size.toString())
