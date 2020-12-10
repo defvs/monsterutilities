@@ -20,17 +20,17 @@ Make sure to read the initial in-app guide and watch out for tooltips.
 
 ### Authentication
 
-For downloading and listening to early access, insert a valid `connect.sid` at the bottom of the Downloader.  
+For downloading and listening to early access, insert a valid `cid` at the bottom of the Downloader.  
 Obtain it though the process below or simply supply your credentials to the login form in the application.
 
 1) [Sign in on monstercat.com][Monstercat-signin] and ensure that you have a valid [Monstercat Gold] subscription
 2) Find a cookie for `connect.monstercat.com` in your browser  
    Chromium-based browsers: [chrome://settings/cookies/detail?site=connect.monstercat.com](chrome://settings/cookies/detail?site=connect.monstercat.com)  
    Firefox: Go to https://connect.monstercat.com/ (ignore any errors), open dev tools (Ctrl+Shift+I), go to `Storage > Cookies > https://connect.monstercat.com`
-3) Find the content of `connect.sid` - a string starting with `s%3A` and around 90 characters in length
-4) Copy that string into the `connect.sid` Textfield at the bottom of the Downloader
+3) Find the content of `cid`
+4) Copy that string into the `cid` Textfield at the bottom of the Downloader
 
-The `connect.sid` can be used to obtain full access to your account, so treat it carefully. The application never sends it anywhere but [Monstercat] servers.  
+The `cid` can be used to obtain full access to your account, so treat it carefully. The application never sends it anywhere but [Monstercat] servers.  
 Please note though that it is persisted on your computer using the [Java Preferences API](https://stackoverflow.com/a/1320798) for your convenience.
 
 ### Caching & Offline usage

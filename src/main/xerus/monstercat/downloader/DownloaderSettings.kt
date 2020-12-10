@@ -49,7 +49,7 @@ val COVERARTSIZE = DownloaderSettings.create("coverArtSize", 1024)
 val COVERPATTERN = DownloaderSettings.create("coverPattern", "{%artistsTitle% - }%title%")
 
 val QUALITY = DownloaderSettings.create("quality")
-val CONNECTSID = DownloaderSettings.create("connect.sid")
+val CONNECTSID = DownloaderSettings.create("cid")
 
 val DOWNLOADTHREADS = DownloaderSettings.create("threads", Runtime.getRuntime().availableProcessors().minus(1).coerceIn(2, 4))
 

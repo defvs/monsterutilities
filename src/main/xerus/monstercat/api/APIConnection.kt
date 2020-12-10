@@ -158,7 +158,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		private fun createHttpClient(connectsid: String): CloseableHttpClient {
 			return HttpClientBuilder.create()
 				.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
-				.setDefaultCookieStore(BasicClientCookie("connect.sid", connectsid).run {
+				.setDefaultCookieStore(BasicClientCookie("cid", connectsid).run {
 					domain = "connect.monstercat.com"
 					path = "/"
 					BasicCookieStore().also { it.addCookie(this) }
@@ -238,7 +238,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			val code = connection.response?.statusLine?.statusCode
 			logger.trace("Login POST returned response code $code")
 			if (code !in 200..206) return false
-			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "connect.sid" }?.value ?: return false)
+			CONNECTSID.value = (context.cookieStore.cookies.find { it.name == "cid" }?.value ?: return false)
 			return true
 		}
 		
