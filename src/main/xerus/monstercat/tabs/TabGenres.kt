@@ -13,6 +13,12 @@ import xerus.ktutil.javafx.ui.FilterableTreeItem
 import xerus.monstercat.Settings.GENRECOLORINTENSITY
 
 val genreColors = RoughMap<String>()
+	.apply {
+		put("EP", "")
+		put("Compilation", "")
+		put("Album", "")
+		
+	}
 val genreColor = { item: String? ->
 	item?.let {
 		"-fx-background-color: %s%02x".format(it, GENRECOLORINTENSITY())
@@ -28,7 +34,7 @@ class TabGenres : FetchTab() {
 	init {
 		styleClass("tab-genres")
 		val searchField = TextField()
-		VBox.setMargin(searchField, Insets(0.0, 0.0, 6.0, 0.0)) // apparently can't set this in css
+		setMargin(searchField, Insets(0.0, 0.0, 6.0, 0.0)) // apparently can't set this in css
 		val root = FilterableTreeItem(StringRow())
 		root.bindPredicate(searchField.textProperty()) { row, text -> row.subList(0, 3).any { it.contains(text, true) } }
 		view.isShowRoot = false

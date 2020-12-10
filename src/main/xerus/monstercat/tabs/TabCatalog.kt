@@ -20,6 +20,7 @@ import xerus.ktutil.javafx.ui.controls.MultiSearchable
 import xerus.ktutil.javafx.ui.controls.SearchView
 import xerus.ktutil.javafx.ui.controls.SearchableColumn
 import xerus.ktutil.javafx.ui.controls.Type
+import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.toLocalDate
 import xerus.monstercat.Settings
 import xerus.monstercat.api.APIUtils
@@ -29,29 +30,28 @@ import xerus.monstercat.api.response.Track
 import java.time.LocalTime
 import kotlin.math.absoluteValue
 
-val defaultColumns = arrayOf("Genre", "Artists", "Track", "Length")
-val availableColumns = arrayOf("ID", "Date", "B", "CC", "E", "Genre", "Subgenres", "Artists", "Track", "Comp", "Length", "BPM", "Key", "Fan Ratings")
-private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp", "rating") || colName == "B" || colName == "E"
+val defaultColumns = arrayOf("Label", "Artists", "Track", "Length")
+val availableColumns = arrayOf("ID", "Date", "CC", "E", "Label", "Artists", "Track", "Comp", "Length", "BPM", "Key")
+private fun isColumnCentered(colName: String) = colName.containsAny("id", "cc", "date", "bpm", "length", "key", "comp") || colName == "E"
 
 class TabCatalog: TableTab() {
 	
 	private val searchView = SearchView<List<String>>()
-	private val searchables = searchView.options
 	
 	init {
 		table.setRowFactory {
 			TableRow<List<String>>().apply {
-				val genre = cols.find("Genre") ?: return@apply
+				val genre = cols.find("label") ?: return@apply
 				itemProperty().listen {
 					style = genreColor(it?.get(genre)?.let {
 						genreColors.find(it)
 							?: genreColors.find(it.split(' ').map { it.first() }.joinToString(separator = ""))
-					}) ?: "-fx-background-color: transparent"
+					}.nullIfEmpty()) ?: "-fx-background-color: transparent"
 				}
 			}
 		}
 		
-		searchables.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre", Type.TEXT) { val c = cols.findAll("genre"); it.filterIndexed { index, _ -> c.contains(index) } })
+		searchView.options.setAll(MultiSearchable("Any", Type.TEXT) { it }, MultiSearchable("Genre (\"Label\")", Type.TEXT) { val c = cols.findAll("label"); it.filterIndexed { index, _ -> c.contains(index) } })
 		setColumns(Settings.LASTCATALOGCOLUMNS.all)
 		
 		children.add(searchView)
@@ -162,13 +162,13 @@ class TabCatalog: TableTab() {
 								it.toIntOrNull() ?: return@converter null
 							}?.let { LocalTime.of(it[0] / 60, it[0] % 60, it[1]) }
 						}
-					colName.contains("genre", true) ->
+					colName.contains("label", true) ->
 						TableColumn<List<String>, String>(colName)
 						{ colValue(it.value) ?: "" }
 					else -> SearchableColumn.simple(colName, Type.TEXT, colValue::invoke)
 				}
 				if(col is SearchableColumn<List<String>, *, *>)
-					searchables.add(col)
+					searchView.options.add(col)
 				if(isColumnCentered(colName))
 					col.style = "-fx-alignment: CENTER"
 				newColumns.add(col)
