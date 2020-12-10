@@ -25,6 +25,7 @@ import xerus.ktutil.collections.isEmpty
 import xerus.ktutil.helpers.HTTPQuery
 import xerus.ktutil.javafx.properties.SimpleObservable
 import xerus.ktutil.javafx.properties.listen
+import xerus.ktutil.nullIfEmpty
 import xerus.monstercat.Settings
 import xerus.monstercat.Sheets
 import xerus.monstercat.api.response.*
@@ -59,12 +60,12 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	fun <T> parseJSON(destination: Class<T>): T? {
 		val inputStream = try {
 			getContent()
-		} catch(e: IOException) {
+		} catch (e: IOException) {
 			return null
 		}
 		return try {
 			Sheets.JSON_FACTORY.fromInputStream(inputStream, destination)
-		} catch(e: Exception) {
+		} catch (e: Exception) {
 			logger.warn("Error parsing response of $uri: $e", e)
 			null
 		}
@@ -72,7 +73,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	/** @return null when the connection fails, else the parsed result */
 	fun getReleases() =
-		parseJSON(ReleaseListResponse::class.java)?.results?.map { it.init() }
+			parseJSON(ReleaseListResponse::class.java)?.results?.map { it.init() }
 	
 	fun getRelease() = parseJSON(ReleaseResponse::class.java)
 	
@@ -80,6 +81,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	fun getTracks() = getRelease()?.tracks
 	
 	private var httpRequest: HttpUriRequest? = null
+	
 	/** Aborts this connection and thus terminates the InputStream if active */
 	fun abort() {
 		httpRequest?.abort()
@@ -94,7 +96,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	private var response: HttpResponse? = null
 	fun getResponse(): HttpResponse {
-		if(response == null)
+		if (response == null)
 			execute(HttpGet(uri))
 		return response!!
 	}
@@ -103,7 +105,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	 * @throws IOException when the connection fails */
 	fun getContent(): InputStream {
 		val resp = getResponse()
-		if(!resp.entity.isRepeatable)
+		if (!resp.entity.isRepeatable)
 			response = null
 		return resp.entity.content
 	}
@@ -137,7 +139,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		 * @param track to get the stream URL from
 		 * @return the redirected (real) stream URL for use with [javafx.scene.media.Media] which doesn't support redirections
 		 */
-		fun getRedirectedStreamURL(track: Track): String?{
+		fun getRedirectedStreamURL(track: Track): String? {
 			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
 			val context = HttpClientContext()
 			connection.execute(HttpGet(connection.uri), context)
@@ -149,7 +151,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			val oldClient = httpClient
 			val manager = connectionManager
 			GlobalScope.launch {
-				while(manager.totalStats.leased > 0)
+				while (manager.totalStats.leased > 0)
 					delay(200)
 				oldClient.close()
 			}
@@ -159,15 +161,21 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		
 		
 		private fun createHttpClient(connectsid: String): CloseableHttpClient {
+			val cookieStore = BasicCookieStore()
+			cookieStore.addCookie(
+					connectsid.nullIfEmpty()?.let {
+						BasicClientCookie("cid", it).apply {
+							domain = "connect.monstercat.com"
+							path = "/"
+						}
+					}
+			)
+			
 			return HttpClientBuilder.create()
-				.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
-				.setDefaultCookieStore(BasicClientCookie("cid", connectsid).run {
-					domain = "connect.monstercat.com"
-					path = "/"
-					BasicCookieStore().also { it.addCookie(this) }
-				})
-				.setConnectionManager(createConnectionManager())
-				.build()
+					.setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+					.setDefaultCookieStore(cookieStore)
+					.setConnectionManager(createConnectionManager())
+					.build()
 		}
 		
 		private fun createConnectionManager(): PoolingHttpClientConnectionManager {
@@ -183,14 +191,14 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 				}
 			}
 			// trace ConnectionManager stats
-			if(logger.isTraceEnabled)
+			if (logger.isTraceEnabled)
 				GlobalScope.launch {
 					val name = connectionManager.javaClass.simpleName + "@" + connectionManager.hashCode()
 					var stats = connectionManager.totalStats
 					val managerWeak = WeakReference(connectionManager)
-					while(!managerWeak.isEmpty()) {
+					while (!managerWeak.isEmpty()) {
 						val newStats = managerWeak.get()?.totalStats ?: break
-						if(stats.leased != newStats.leased || stats.pending != newStats.pending || stats.available != newStats.available) {
+						if (stats.leased != newStats.leased || stats.pending != newStats.pending || stats.available != newStats.available) {
 							logger.trace("$name: $newStats")
 							stats = newStats
 						}
@@ -201,13 +209,13 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		fun checkConnectsid(connectsid: String) {
-			if(connectsid.isBlank()) {
+			if (connectsid.isBlank()) {
 				connectValidity.value = ConnectValidity.NOUSER
 				return
 			}
 			GlobalScope.launch {
 				val result = getConnectValidity(connectsid)
-				if(QUALITY().isEmpty())
+				if (QUALITY().isEmpty())
 					result.session?.settings?.run {
 						QUALITY.set(preferredDownloadFormat)
 					}
