@@ -58,6 +58,7 @@ data class Release(
 	enum class Type(override val displayName: String, val isCollection: Boolean, val matcher: (Release.() -> Boolean)? = null): Named, CharSequence by displayName {
 		MCOLLECTION("Monstercat Collection", true,
 			{ title.startsWith("Monstercat 0") || title.startsWith("Monstercat Uncaged") || title.startsWith("Monstercat Instinct") }),
+		MCOMPIL("Compilations", true, {type == "Compilation"}),
 		BESTOF("Best of", true, { title.contains("Best of") || title.endsWith("Anniversary") }),
 		ALBUM("Album", true),
 		EP("EP", true),
