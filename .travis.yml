@@ -1,5 +1,6 @@
+os: linux
 dist: trusty
-sudo: false
+language: java
 git:
   depth: 3
 addons:
@@ -27,7 +28,7 @@ deploy:
   file_glob: true
   file:
     - ./*.jar
-  skip_cleanup: true
+  cleanup: false
   on:
     condition: $GH_TOKEN != ""
     tags: true
