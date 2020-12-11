@@ -56,7 +56,7 @@ object Settings: SettingsNode("xerus/monsterutilities") {
 	val FILENAMEPATTERN = create("updatePattern", "MonsterUtilities-%version%.jar")
 	
 	// Connection and API settings
-	val CONNECTIONSPEED = create("connectionSpeed", ConnectionSpeed.ADSL)
+	val CONNECTIONSPEED = create("connectionSpeed", ConnectionSpeed.ADSL) { ConnectionSpeed.findFromName(it) }
 	val ENABLECACHE = create("cacheEnabled", true)
 	
 	init {
@@ -96,5 +96,9 @@ object Settings: SettingsNode("xerus/monsterutilities") {
 		FIBER(300, "Fiber (300+ Mb/s)");
 
 		override fun toString(): String = displayName
+		
+		companion object {
+			fun findFromName(name: String) = values().find { it.displayName == name } ?: ADSL
+		}
 	}
 }
