@@ -1,4 +1,4 @@
-# ![icon](assets/favicon.png) MonsterUtilities ![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord) [![Build Status](https://semaphoreci.com/api/v1/xerus2000/monsterutilities/branches/master/shields_badge.svg)](https://semaphoreci.com/xerus2000/monsterutilities)
+# ![icon](assets/favicon.png) MonsterUtilities [![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord)](https://discord.gg/ZEusvHS) [![Latest Release](https://img.shields.io/github/v/release/defvs/monsterutilities?color=%236060FF&label=latest)](https://github.com/defvs/monsterutilities/releases/latest)
 
 Browse, stream and download [Monstercat] Songs, powered by the [Monstercat API] and [MCatalog].
 
@@ -78,11 +78,12 @@ The application has various color schemes and configuration options.
 ## Credits
 
 [@xerus2000](https://github.com/xerus2000) [founded the project](assets/Story.md) and established most of its features. He still technically owns it, but has [mostly moved on to other projects](https://github.com/search?q=author%3Axerus2000&type=Issues).  
-[@defvs](https://github.com/defvs) is currently the main maintainer, but rarely gets around to anything other than critical fixes.
+[@defvs](https://github.com/defvs) is currently the maintainer.
 
 We thank [![install4j](https://www.ej-technologies.com/images/product_banners/install4j_small.png)](https://www.ej-technologies.com/products/install4j/overview.html) for providing a free license to build the installers.
 
-[issues]: https://github.com/xerus2000/monsterutilities/issues
+[issues]: https://github.com/defvs/monsterutilities/issues
+[Latest Release]: https://github.com/defvs/monsterutilities/releases/latest
 [Discord]: https://discord.gg/ZEusvHS
 [Monstercat]: https://monstercat.com
 [Monstercat API]: https://github.com/defvs/connect-v2-docs/wiki
