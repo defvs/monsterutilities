@@ -1,4 +1,4 @@
-# ![icon](assets/favicon.png) MonsterUtilities [![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord)](https://discord.gg/ZEusvHS) [![Latest Release](https://img.shields.io/github/v/release/defvs/monsterutilities?color=%236060FF&label=latest)](https://github.com/defvs/monsterutilities/releases/latest)
+# ![icon](assets/favicon.png) MonsterUtilities [![Discord](https://img.shields.io/discord/417314230681993226.svg?logo=discord)](https://discord.gg/ZEusvHS) [![Latest Release](https://img.shields.io/github/v/release/defvs/monsterutilities?color=%236060FF&label=latest)](https://github.com/defvs/monsterutilities/releases/latest) ![GitHub last commit](https://img.shields.io/github/last-commit/defvs/monsterutilities)
 
 Browse, stream and download [Monstercat] Songs, powered by the [Monstercat API] and [MCatalog].
 
