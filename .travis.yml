@@ -21,14 +21,3 @@ cache:
 
 script:
   - ./gradlew check --stacktrace --no-daemon
-
-deploy:
-  provider: releases
-  api_key: "$GH_TOKEN"
-  file_glob: true
-  file:
-    - ./*.jar
-  cleanup: false
-  on:
-    condition: $GH_TOKEN != ""
-    tags: true
