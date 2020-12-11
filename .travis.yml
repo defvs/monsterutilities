@@ -29,4 +29,5 @@ deploy:
     - ./*.jar
   skip_cleanup: true
   on:
+    condition: $GH_TOKEN != ""
     tags: true
