@@ -146,10 +146,10 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	fun checkForUpdate(userControlled: Boolean = false, unstable: Boolean = isUnstable) {
 		GlobalScope.launch {
 			try {
-				val jsonObject = fetchJson("https://api.github.com/repos/Xerus2000/monsterutilities/releases/latest") as? JsonObject
+				val jsonObject = fetchJson("https://api.github.com/repos/defvs/monsterutilities/releases/latest") as? JsonObject
 				val latestVersion = jsonObject?.string("tag_name")
 				val versionName = jsonObject?.string("name")
-				val githubReleaseUrl = jsonObject?.string("html_url") ?: "https://github.com/xerus2000/monsterutilities/releases"
+				val githubReleaseUrl = jsonObject?.string("html_url") ?: "https://github.com/defvs/monsterutilities/releases"
 				if(latestVersion == null || latestVersion.length > 50 || latestVersion == currentVersion || (!userControlled && latestVersion == Settings.IGNOREVERSION()) || latestVersion.devVersion()?.let { currentVersion.devVersion()!! > it } == true) {
 					if(userControlled)
 						showMessage("No update found!", "Updater", Alert.AlertType.INFORMATION)
@@ -199,7 +199,7 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	
 	fun showChangelog() {
 		GlobalScope.launch {
-			val releasesArray = fetchJson("https://api.github.com/repos/xerus2000/monsterutilities/releases") as JsonArray<*>
+			val releasesArray = fetchJson("https://api.github.com/repos/defvs/monsterutilities/releases") as JsonArray<*>
 			val c = Changelog()
 			releasesArray.forEach {
 				if (it is JsonObject) {
