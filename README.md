@@ -26,7 +26,7 @@ Obtain it though the process below or simply supply your credentials to the logi
 1) [Sign in on monstercat.com][Monstercat-signin] and ensure that you have a valid [Monstercat Gold] subscription
 2) Find a cookie for `connect.monstercat.com` in your browser  
    Chromium-based browsers: [chrome://settings/cookies/detail?site=connect.monstercat.com](chrome://settings/cookies/detail?site=connect.monstercat.com)  
-   Firefox: Go to https://connect.monstercat.com/ (ignore any errors), open dev tools (Ctrl+Shift+I), go to `Storage > Cookies > https://connect.monstercat.com`
+   Firefox: Go to https://connect.monstercat.com/ (ignore any errors, including Cloudflare 502's), open dev tools (Ctrl+Shift+I), go to `Storage > Cookies > https://connect.monstercat.com`
 3) Find the content of `cid`
 4) Copy that string into the `cid` Textfield at the bottom of the Downloader
 
