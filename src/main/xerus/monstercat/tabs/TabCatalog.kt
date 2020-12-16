@@ -9,6 +9,7 @@ import javafx.scene.text.Font
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import xerus.ktutil.collections.ArraySet
+import xerus.ktutil.collections.nullIfEmpty
 import xerus.ktutil.containsAny
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.TableColumn
@@ -63,7 +64,9 @@ class TabCatalog: TableTab() {
 		})
 		
 		fun playTracks(add: Boolean) {
-			val selected = table.selectionModel.selectedItems ?: return
+			val selected = table.selectionModel.selectedItems?.filter {
+				it[cols.findUnsafe("Label")] !in listOf("EP", "Compilation", "Album")
+			}.nullIfEmpty() ?: return
 			GlobalScope.launch {
 				if(!add)
 					Player.playTracks(getSongs(selected))
@@ -115,7 +118,7 @@ class TabCatalog: TableTab() {
 		table.contextMenu = rightClickMenu
 	}
 	
-	private suspend fun getSongs(songList: ObservableList<List<String>>): ArrayList<Track> {
+	private suspend fun getSongs(songList: List<List<String>>): ArrayList<Track> {
 		val tracklist = arrayListOf<Track>()
 		songList.forEach { item ->
 			APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
