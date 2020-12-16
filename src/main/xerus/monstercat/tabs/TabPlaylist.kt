@@ -58,7 +58,7 @@ class TabPlaylist: VTab() {
 		
 		// Columns and rows
 		columns.addAll(TableColumn<Track, String>("Artists") { it.value.artistsTitle },
-			TableColumn<Track, String>("Title") { it.value.title })
+			TableColumn<Track, String>("Title") { it.value.titleFull })
 		
 		setRowFactory {
 			TableRow<Track>().apply {

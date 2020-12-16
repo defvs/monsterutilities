@@ -34,6 +34,12 @@ open class Track: MusicItem() {
 	val isAlbumMix
 		get() = title.contains("Album Mix")
 	
+	val titleFull
+		get() = when {
+			version.isEmpty() -> "%s"
+			else -> "%s (%s)"
+		}.format(title, version)
+	
 	open fun init(): Track {
 		if(albumArtists.isNotEmpty() && titleClean.isNotEmpty())
 			return this
