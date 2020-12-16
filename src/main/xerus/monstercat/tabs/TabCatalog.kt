@@ -1,7 +1,6 @@
 package xerus.monstercat.tabs
 
 import javafx.collections.ListChangeListener
-import javafx.collections.ObservableList
 import javafx.scene.control.*
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
@@ -9,7 +8,6 @@ import javafx.scene.text.Font
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import xerus.ktutil.collections.ArraySet
-import xerus.ktutil.collections.nullIfEmpty
 import xerus.ktutil.containsAny
 import xerus.ktutil.javafx.MenuItem
 import xerus.ktutil.javafx.TableColumn
@@ -64,9 +62,7 @@ class TabCatalog: TableTab() {
 		})
 		
 		fun playTracks(add: Boolean) {
-			val selected = table.selectionModel.selectedItems?.filter {
-				it[cols.findUnsafe("Label")] !in listOf("EP", "Compilation", "Album")
-			}.nullIfEmpty() ?: return
+			val selected = table.selectionModel.selectedItems ?: return
 			GlobalScope.launch {
 				if(!add)
 					Player.playTracks(getSongs(selected))
@@ -118,14 +114,23 @@ class TabCatalog: TableTab() {
 		table.contextMenu = rightClickMenu
 	}
 	
-	private suspend fun getSongs(songList: List<List<String>>): ArrayList<Track> {
-		val tracklist = arrayListOf<Track>()
+	private suspend fun getSongs(selectedItems: List<List<String>>): ArrayList<Track> {
+		val filter = { it: List<String> -> it[cols.findUnsafe("Label")] in listOf("EP", "Compilation", "Album") }
+		val releaseList = selectedItems.filter(filter)
+		val songList = selectedItems.filterNot(filter)
+		
+		val tracks = arrayListOf<Track>()
 		songList.forEach { item ->
 			APIUtils.find(item[cols.findUnsafe("Track")].trim(), item[cols.findUnsafe("Artist")])
-				?.let { tracklist.add(it) }
+				?.let { tracks.add(it) }
 				?: logger.warn("Failed matching song ${item[cols.findUnsafe("Artist")]} - ${item[cols.findUnsafe("Track")].trim()} while adding it to playlist")
 		}
-		return tracklist
+		releaseList.forEach { item ->
+			APIUtils.findRelease(item[cols.findUnsafe("ID")].trim())?.let {
+				tracks.addAll(it.tracks)
+			} ?: logger.warn { "Failed matching release ${item[cols.findUnsafe("Track")].trim()} while adding it to the playlist" }
+		}
+		return tracks
 	}
 	
 	private fun setColumns(columns: List<String>) {

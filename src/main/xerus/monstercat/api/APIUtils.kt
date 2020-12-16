@@ -5,6 +5,7 @@ import xerus.ktutil.helpers.StringMasker
 import xerus.ktutil.nullIfEmpty
 import xerus.ktutil.splitTitleTrimmed
 import xerus.ktutil.toInt
+import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 
 val artistDelimiters = arrayOf(" & ", ", ", " and ", " x ", " feat. ")
@@ -41,6 +42,14 @@ object APIUtils {
 				.minBy { xerus.monstercat.Settings.PLAYERARTPRIORITY.get().priorities.map { it.displayName }.indexOf(it.release.type)}
 		
 		return bestTrack
+	}
+	
+	suspend fun findRelease(title: String, artist: String) = Cache.getReleases().maxBy { release ->
+		title.sumBy { release.title.contains(it).toInt() } + title.sumBy { release.artistsTitle.contains(it).toInt() }
+	}
+	
+	suspend fun findRelease(catalogId: String) = Cache.getReleases().maxBy { release ->
+		catalogId.sumBy { release.catalogId.contains(it).toInt() }
 	}
 	
 }
