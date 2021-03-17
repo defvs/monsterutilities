@@ -204,8 +204,8 @@ class TabCatalog: TableTab() {
 				val avg = widths.average()
 				val deviation = widths.sumByDouble { (it - avg).absoluteValue } / widths.size
 				col.prefWidth = avg
-				col.minWidth = (avg - deviation).coerceAtLeast(Label(col.text).textWidth().plus(5).coerceAtLeast(30.0))
-				col.maxWidth = widths.max()!!
+				/*col.minWidth = (avg - deviation).coerceAtLeast(Label(col.text).textWidth().plus(5).coerceAtLeast(30.0))
+				col.maxWidth = widths.max()!!*/
 				logger.trace { "Catalog column %-11s avg %3.0f +-%2.0f  max %3.0f  min %2.0f".format(col.text, avg, deviation, col.maxWidth, col.minWidth) }
 			}
 		}
