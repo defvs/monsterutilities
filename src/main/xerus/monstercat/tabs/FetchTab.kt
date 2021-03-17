@@ -35,7 +35,11 @@ abstract class FetchTab : VTab() {
 		if(this::class != TabGenres::class) {
 			onFx { setPlaceholder(Label("Fetching...")) }
 			logger.debug("Fetching $tabName")
-			val sheet = fetchMCatalogTab(tabName, request)
+			val sheet = when (tabName) {
+				"Catalog" -> fetchMCatalogTab("Main Catalog", request)
+				"Genre" -> fetchMCatalogTab("Genre", request)
+				else -> null
+			}
 			if(sheet != null) {
 				readSheet(sheet)
 				writeCache(sheet)
