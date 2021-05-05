@@ -517,7 +517,7 @@ class TabDownloader: VTab() {
 			}
 			add(cancelButton.allowExpand(vertical = false))
 			
-			addLabeled("Download Threads", intSpinner(0, 99) syncWith DOWNLOADTHREADS)
+			addLabeled("Download Threads", intSpinner(0, 100) syncWith DOWNLOADTHREADS)
 			val progressLabel = Label("0 / ${state.total} Errors: 0")
 			val progressBar = ProgressBar()
 			add(StackPane(progressBar.allowExpand(vertical = false), progressLabel))
