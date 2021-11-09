@@ -36,11 +36,17 @@ fun String.addFormatSuffix() = "$this.${QUALITY().split('_')[0]}"
 
 private val logger = KotlinLogging.logger { }
 
-abstract class Download(val item: MusicItem, val coverUrl: String): Task<Long>() {
+abstract class Download(val item: MusicItem): Task<Long>() {
 	
 	init {
 		@Suppress("LEAKINGTHIS")
 		updateTitle(item.toString())
+	}
+	
+	fun getReleaseItem(): Release = when(item) {
+		is Release -> item
+        is Track -> item.release
+        else -> throw IllegalArgumentException("Unknown item type: $item")
 	}
 	
 	private var startTime: Long = 0
@@ -75,12 +81,12 @@ abstract class Download(val item: MusicItem, val coverUrl: String): Task<Long>()
 	
 }
 
-class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>): Download(release, release.coverUrl) {
+class ReleaseDownload(private val release: Release, private var tracks: Collection<Track>): Download(release) {
 	
 	private var totalProgress = 0
 	
 	fun downloadTrack(releaseId: String, trackId: String, path: Path) {
-		val connection = APIConnection("v2", "release", releaseId, "track-download", trackId).addQuery("format", QUALITY())
+		val connection = APIConnection("api", "release", releaseId, "track-download", trackId).addQuery("format", QUALITY())
 		val httpResponse = connection.getResponse()
 		val entity = httpResponse.entity
 		val contentLength = entity.contentLength
@@ -129,7 +135,7 @@ class ReleaseDownload(private val release: Release, private var tracks: Collecti
 			totalProgress++
 		}
 		if(!isCancelled && downloadCover) {
-			val entity = Covers.fetchCover(release.coverUrl, COVERARTSIZE())
+			val entity = Covers.fetchCover(release, COVERARTSIZE())
 			val coverName = release.toString(COVERPATTERN()).replaceIllegalFileChars() + "." + entity.contentType.value.substringAfter('/')
 			updateMessage(coverName)
 			val length = entity.contentLength.toDouble()

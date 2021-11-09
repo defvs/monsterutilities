@@ -6,7 +6,6 @@ Browse, stream and download [Monstercat] Songs, powered by the [Monstercat API] 
 We are however still available for questions in the [Discord] or via [GitHub issues][issues] and [welcome new contributors](CONTRIBUTING.md)!
 
 - [Getting started](#getting-started)
-- [Troubleshooting](#troubleshooting)
 - [Caching & Offline usage](#caching--offline-usage)
 - [Screenshots](#screenshots)
 - [Credits](#credits)
@@ -24,11 +23,11 @@ For downloading and listening to early access, insert a valid `cid` at the botto
 Obtain it though the process below or simply supply your credentials to the login form in the application.
 
 1) [Sign in on monstercat.com][Monstercat-signin] and ensure that you have a valid [Monstercat Gold] subscription
-2) Find a cookie for `connect.monstercat.com` in your browser  
-   Chromium-based browsers: [chrome://settings/cookies/detail?site=connect.monstercat.com](chrome://settings/cookies/detail?site=connect.monstercat.com)  
-   Firefox: Go to https://connect.monstercat.com/ (ignore any errors, including Cloudflare 502's), open dev tools (Ctrl+Shift+I), go to `Storage > Cookies > https://connect.monstercat.com`
+2) Find a cookie for `www.monstercat.com` in your browser
+   Chromium-based browsers: [chrome://settings/cookies/detail?site=www.monstercat.com](chrome://settings/cookies/detail?site=www.monstercat.com)  
+   Firefox: Go to https://www.monstercat.com/, open dev tools (Ctrl+Shift+I), go to `Storage > Cookies > https://connect.monstercat.com`
 3) Find the content of `cid`
-4) Copy that string into the `cid` Textfield at the bottom of the Downloader
+4) Copy that string into the `cid` Text field at the bottom of the Downloader
 
 The `cid` can be used to obtain full access to your account, so treat it carefully. The application never sends it anywhere but [Monstercat] servers.  
 Please note though that it is persisted on your computer using the [Java Preferences API](https://stackoverflow.com/a/1320798) for your convenience.

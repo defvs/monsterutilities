@@ -7,7 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.apache.http.HttpResponse
-import org.apache.http.client.ClientProtocolException
 import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
@@ -46,11 +45,11 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	private val path: String = "/" + path.joinToString("/")
 	val uri: URI
-		get() = URI("https", "connect.monstercat.com", path, getQuery(), null)
+		get() = URI("https", "www.monstercat.com", path, getQuery(), null)
 	
 	fun fields(clazz: KClass<*>) = addQuery("fields", *clazz.declaredKeys.toTypedArray())
 	fun limit(limit: Int) = replaceQuery("limit", limit.toString())
-	fun skip(skip: Int) = replaceQuery("skip", skip.toString())
+	fun skip(skip: Int) = replaceQuery("offset", skip.toString())
 	
 	// Requesting
 	
@@ -59,7 +58,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	 * @return the response parsed onto [T] or null if there was an error */
 	fun <T> parseJSON(destination: Class<T>): T? {
 		val inputStream = try {
-			getContent()
+			getContent("application/json")
 		} catch (e: IOException) {
 			return null
 		}
@@ -73,7 +72,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	
 	/** @return null when the connection fails, else the parsed result */
 	fun getReleases() =
-			parseJSON(ReleaseListResponse::class.java)?.results?.map { it.init() }
+			parseJSON(ReleaseListResponse::class.java)?.releases?.results?.map { it.init() }
 	
 	fun getRelease() = parseJSON(ReleaseResponse::class.java)
 	
@@ -95,16 +94,19 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 	}
 	
 	private var response: HttpResponse? = null
-	fun getResponse(): HttpResponse {
+	fun getResponse(acceptContentType: String? = null): HttpResponse {
 		if (response == null)
-			execute(HttpGet(uri))
+			execute(HttpGet(uri).apply {
+                if (acceptContentType != null)
+                    setHeader("Accept", acceptContentType)
+            })
 		return response!!
 	}
 	
 	/**@return the content of the response
 	 * @throws IOException when the connection fails */
-	fun getContent(): InputStream {
-		val resp = getResponse()
+	fun getContent(acceptContentType: String? = null): InputStream {
+		val resp = getResponse(acceptContentType)
 		if (!resp.entity.isRepeatable)
 			response = null
 		return resp.entity.content
@@ -140,7 +142,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		 * @return the redirected (real) stream URL for use with [javafx.scene.media.Media] which doesn't support redirections
 		 */
 		fun getRedirectedStreamURL(track: Track): String? {
-			val connection = APIConnection("v2", "release", track.release.id, "track-stream", track.id)
+			val connection = APIConnection("api", "release", track.release.id, "track-stream", track.id)
 			val context = HttpClientContext()
 			connection.execute(HttpGet(connection.uri), context)
 			return if (connection.response?.getLastHeader("Content-Type")?.value == "audio/mpeg")
@@ -165,7 +167,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 			cookieStore.addCookie(
 					connectsid.nullIfEmpty()?.let {
 						BasicClientCookie("cid", it).apply {
-							domain = "connect.monstercat.com"
+							domain = "www.monstercat.com"
 							path = "/"
 						}
 					}
@@ -224,7 +226,7 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		private fun getConnectValidity(connectsid: String): ConnectResult {
-			val session = APIConnection("v2", "self", "session").parseJSON(Session::class.java)
+			val session = APIConnection("api", "me").parseJSON(Session::class.java)
 			val validity = when {
 				session == null -> ConnectValidity.NOCONNECTION
 				session.user == null -> ConnectValidity.NOUSER
@@ -238,12 +240,12 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		fun login(username: String, password: String): Boolean {
-			val connection = APIConnection("v2", "signin")
+			val connection = APIConnection("api", "sign-in")
 			val context = HttpClientContext()
 			connection.execute(HttpPost(connection.uri).apply {
 				setHeader("Accept", "application/json")
 				setHeader("Content-type", "application/json")
-				entity = StringEntity("""{"email":"$username","password":"$password"}""")
+				entity = StringEntity("""{"Email":"$username","Password":"$password"}""")
 			}, context)
 			
 			val code = connection.response?.statusLine?.statusCode
@@ -254,6 +256,13 @@ class APIConnection(vararg path: String): HTTPQuery<APIConnection>() {
 		}
 		
 		fun logout() {
+			val connection = APIConnection("api", "sign-out")
+			val context = HttpClientContext()
+			connection.execute(HttpPost(connection.uri), context)
+			
+			val code = connection.response?.statusLine?.statusCode
+			logger.trace("Login POST returned response code $code")
+			
 			CONNECTSID.clear()
 		}
 		

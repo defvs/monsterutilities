@@ -29,11 +29,11 @@ In order to fetch the Catalog and Genres you have to create a file called `src/r
 
 ### Important Gradle Tasks
 
- Name        | Action
- ---         | ---
- `run`       | run the project right from source
- `shadowJar` | create an executable jar in the root directory of the project bundled with all libraries
- `build`     | build & test the whole project
+| Name        | Action                                                                                   |
+|-------------|------------------------------------------------------------------------------------------|
+| `run`       | run the project right from source                                                        |
+| `shadowJar` | create an executable jar in the root directory of the project bundled with all libraries |
+| `build`     | build & test the whole project                                                           |
 
 Provide the argument `-Dargs="--loglevel trace"` to the run task to change the log level or pass other commandline options to the application.
 

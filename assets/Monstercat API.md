@@ -1,16 +1,18 @@
 
+# DEPRECIATED! Please see [the new documentation](https://github.com/defvs/connect-v2-docs)
+
 All API calls go to https://connect.monstercat.com/
 
 ## Overview
-| URL   |      HTTP Verb      |  Functionality |
-|---|---|---|
-| /signin                   | POST | [Signs you in](#signin) |
-| /api/catalog/release      | GET | [Returns all tracks paired to releases](#catalogbrowse) |
-| /api/catalog/release      | GET | [Returns all releases](#catalogrelease) |
-| /api/catalog/track        | GET | [Returns all tracks](#catalogtrack) |
-| /api/playlist             | GET/POST/PUT | [Interacts with playlists of the user](#playlist) |
-| /api/playlist/:id | PUT | [Add a song to a playlist](#playlist) |
-| /api/self         | GET | [Returns information about the user](#self) |
+| URL                  | HTTP Verb    | Functionality                                           |
+|----------------------|--------------|---------------------------------------------------------|
+| /signin              | POST         | [Signs you in](#signin)                                 |
+| /api/catalog/release | GET          | [Returns all tracks paired to releases](#catalogbrowse) |
+| /api/catalog/release | GET          | [Returns all releases](#catalogrelease)                 |
+| /api/catalog/track   | GET          | [Returns all tracks](#catalogtrack)                     |
+| /api/playlist        | GET/POST/PUT | [Interacts with playlists of the user](#playlist)       |
+| /api/playlist/:id    | PUT          | [Add a song to a playlist](#playlist)                   |
+| /api/self            | GET          | [Returns information about the user](#self)             |
 
 ### /signin
 **POST**

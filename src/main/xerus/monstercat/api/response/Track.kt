@@ -8,15 +8,15 @@ import java.util.Collections.emptyList
 
 open class Track: MusicItem() {
 	
-	@Key override var id: String = ""
-	@Key var artistsTitle: String = ""
-	@Key override var title: String = ""
-	@Key var version: String = ""
-	@Key var artists: List<ArtistRel> = emptyList()
-	@Key var bpm: Double? = null
-	@Key var streamable: Boolean = false
-	@Key var trackNumber = -1
-	@Key var creatorFriendly: Boolean = false
+	@Key("Id") override var id: String = ""
+	@Key("ArtistsTitle") var artistsTitle: String = ""
+	@Key("Title") override var title: String = ""
+	@Key("Version") var version: String = ""
+	@Key("Artists") var artists: List<ArtistRel> = emptyList()
+	@Key("BPM") var bpm: Double? = null
+	@Key("Streamable") var streamable: Boolean = false
+	@Key("TrackNumber") var trackNumber = -1
+	@Key("CreatorFriendly") var creatorFriendly: Boolean = false
 	
 	var artistsSplit: List<String> = emptyList()
 	var titleClean: String = ""

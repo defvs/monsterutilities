@@ -3,15 +3,19 @@ package xerus.monstercat.api.response
 import com.google.api.client.util.Key
 
 open class ListResponse<T> {
-	@Key
+	@Key("Data")
 	lateinit var results: ArrayList<T>
-	@Key
+	@Key("Total")
 	var total: Int = 0
 	
 	override fun toString() = "${this.javaClass.simpleName}($total elements): $results"
 }
 
-class ReleaseListResponse: ListResponse<Release>()
-class TrackListResponse: ListResponse<Track>()
+class ReleaseListResponse {
+	@Key("Releases") lateinit var releases: ListResponse<Release>
+}
+class TrackListResponse {
+	@Key("Tracks") lateinit var tracks: ListResponse<Release>
+}
 
 class ReleaseList: ArrayList<Release>()

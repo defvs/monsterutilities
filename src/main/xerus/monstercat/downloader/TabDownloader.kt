@@ -329,7 +329,7 @@ class TabDownloader: VTab() {
 		
 		addRow(TextField(CONNECTSID()).apply {
 			promptText = "cid Cookie"
-			tooltip = Tooltip("Log in on monstercat.com from your browser, find the cookie \"cid\" from \"connect2.monstercat.com\" and copy the content into here")
+			tooltip = Tooltip("Log in on monstercat.com from your browser, find the cookie \"cid\" from \"www.monstercat.com\" and copy the content into here")
 			val textListener = textProperty().debounce(400) { text ->
 				CONNECTSID.set(text)
 			}
@@ -339,11 +339,11 @@ class TabDownloader: VTab() {
 			Alert(Alert.AlertType.NONE, null, ButtonType.OK).apply {
 				title = "How to get your cid Cookie"
 				dialogPane.content = VBox(
-					Label("""Log in on monstercat.com from your browser, go to your browser's cookies (usually somewhere in settings), find the cookie "cid" from "connect.monstercat.com" and copy the content into the Textfield.."""),
+					Label("""Log in on monstercat.com from your browser, go to your browser's cookies (usually somewhere in settings), find the cookie "cid" from "www.monstercat.com" and copy the content into the Text field.."""),
 					HBox(Label("If you use Chrome, you can simply paste this into the address bar after logging in:"), TextField().apply {
 						isEditable = false
 						maxWidth = Double.MAX_VALUE
-						text = "chrome://settings/cookies/detail?site=connect.monstercat.com"
+						text = "chrome://settings/cookies/detail?site=www.monstercat.com"
 						onFx {
 							prefWidth = Text(text).let {
 								it.font = font
@@ -556,7 +556,7 @@ class TabDownloader: VTab() {
 			
 			val taskView = TaskProgressView<Download>()
 			taskView.setGraphicFactory {
-				ImageView(Covers.getThumbnailImage(it.coverUrl, 64))
+				ImageView(Covers.getThumbnailImage(it.getReleaseItem(), 64))
 			}
 			tasks = taskView.tasks
 			tasks.listen {

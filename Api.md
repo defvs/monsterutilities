@@ -1,3 +1,6 @@
+
+# DEPRECIATED! Please see [the new documentation](https://github.com/defvs/connect-v2-docs)
+
 # Connect API (Alpha)
 
 Base URL: `https://connect.monstercat.com/api`

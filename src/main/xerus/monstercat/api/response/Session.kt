@@ -3,10 +3,10 @@ package xerus.monstercat.api.response
 import com.google.api.client.util.Key
 
 /** Session obtained by /self/session */
-data class Session(@Key var user: User? = null, @Key var settings: Settings? = null)
+data class Session(@Key("User") var user: User? = null, @Key("Settings") var settings: Settings? = null)
 
 /** User infos, included in a session if the cid is valid */
-data class User(@Key var hasGold: Boolean = false)
+data class User(@Key("HasGold") var hasGold: Boolean = false)
 
 /** User settings, included in a session if the cid is valid */
-data class Settings(@Key var preferredDownloadFormat: String = "")
+data class Settings(@Key("PreferredFormat") var preferredDownloadFormat: String = "")

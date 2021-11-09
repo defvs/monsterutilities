@@ -96,7 +96,7 @@ tasks {
 	
 	arrayOf(run.get(), runShadow.get()).forEach {
 		it.group = MAIN
-		it.args = System.getProperty("args", "--loglevel debug").split(" ")
+		it.args = System.getProperty("args", "--loglevel trace").split(" ")
 	}
 	
 	val shadowJar by getting(ShadowJar::class) {

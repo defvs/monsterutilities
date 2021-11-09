@@ -42,6 +42,7 @@ import xerus.monstercat.api.Cache
 import xerus.monstercat.api.Covers
 import xerus.monstercat.api.DiscordRPC
 import xerus.monstercat.api.Player
+import xerus.monstercat.api.response.Release
 import xerus.monstercat.downloader.TabDownloader
 import xerus.monstercat.tabs.*
 import java.awt.Desktop
@@ -221,7 +222,7 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	}
 	
 	/** Shows a new window with an ImageView of the requested [coverUrl]
-	 * @param coverUrl URL of the cover to download and show
+	 * @param release the release to show the cover for
 	 * @param title Title of the window, only useful when decorated
 	 * @param size Height and width in pixel of the window and image
 	 * @param isDecorated True if the window has borders and title bar with close controls
@@ -229,8 +230,9 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 	 * @param closeOnFocusLost Should we close the window if we're out of focus ?
 	 * @param isResizable Allow resizing the window. The image will follow.
 	 */
-	fun viewCover(coverUrl: String, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false){
-		val windowSize: Double = size ?: minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2
+	fun viewCover(release: Release, size: Double? = null, title: String = "Cover Art", isDecorated: Boolean = false, isDraggable: Boolean = true, closeOnFocusLost: Boolean = true, isResizable: Boolean = false){
+		val windowSize: Double =
+			size ?: (minOf(Screen.getPrimary().visualBounds.width, Screen.getPrimary().visualBounds.height) / 2)
 		
 		val pane = StackPane()
 		val largeImage = ImageView()
@@ -272,7 +274,7 @@ class MonsterUtilities(checkForUpdate: Boolean): JFXMessageDisplay {
 		
 		GlobalScope.launch {
 			try {
-				largeImage.image = Covers.getCoverImage(coverUrl, windowSize.toInt())
+				largeImage.image = Covers.getCoverImage(release, windowSize.toInt())
 			} catch (e: IOException) {
 				onFx {
 					stage.close()

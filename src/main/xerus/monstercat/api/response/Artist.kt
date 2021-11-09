@@ -12,13 +12,12 @@ abstract class Artist {
 }
 
 class ArtistRel(
-	@Key override var name: String = "",
-	@Key var role: String = "",
-	@Key var vendor: String? = null,
-	@Key("id") override var artistId: String = "",
-	@Key var uri: String? = null
+	@Key("Name") override var name: String = "",
+	@Key("Role") var role: String = "",
+	@Key("Id") override var artistId: String = "",
+	@Key("URI") var uri: String? = null
 ): Artist() {
-	fun debugString() = "ArtistRel(name=$name, role=$role, vendor=$vendor)"
+	fun debugString() = "ArtistRel(id=$artistId, name=$name, role=$role)"
 }
 
-class FullArtist(@Key("_id") override var artistId: String = "", @Key override var name: String = ""): Artist()
+class FullArtist(@Key("Id") override var artistId: String = "", @Key("Name") override var name: String = ""): Artist()

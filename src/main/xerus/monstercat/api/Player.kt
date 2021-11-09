@@ -25,13 +25,11 @@ import xerus.ktutil.javafx.ui.controls.FadingHBox
 import xerus.ktutil.javafx.ui.transitionToHeight
 import xerus.ktutil.javafx.ui.verticalFade
 import xerus.ktutil.square
-import xerus.ktutil.write
 import xerus.monstercat.Settings
 import xerus.monstercat.api.response.Release
 import xerus.monstercat.api.response.Track
 import xerus.monstercat.monsterUtilities
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.util.*
@@ -115,7 +113,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 	/** hides the Player and appears again displaying the latest Release */
 	fun reset() {
 		fadeOut()
-		if(!Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
+		if(Settings.PLAYEREXPORTFILE.value.isNotBlank() && !Files.isDirectory(Settings.PLAYEREXPORTFILE())) {
 			Files.newBufferedWriter(Settings.PLAYEREXPORTFILE(),
 					StandardOpenOption.TRUNCATE_EXISTING,
 					StandardOpenOption.WRITE,
@@ -187,7 +185,7 @@ object Player: FadingHBox(true, targetHeight = 25) {
 				}
 			}
 		}
-		updateCover(track.release.coverUrl)
+		updateCover(track.release)
 	}
 	
 	/** Disposes the [activePlayer] and hides the [seekBar] */
@@ -233,15 +231,15 @@ object Player: FadingHBox(true, targetHeight = 25) {
 			}
 		}
 	
-	private var coverUrl: String? = null
+	private var coverRelease: Release? = null
 	private fun playing(text: String) {
 		onFx {
 			showText(text)
-			if(coverUrl != null) {
-				val imageView = ImageView(Covers.getThumbnailImage(coverUrl!!, 24))
+			if(coverRelease != null) {
+				val imageView = ImageView(Covers.getThumbnailImage(coverRelease!!, 24))
 				imageView.setOnMouseClicked {
 					if(it.button == MouseButton.PRIMARY) {
-						monsterUtilities.viewCover(coverUrl!!)
+						monsterUtilities.viewCover(coverRelease!!)
 					}
 				}
 				children.add(0, imageView)
@@ -298,14 +296,15 @@ object Player: FadingHBox(true, targetHeight = 25) {
 		Playlist.getPrev()?.also { playTrack(it) }
 	}
 	
-	fun updateCover(coverUrl: String?) {
-		if(coverUrl == this.coverUrl)
+	fun updateCover(release: Release?) {
+		if(release == coverRelease)
 			return
-		logger.debug("Updating cover: $coverUrl")
-		this.coverUrl = coverUrl
+		coverRelease = release
+		if (release != null)
+			logger.debug("Updating cover for: ${release.catalogId}")
 		GlobalScope.launch {
 			try {
-				val image: Image? = coverUrl?.let { Covers.getThumbnailImage(it) }
+				val image: Image? = release?.let { Covers.getThumbnailImage(release) }
 				onFx {
 					backgroundCover.value = image?.let {
 						Background(BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, BackgroundSize(100.0, 100.0, true, true, true, true)))
