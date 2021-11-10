@@ -99,6 +99,7 @@ class TabDownloader: VTab() {
 				parent != songView.root &&
 					// Match titles
 					(value.toString().contains(searchText, true) ||
+						release?.searchableString()?.contains(searchText, true) ?: false ||
 						release?.tracks?.any { it.toString().contains(searchText, true) } ?: false) &&
 					// Match Releasedate
 					release?.let { releaseSearch.predicate.test(it) } ?: false

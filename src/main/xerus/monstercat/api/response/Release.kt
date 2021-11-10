@@ -14,7 +14,8 @@ data class Release(
 	@Key("Type") var type: String = "",
 	@Key("ArtistTitle") var artistsTitle: String = "",
 	@Key("Title") override var title: String = "",
-	@Key("Downloadable") var downloadable: Boolean = false
+	@Key("Downloadable") var downloadable: Boolean = false,
+	@Key("Brand") var brand: String = ""
 ): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
@@ -53,6 +54,9 @@ data class Release(
 	
 	override fun toString(): String =
 		artistsTitle.isEmpty().to("%2\$s", "%s - %s").format(artistsTitle, title)
+	
+	
+	fun searchableString(): String = "brand=$brand artist=$artistsTitle title=$title catalogid=$catalogId"
 	
 	fun debugString(): String =
 		"Release(id='$id', releaseDate='$releaseDate', type='$type', artistsTitle='$artistsTitle', title='$title', coverUrl='$coverUrl', downloadable=$downloadable, isCollection=$isCollection)"
