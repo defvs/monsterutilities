@@ -220,16 +220,30 @@ class TabDownloader: VTab() {
 			}
 			
 			override fun increment(steps: Int) {
-				for(i in 0 until steps)
-					if(value < 8000)
-						value *= 2
+				for(i in 0 until steps) {
+					if(value < 16) value = 16
+					else value *= 2
+					if(value > 1920) {
+						value = 1920
+						break
+					}
+				}
+			
 			}
 			
 			override fun decrement(steps: Int) {
 				for(i in 0 until steps)
-					value /= 2
+				{
+					if(value == 1920) value = 1024
+					else value /= 2
+					if(value < 16) {
+						value = 16
+                        break;
+					}
+				}
 			}
-		})).children.addAll(Label("Cover naming pattern"), TextField().bindText(COVERPATTERN))
+		}).tooltip("1920 is the maximum allowed by the API"))
+			.children.addAll(Label("Cover naming pattern"), TextField().bindText(COVERPATTERN))
 		
 		val epAsSingle = CheckBox("Treat Collections with less than")
 		epAsSingle.isSelected = EPSTOSINGLES() > 0
