@@ -12,7 +12,7 @@ data class Release(
 	@Key("CatalogId") var catalogId: String = "",
 	@Key("ReleaseDate") var releaseDate: String = "",
 	@Key("Type") var type: String = "",
-	@Key("ArtistTitle") var artistsTitle: String = "",
+	@Key("ArtistsTitle") var artistsTitle: String = "",
 	@Key("Title") override var title: String = "",
 	@Key("Downloadable") var downloadable: Boolean = false,
 	@Key("Brand") var brand: String = ""
