@@ -26,7 +26,7 @@ data class Release(
 			field = value
 		}
 	
-	fun getCoverUrl(width: Int = 1024) = "https://monstercat.com/cdn-cgi/image/format=png,width=${width.coerceIn(16..1920)}/release/$catalogId/cover"
+	fun getCoverUrl(width: Int = 1024) = "https://cdx.monstercat.com/?width=${width.coerceIn(16..1920)}&encoding=jpg&url=https://www.monstercat.com/release/$catalogId/cover"
 	val coverUrl: String
 		get() = getCoverUrl() // for backwards compatibility
 	
