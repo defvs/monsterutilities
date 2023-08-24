@@ -98,10 +98,30 @@ class TabDownloader: VTab() {
 				val release = value as? Release
 				parent != songView.root &&
 					// Match titles
-					(value.toString().contains(searchText, true) ||
-						release?.searchableString()?.contains(searchText, true) ?: false ||
-						release?.tracks?.any { it.toString().contains(searchText, true) } ?: false) &&
-					// Match Releasedate
+					release?.let { currentRelease ->
+						data class FilterField(val fieldName: String, val operator: String, val value: String) {
+							fun getActualFieldValue(release: Release) = try {
+							    release.getField(fieldName.toLowerCase())
+							} catch (e: FieldNotFoundException) { null }
+
+							fun isFilterValid(release: Release) = (getActualFieldValue(release) as? String)?.let {
+								when (operator) {
+									"!=" -> !this.value.equals(it, ignoreCase = true)
+									"==" -> this.value.equals(it, ignoreCase = true)
+									else -> false
+								}
+							} ?: false
+						}
+
+						val filterFields = "([a-zA-Z]+)(!=|==)\"(.*)\"".toRegex().findAll(searchText)
+								.map { match -> FilterField(match.groupValues[1], match.groupValues[2], match.groupValues[3]) }
+								.toList()
+								.filter { it.getActualFieldValue(currentRelease) != null }
+						if (filterFields.isEmpty()) (value.toString().contains(searchText, true) ||
+								currentRelease.tracks.any { it.toString().contains(searchText, true) }) // Revert to regular matching
+						else filterFields.all { it.isFilterValid(currentRelease) }
+					} ?: false &&
+					// Match Release date
 					release?.let { releaseSearch.predicate.test(it) } ?: false
 			}
 		}, searchField.textProperty(), releaseSearch.predicateProperty)
