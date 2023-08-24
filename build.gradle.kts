@@ -58,7 +58,7 @@ dependencies {
 	implementation("ch.qos.logback", "logback-classic", "1.2.+")
 	implementation("io.github.microutils", "kotlin-logging", "1.6.+")
 	
-	implementation("be.bluexin", "drpc4k", "0.9")
+	implementation("com.github.defvs", "drpc4k", "2abec4cc1f")
 	implementation("org.apache.httpcomponents", "httpmime", "4.5.+")
 	implementation("com.google.apis", "google-api-services-sheets", "v4-rev20190508-1.30.1")
 	
