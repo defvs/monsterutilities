@@ -15,7 +15,7 @@ data class Release(
 	@Key("ArtistsTitle") var artistsTitle: String = "",
 	@Key("Title") override var title: String = "",
 	@Key("Downloadable") var downloadable: Boolean = false,
-	@Key("Brand") var brand: String = ""
+	@Key("BrandTitle") var brand: String = ""
 ): MusicItem() {
 	
 	@Key var isCollection: Boolean = false
